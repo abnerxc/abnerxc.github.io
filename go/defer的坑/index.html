@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+<meta name="viewport" content="width=device-width,minimum-scale=1">
+
+
+
+
+<title>Go 中 defer坑 | Abner的博客</title>
+<link rel="canonical" href="https://abnerxc.github.io/go/defer%E7%9A%84%E5%9D%91/">
+<meta name="description" content="defer nil函数 🔗func() { var run func() = nil defer run() fmt." />
+<meta property="og:type" content="article" />
+<meta property="og:title" content="Go 中 defer坑 | Abner的博客" />
+<meta property="og:url" content="https://abnerxc.github.io/go/defer%E7%9A%84%E5%9D%91/" />
+<meta property="og:description" content="defer nil函数 🔗func() { var run func() = nil defer run() fmt." />
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/icofont/icofont.min.css" />
+<link rel="stylesheet" href="/css/syntax.css" />
+<link rel="stylesheet" href="/css/style.css" />
+<link rel="shortcut icon" href="/images/favicon.ico" type="image/x-icon" />
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3672527868545324" crossorigin="anonymous"></script>
+
+    </head>
+
+    <body>
+        <header class="header-wrapper">
+    <div class="header">
+        <a class="site-title" href="https://abnerxc.github.io">Abner的博客</a>
+
+        <nav class="menu">
+            
+        </nav>
+    </div>
+</header>
+
+        <main class="main-wrapper">
+            <div class="main">
+                
+
+<section class="single">
+    <h1 class="title">Go 中 defer坑</h1>
+
+    <div class="tip">
+        <time datetime="2021-03-15 18:35:11 &#43;0800 CST">2021/03/15</time>
+        <span class="split">·</span>
+        <span> 211 words </span>
+        <span class="split">·</span>
+        <span>
+            1 minutes to read
+        </span>
+    </div>
+
+    <aside class="toc">
+        <nav id="TableOfContents">
+  <ul>
+    <li><a href="#循环z-a倒叙">循环Z-A(倒叙)</a></li>
+  </ul>
+</nav>
+    </aside>
+
+
+    <div class="taxonomies">
+        
+        <div>
+            Categories:
+            
+                <a href="/categories/go">Go</a>
+            
+        </div>
+        
+
+        
+    </div>
+
+    <hr />
+
+    <div class="content">
+        <h1 id="defer-nil函数">defer nil函数 <a href="#defer-nil%e5%87%bd%e6%95%b0" class="anchor">🔗</a></h1><pre tabindex="0"><code>func() {
+    var run func() = nil
+    defer run()
+    
+    fmt.Println(&#34;runs&#34;)
+}
+//output
+runs
+panic: runtime error: invalid memory address or nil pointer dereference
+</code></pre><p>名为 func 的函数一直运行至结束，然后 defer 函数会被执行且会因为值为 nil 而产生 panic 异常。然而值得注意的是，run() 的声明是没有问题，因为在外围函数运行完成后它才会被调用。</p>
+<p>+++</p>
+<h1 id="循环中使用defer">循环中使用defer <a href="#%e5%be%aa%e7%8e%af%e4%b8%ad%e4%bd%bf%e7%94%a8defer" class="anchor">🔗</a></h1><p><code>慎重在循环中使用defer</code>，因为结果出人意料</p>
+<pre tabindex="0"><code>func demo(){
+	for{
+		row,err:=db.Query(&#34;select .....&#34;)
+		if err!=nil{
+			...
+		}
+		defer row.close()
+	}
+}
+</code></pre><p>在上面的例子中，defer row.Close() 在循环中的延迟函数会在函数结束过后运行，而不是每次 for 循环结束之后。这些延迟函数会不停地堆积到延迟调用栈中，最终可能会导致一些不可预知的问题。</p>
+<ul>
+<li>解决方案1：不使用defer</li>
+</ul>
+<pre tabindex="0"><code>func demo(){
+	for{
+		row,err:=db.Query(&#34;select .....&#34;)
+		if err!=nil{
+			...
+		}
+		row.close()
+	}
+}
+</code></pre><ul>
+<li>解决方案2：移交给函数
+这样每次匿名函数执行完，会执行defer</li>
+</ul>
+<pre tabindex="0"><code>func demo(){
+	for{
+		func(){
+			row,err:=db.Query(&#34;select .....&#34;)
+            if err!=nil{
+                ...
+            }
+            defer row.close()
+		}()
+	}
+}
+</code></pre><h2 id="循环z-a倒叙">循环Z-A(倒叙) <a href="#%e5%be%aa%e7%8e%afz-a%e5%80%92%e5%8f%99" class="anchor">🔗</a></h2><pre tabindex="0"><code>func main() {
+    for i := 0; i &lt; 4; i++ {
+        defer fmt.Print(i)
+    }
+}
+//output
+3
+2
+1
+0
+</code></pre><p>+++</p>
+<h1 id="延迟调用含有闭包的函数">延迟调用含有闭包的函数 <a href="#%e5%bb%b6%e8%bf%9f%e8%b0%83%e7%94%a8%e5%90%ab%e6%9c%89%e9%97%ad%e5%8c%85%e7%9a%84%e5%87%bd%e6%95%b0" class="anchor">🔗</a></h1><pre tabindex="0"><code>type database struct{}
+
+func (db *database) connect() (disconnect func()) {
+    fmt.Println(&#34;connect&#34;)
+    return func() {
+        fmt.Println(&#34;disconnect&#34;)
+    }
+}
+
+//运行 
+db := &amp;database{}
+defer db.connect()
+
+fmt.Println(&#34;query db...&#34;)
+
+//output
+query db...
+connect
+</code></pre><p>最终 disconnect 并没有输出，最后只有 connect ，这是一个 bug，最终的情况是 connect() 执行结束后，其执行域得以被保存起来，但内部的闭包并不会被执行。</p>
+<ul>
+<li>解决方案</li>
+</ul>
+<pre tabindex="0"><code>
+func() {
+    db := &amp;database{}  close := db.connect()
+    defer close()
+    fmt.Println(&#34;query db...&#34;)
+}
+</code></pre><p>+++</p>
+<h1 id="在执行块中使用-defer">在执行块中使用 defer <a href="#%e5%9c%a8%e6%89%a7%e8%a1%8c%e5%9d%97%e4%b8%ad%e4%bd%bf%e7%94%a8-defer" class="anchor">🔗</a></h1><p>想要在执行块执行结束后执行在块内延迟调用的函数，但事实并非如此，它们只会在块所属的函数执行结束后才被执行，这种情况适用于所有的代码块除了上文的函数块例如，for，switch 等</p>
+<pre tabindex="0"><code>func main() {
+    {
+        defer func() {
+            fmt.Println(&#34;block: defer runs&#34;)
+        }()
+            
+        fmt.Println(&#34;block: ends&#34;)
+    }
+    
+    fmt.Println(&#34;main: ends&#34;)
+}
+//output
+block: ends
+main: ends
+block: defer runs
+</code></pre><ul>
+<li>解决方案</li>
+</ul>
+<pre tabindex="0"><code>func main() {
+    func() {
+        defer func() {
+            fmt.Println(&#34;func: defer runs&#34;)
+        }()
+    
+        fmt.Println(&#34;func: ends&#34;)
+    }()
+    
+    fmt.Println(&#34;main: ends&#34;)
+}
+</code></pre><p>+++</p>
+
+    </div>
+
+    
+</section>
+
+
+            </div>
+            <div class="side">
+                <div class="side-categories">
+    <h2>Categories</h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/categories/go">go(21)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E4%BB%A3%E7%A0%81">代码(1)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E5%B7%A5%E5%85%B7">工具(7)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E9%80%86%E5%90%91">逆向(2)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E9%9D%A2%E8%AF%95">面试(4)</a>
+            </li>
+        
+    </ul>
+</div>
+
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/note/">Recent Note</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/note/spring6%E5%AD%A6%E4%B9%A0%E8%AF%BE%E4%BB%B6/">Spring6学习课件</a>
+            </li>
+        
+            <li>
+                <a href="/note/rdis-%E7%BC%93%E5%AD%98%E7%A9%BF%E9%80%8F%E9%9B%AA%E5%B4%A9%E5%87%BB%E7%A9%BF%E7%9A%84%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95/">缓存穿透、雪崩、击穿的解决方法</a>
+            </li>
+        
+            <li>
+                <a href="/note/redis-%E5%8D%95%E7%BA%BF%E7%A8%8B%E7%9A%84redis%E4%B8%BA%E4%BB%80%E4%B9%88%E5%BF%AB/">单线程的redis为什么快</a>
+            </li>
+        
+            <li>
+                <a href="/note/redis-%E6%80%BB%E7%BB%93/">redis总结</a>
+            </li>
+        
+            <li>
+                <a href="/note/mysql-%E6%80%BB%E7%BB%93/">mysql总结</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/go/">Recent Go</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/go/%E9%A1%B9%E7%9B%AE%E6%89%93%E5%8C%85%E5%8F%91%E5%B8%83/">基于Scratch创建最小且安全的golang docker镜像</a>
+            </li>
+        
+            <li>
+                <a href="/go/%E9%94%99%E8%AF%AF%E5%A4%84%E7%90%86%E6%96%B9%E6%A1%88/">Go-错误(error)处理方案</a>
+            </li>
+        
+            <li>
+                <a href="/go/%E7%9B%B8%E5%AF%B9%E8%B7%AF%E5%BE%84%E9%97%AE%E9%A2%98/">Go相对路径问题</a>
+            </li>
+        
+            <li>
+                <a href="/go/gmp%E6%A8%A1%E5%9E%8B/">Go-GMP模型</a>
+            </li>
+        
+            <li>
+                <a href="/go/gin_validator/">gin_validator</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/tool/">Recent Tool</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/tool/vscode%E6%8A%98%E8%85%BE/">vscode折腾</a>
+            </li>
+        
+            <li>
+                <a href="/tool/linux-ubuntu%E4%BC%98%E5%8C%96/">Ubuntu开机优化</a>
+            </li>
+        
+            <li>
+                <a href="/tool/shell-ssh_script/">ssh常用脚本</a>
+            </li>
+        
+            <li>
+                <a href="/tool/mac-%E4%BC%98%E5%8C%96/">Mac优化</a>
+            </li>
+        
+            <li>
+                <a href="/tool/git-%E5%91%BD%E4%BB%A4%E5%A4%A7%E5%85%A8/">git命令大全</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/android/">Recent Android</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/android/%E5%85%A5%E9%97%A8/">逆向环境-杂</a>
+            </li>
+        
+            <li>
+                <a href="/android/frida%E6%95%99%E7%A8%8B/">frida教程</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+
+                <div class="side-tags">
+    <h2>Tags</h2>
+    <hr />
+
+    <ul>
+        
+    </ul>
+</div>
+
+            </div>
+        </main>
+        <footer class="footer">
+    <div class="footer-row">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+            
+        
+    </div>
+
+    
+    <script>
+        var _hmt = _hmt || [];
+        (function() {
+            var hm = document.createElement("script");
+            hm.src = "https://hm.baidu.com/hm.js?c7c71c25f37f41a6ca2ef0b894a383e3";
+            var s = document.getElementsByTagName("script")[0];
+            s.parentNode.insertBefore(hm, s);
+        })();
+    </script>
+    <script>
+        
+        const sidebar = document.querySelector('.toc');
+        const screenWidth = window.innerWidth;
+
+        
+        window.addEventListener('resize', () => {
+            const newScreenWidth = window.innerWidth;
+
+            
+            if (newScreenWidth >= 768) {
+                sidebar.style.left = '0';
+            } else {
+                sidebar.style.left = '-250px';
+            }
+        });
+
+        
+        if (screenWidth >= 768) {
+            sidebar.style.left = '0';
+        } else {
+            sidebar.style.left = '-250px';
+        }
+    </script>
+
+</footer>
+
+    </body>
+</html>
