@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+<meta name="viewport" content="width=device-width,minimum-scale=1">
+
+
+
+
+<title>Mac优化 | Abner的博客</title>
+<link rel="canonical" href="https://abnerxc.github.io/tool/mac-%E4%BC%98%E5%8C%96/">
+<meta name="description" content="全局设置代理
+export ALL_PROXY=socks5://127.0.0.1:1086 git-ssh
+git config --global user.name &#34;xuchen&#34;git config --global user." />
+<meta property="og:type" content="article" />
+<meta property="og:title" content="Mac优化 | Abner的博客" />
+<meta property="og:url" content="https://abnerxc.github.io/tool/mac-%E4%BC%98%E5%8C%96/" />
+<meta property="og:description" content="全局设置代理
+export ALL_PROXY=socks5://127.0.0.1:1086 git-ssh
+git config --global user.name &#34;xuchen&#34;git config --global user." />
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/icofont/icofont.min.css" />
+<link rel="stylesheet" href="/css/syntax.css" />
+<link rel="stylesheet" href="/css/style.css" />
+<link rel="shortcut icon" href="/images/favicon.ico" type="image/x-icon" />
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3672527868545324" crossorigin="anonymous"></script>
+
+    </head>
+
+    <body>
+        <header class="header-wrapper">
+    <div class="header">
+        <a class="site-title" href="https://abnerxc.github.io">Abner的博客</a>
+
+        <nav class="menu">
+            
+        </nav>
+    </div>
+</header>
+
+        <main class="main-wrapper">
+            <div class="main">
+                
+
+<section class="single">
+    <h1 class="title">Mac优化</h1>
+
+    <div class="tip">
+        <time datetime="2022-07-21 18:35:11 &#43;0800 CST">2022/07/21</time>
+        <span class="split">·</span>
+        <span> 52 words </span>
+        <span class="split">·</span>
+        <span>
+            1 minutes to read
+        </span>
+    </div>
+
+    <aside class="toc">
+        <nav id="TableOfContents"></nav>
+    </aside>
+
+
+    <div class="taxonomies">
+        
+        <div>
+            Categories:
+            
+                <a href="/categories/%E5%B7%A5%E5%85%B7">工具</a>
+            
+        </div>
+        
+
+        
+    </div>
+
+    <hr />
+
+    <div class="content">
+        <p>全局设置代理</p>
+<pre tabindex="0"><code>export ALL_PROXY=socks5://127.0.0.1:1086
+</code></pre><p>git-ssh</p>
+<pre tabindex="0"><code>git config --global user.name &#34;xuchen&#34;
+git config --global user.email &#34;abner510@126.com&#34;
+</code></pre><p>brew</p>
+<pre tabindex="0"><code>ruby -e &#34;$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)&#34;
+</code></pre><p>或者
+/bin/zsh -c &ldquo;$(curl -fsSL <a href="https://gitee.com/cunkai/HomebrewCN/raw/master/Homebrew.sh)%22">https://gitee.com/cunkai/HomebrewCN/raw/master/Homebrew.sh)&quot;</a>
+选择1 中科大源</p>
+<p>oh-my-zsh</p>
+<pre tabindex="0"><code>curl -L https://raw.github.com/robbyrussell/oh-my-zsh/master/tools/install.sh | sh
+</code></pre><p>zsh-autosuggestions 自动补全插件</p>
+<ul>
+<li>下载该插件到.oh-my-zsh的插件目录 <code>git clone git://github.com/zsh-users/zsh-autosuggestions $ZSH_CUSTOM/plugins/zsh-autosuggestions</code></li>
+<li>编辑.zshrc： <code>plugins=(git zsh-autosuggestions)</code></li>
+<li>重启命令行工具</li>
+<li>下载自动补全插件 <code>http://mimosa-pudica.net/src/incr-0.2.zsh</code></li>
+<li>放到oh-my-zsh的插件库中 <code>.oh-my-zsh/plugins/创建incr文件夹放到该文件夹中</code></li>
+<li>.zshrc末尾添加：<code>source ~/.oh-my-zsh/plugins/incr/incr*.zsh</code> 重启命令行</li>
+</ul>
+
+    </div>
+
+    
+</section>
+
+
+            </div>
+            <div class="side">
+                <div class="side-categories">
+    <h2>Categories</h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/categories/go">go(21)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E4%BB%A3%E7%A0%81">代码(1)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E5%B7%A5%E5%85%B7">工具(7)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E9%80%86%E5%90%91">逆向(2)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E9%9D%A2%E8%AF%95">面试(4)</a>
+            </li>
+        
+    </ul>
+</div>
+
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/note/">Recent Note</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/note/spring6%E5%AD%A6%E4%B9%A0%E8%AF%BE%E4%BB%B6/">Spring6学习课件</a>
+            </li>
+        
+            <li>
+                <a href="/note/rdis-%E7%BC%93%E5%AD%98%E7%A9%BF%E9%80%8F%E9%9B%AA%E5%B4%A9%E5%87%BB%E7%A9%BF%E7%9A%84%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95/">缓存穿透、雪崩、击穿的解决方法</a>
+            </li>
+        
+            <li>
+                <a href="/note/redis-%E5%8D%95%E7%BA%BF%E7%A8%8B%E7%9A%84redis%E4%B8%BA%E4%BB%80%E4%B9%88%E5%BF%AB/">单线程的redis为什么快</a>
+            </li>
+        
+            <li>
+                <a href="/note/redis-%E6%80%BB%E7%BB%93/">redis总结</a>
+            </li>
+        
+            <li>
+                <a href="/note/mysql-%E6%80%BB%E7%BB%93/">mysql总结</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/go/">Recent Go</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/go/%E9%A1%B9%E7%9B%AE%E6%89%93%E5%8C%85%E5%8F%91%E5%B8%83/">基于Scratch创建最小且安全的golang docker镜像</a>
+            </li>
+        
+            <li>
+                <a href="/go/%E9%94%99%E8%AF%AF%E5%A4%84%E7%90%86%E6%96%B9%E6%A1%88/">Go-错误(error)处理方案</a>
+            </li>
+        
+            <li>
+                <a href="/go/%E7%9B%B8%E5%AF%B9%E8%B7%AF%E5%BE%84%E9%97%AE%E9%A2%98/">Go相对路径问题</a>
+            </li>
+        
+            <li>
+                <a href="/go/gmp%E6%A8%A1%E5%9E%8B/">Go-GMP模型</a>
+            </li>
+        
+            <li>
+                <a href="/go/gin_validator/">gin_validator</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/tool/">Recent Tool</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/tool/vscode%E6%8A%98%E8%85%BE/">vscode折腾</a>
+            </li>
+        
+            <li>
+                <a href="/tool/linux-ubuntu%E4%BC%98%E5%8C%96/">Ubuntu开机优化</a>
+            </li>
+        
+            <li>
+                <a href="/tool/shell-ssh_script/">ssh常用脚本</a>
+            </li>
+        
+            <li>
+                <a href="/tool/mac-%E4%BC%98%E5%8C%96/">Mac优化</a>
+            </li>
+        
+            <li>
+                <a href="/tool/git-%E5%91%BD%E4%BB%A4%E5%A4%A7%E5%85%A8/">git命令大全</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/android/">Recent Android</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/android/%E5%85%A5%E9%97%A8/">逆向环境-杂</a>
+            </li>
+        
+            <li>
+                <a href="/android/frida%E6%95%99%E7%A8%8B/">frida教程</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+
+                <div class="side-tags">
+    <h2>Tags</h2>
+    <hr />
+
+    <ul>
+        
+    </ul>
+</div>
+
+            </div>
+        </main>
+        <footer class="footer">
+    <div class="footer-row">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+            
+        
+    </div>
+
+    
+    <script>
+        var _hmt = _hmt || [];
+        (function() {
+            var hm = document.createElement("script");
+            hm.src = "https://hm.baidu.com/hm.js?c7c71c25f37f41a6ca2ef0b894a383e3";
+            var s = document.getElementsByTagName("script")[0];
+            s.parentNode.insertBefore(hm, s);
+        })();
+    </script>
+    <script>
+        
+        const sidebar = document.querySelector('.toc');
+        const screenWidth = window.innerWidth;
+
+        
+        window.addEventListener('resize', () => {
+            const newScreenWidth = window.innerWidth;
+
+            
+            if (newScreenWidth >= 768) {
+                sidebar.style.left = '0';
+            } else {
+                sidebar.style.left = '-250px';
+            }
+        });
+
+        
+        if (screenWidth >= 768) {
+            sidebar.style.left = '0';
+        } else {
+            sidebar.style.left = '-250px';
+        }
+    </script>
+
+</footer>
+
+    </body>
+</html>
