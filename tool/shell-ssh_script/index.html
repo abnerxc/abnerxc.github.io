@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+<meta name="viewport" content="width=device-width,minimum-scale=1">
+
+
+
+
+<title>ssh常用脚本 | Abner的博客</title>
+<link rel="canonical" href="https://abnerxc.github.io/tool/shell-ssh_script/">
+<meta name="description" content="ssh登陆脚本 🔗1.main.sh 🔗#!/bin/bash direc=`dirname $0` function color(){ blue=&#34;\033[0;36m&#34; red=&#34;\033[0;31m&#34; green=&#34;\033[0;32m&#34; close=&#34;\033[m&#34; case $1 in blue) echo -e &#34;$blue $2 $close&#34; ;; red)AA echo -e &#34;$red $2 $close&#34; ;; green) echo -e &#34;$green $2 $close&#34; ;; *) echo &#34;Input color error!" />
+<meta property="og:type" content="article" />
+<meta property="og:title" content="ssh常用脚本 | Abner的博客" />
+<meta property="og:url" content="https://abnerxc.github.io/tool/shell-ssh_script/" />
+<meta property="og:description" content="ssh登陆脚本 🔗1.main.sh 🔗#!/bin/bash direc=`dirname $0` function color(){ blue=&#34;\033[0;36m&#34; red=&#34;\033[0;31m&#34; green=&#34;\033[0;32m&#34; close=&#34;\033[m&#34; case $1 in blue) echo -e &#34;$blue $2 $close&#34; ;; red)AA echo -e &#34;$red $2 $close&#34; ;; green) echo -e &#34;$green $2 $close&#34; ;; *) echo &#34;Input color error!" />
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/icofont/icofont.min.css" />
+<link rel="stylesheet" href="/css/syntax.css" />
+<link rel="stylesheet" href="/css/style.css" />
+<link rel="shortcut icon" href="/images/favicon.ico" type="image/x-icon" />
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3672527868545324" crossorigin="anonymous"></script>
+
+    </head>
+
+    <body>
+        <header class="header-wrapper">
+    <div class="header">
+        <a class="site-title" href="https://abnerxc.github.io">Abner的博客</a>
+
+        <nav class="menu">
+            
+        </nav>
+    </div>
+</header>
+
+        <main class="main-wrapper">
+            <div class="main">
+                
+
+<section class="single">
+    <h1 class="title">ssh常用脚本</h1>
+
+    <div class="tip">
+        <time datetime="2022-07-21 18:35:11 &#43;0800 CST">2022/07/21</time>
+        <span class="split">·</span>
+        <span> 252 words </span>
+        <span class="split">·</span>
+        <span>
+            2 minutes to read
+        </span>
+    </div>
+
+    <aside class="toc">
+        <nav id="TableOfContents">
+  <ul>
+    <li><a href="#1mainsh">1.main.sh</a></li>
+    <li><a href="#2loginexp">2.login.exp</a></li>
+    <li><a href="#3configlst">3.config.lst</a></li>
+  </ul>
+</nav>
+    </aside>
+
+
+    <div class="taxonomies">
+        
+        <div>
+            Categories:
+            
+                <a href="/categories/%E5%B7%A5%E5%85%B7">工具</a>
+            
+        </div>
+        
+
+        
+    </div>
+
+    <hr />
+
+    <div class="content">
+        <h1 id="ssh登陆脚本">ssh登陆脚本 <a href="#ssh%e7%99%bb%e9%99%86%e8%84%9a%e6%9c%ac" class="anchor">🔗</a></h1><h2 id="1mainsh">1.main.sh <a href="#1mainsh" class="anchor">🔗</a></h2><pre tabindex="0"><code>#!/bin/bash
+
+
+direc=`dirname $0`
+function color(){
+    blue=&#34;\033[0;36m&#34;
+    red=&#34;\033[0;31m&#34;
+    green=&#34;\033[0;32m&#34;
+    close=&#34;\033[m&#34;
+    case $1 in
+        blue)
+            echo -e &#34;$blue $2 $close&#34;
+        ;;
+        red)AA
+            echo -e &#34;$red $2 $close&#34;
+        ;;
+        green)
+            echo -e &#34;$green $2 $close&#34;
+        ;;
+        *)
+            echo &#34;Input color error!!&#34;
+        ;;
+    esac
+}
+
+function copyright(){
+    echo &#34;#####################&#34;
+    color blue &#34;   SSH Login Platform   &#34;
+    echo &#34;#####################&#34;
+    echo
+}
+
+function underline(){
+    echo &#34;-----------------------------------------&#34;
+}
+
+function main(){
+
+while [ True ];do
+
+
+    echo &#34;序号 |       主机      | 说明&#34;
+    underline
+    awk &#39;BEGIN {FS=&#34;:&#34;} {printf(&#34;\033[0;31m% 3s \033[m | %15s | %s\n&#34;,$1,$2,$6)}&#39; $direc/config.lst
+    underline
+    read -p &#39;[*] 选择主机: &#39; number
+    pw=&#34;$direc/config.lst&#34;
+    ipaddr=$(awk -v num=$number &#39;BEGIN {FS=&#34;:&#34;} {if($1 == num) {print $2}}&#39; $pw)
+    port=$(awk -v num=$number &#39;BEGIN {FS=&#34;:&#34;} {if($1 == num) {print $3}}&#39; $pw)
+    username=$(awk -v num=$number &#39;BEGIN {FS=&#34;:&#34;} {if($1 == num) {print $4}}&#39; $pw)
+    passwd=$(awk -v num=$number &#39;BEGIN {FS=&#34;:&#34;} {if($1 == num) {print $5}}&#39; $pw)
+
+    case $number in
+        [0-9]|[0-9][0-9]|[0-9][0-9][0-9])
+            echo $passwd | grep -q &#34;.pem$&#34;
+            RETURN=$?
+            if [[ $RETURN == 0 ]];then
+                ssh -i $direc/keys/$passwd $username@$ipaddr -p $port
+                echo &#34;ssh -i $direc/$passwd $username@$ipaddr -p $port&#34;
+            else
+                expect -f $direc/login.exp $ipaddr $username $passwd $port
+            fi
+        ;;
+        &#34;q&#34;|&#34;quit&#34;)
+            exit
+        ;;
+
+        *)
+            echo &#34;Input error!!&#34;
+        ;;
+    esac
+done
+}
+
+copyright
+main
+</code></pre><h2 id="2loginexp">2.login.exp <a href="#2loginexp" class="anchor">🔗</a></h2><pre tabindex="0"><code>#!/usr/bin/expect -f
+set TARGET [lindex $argv 0]
+set USER [lindex $argv 1]
+set PASSWD [lindex $argv 2]
+set PORT [lindex $argv 3]
+set timeout 10
+
+spawn ssh $USER@$TARGET -p $PORT
+expect {
+    &#34;*yes/no&#34; {send &#34;yes\r&#34;; exp_continue}
+    &#34;*password:&#34; {send &#34;$PASSWD\r&#34;}
+}
+interact
+</code></pre><h2 id="3configlst">3.config.lst <a href="#3configlst" class="anchor">🔗</a></h2><pre tabindex="0"><code>{1序号}:{2服务器ip}:{3端口号}:{4用户名}:{5密码}：{6标签}
+1:ip_address:port:username:password:tag_name
+</code></pre><h1 id="查询日志访问topn的请求">查询日志访问topN的请求 <a href="#%e6%9f%a5%e8%af%a2%e6%97%a5%e5%bf%97%e8%ae%bf%e9%97%aetopn%e7%9a%84%e8%af%b7%e6%b1%82" class="anchor">🔗</a></h1><pre tabindex="0"><code>awk &#39;{urls[$7]++} END{for (i in urls){print i,urls[i]}}&#39; access.log | sort -k2rn | head -30
+</code></pre>
+    </div>
+
+    
+</section>
+
+
+            </div>
+            <div class="side">
+                <div class="side-categories">
+    <h2>Categories</h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/categories/go">go(21)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E4%BB%A3%E7%A0%81">代码(1)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E5%B7%A5%E5%85%B7">工具(7)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E9%80%86%E5%90%91">逆向(2)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E9%9D%A2%E8%AF%95">面试(4)</a>
+            </li>
+        
+    </ul>
+</div>
+
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/note/">Recent Note</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/note/spring6%E5%AD%A6%E4%B9%A0%E8%AF%BE%E4%BB%B6/">Spring6学习课件</a>
+            </li>
+        
+            <li>
+                <a href="/note/rdis-%E7%BC%93%E5%AD%98%E7%A9%BF%E9%80%8F%E9%9B%AA%E5%B4%A9%E5%87%BB%E7%A9%BF%E7%9A%84%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95/">缓存穿透、雪崩、击穿的解决方法</a>
+            </li>
+        
+            <li>
+                <a href="/note/redis-%E5%8D%95%E7%BA%BF%E7%A8%8B%E7%9A%84redis%E4%B8%BA%E4%BB%80%E4%B9%88%E5%BF%AB/">单线程的redis为什么快</a>
+            </li>
+        
+            <li>
+                <a href="/note/redis-%E6%80%BB%E7%BB%93/">redis总结</a>
+            </li>
+        
+            <li>
+                <a href="/note/mysql-%E6%80%BB%E7%BB%93/">mysql总结</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/go/">Recent Go</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/go/%E9%A1%B9%E7%9B%AE%E6%89%93%E5%8C%85%E5%8F%91%E5%B8%83/">基于Scratch创建最小且安全的golang docker镜像</a>
+            </li>
+        
+            <li>
+                <a href="/go/%E9%94%99%E8%AF%AF%E5%A4%84%E7%90%86%E6%96%B9%E6%A1%88/">Go-错误(error)处理方案</a>
+            </li>
+        
+            <li>
+                <a href="/go/%E7%9B%B8%E5%AF%B9%E8%B7%AF%E5%BE%84%E9%97%AE%E9%A2%98/">Go相对路径问题</a>
+            </li>
+        
+            <li>
+                <a href="/go/gmp%E6%A8%A1%E5%9E%8B/">Go-GMP模型</a>
+            </li>
+        
+            <li>
+                <a href="/go/gin_validator/">gin_validator</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/tool/">Recent Tool</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/tool/vscode%E6%8A%98%E8%85%BE/">vscode折腾</a>
+            </li>
+        
+            <li>
+                <a href="/tool/linux-ubuntu%E4%BC%98%E5%8C%96/">Ubuntu开机优化</a>
+            </li>
+        
+            <li>
+                <a href="/tool/shell-ssh_script/">ssh常用脚本</a>
+            </li>
+        
+            <li>
+                <a href="/tool/mac-%E4%BC%98%E5%8C%96/">Mac优化</a>
+            </li>
+        
+            <li>
+                <a href="/tool/git-%E5%91%BD%E4%BB%A4%E5%A4%A7%E5%85%A8/">git命令大全</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/android/">Recent Android</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/android/%E5%85%A5%E9%97%A8/">逆向环境-杂</a>
+            </li>
+        
+            <li>
+                <a href="/android/frida%E6%95%99%E7%A8%8B/">frida教程</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+
+                <div class="side-tags">
+    <h2>Tags</h2>
+    <hr />
+
+    <ul>
+        
+    </ul>
+</div>
+
+            </div>
+        </main>
+        <footer class="footer">
+    <div class="footer-row">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+            
+        
+    </div>
+
+    
+    <script>
+        var _hmt = _hmt || [];
+        (function() {
+            var hm = document.createElement("script");
+            hm.src = "https://hm.baidu.com/hm.js?c7c71c25f37f41a6ca2ef0b894a383e3";
+            var s = document.getElementsByTagName("script")[0];
+            s.parentNode.insertBefore(hm, s);
+        })();
+    </script>
+    <script>
+        
+        const sidebar = document.querySelector('.toc');
+        const screenWidth = window.innerWidth;
+
+        
+        window.addEventListener('resize', () => {
+            const newScreenWidth = window.innerWidth;
+
+            
+            if (newScreenWidth >= 768) {
+                sidebar.style.left = '0';
+            } else {
+                sidebar.style.left = '-250px';
+            }
+        });
+
+        
+        if (screenWidth >= 768) {
+            sidebar.style.left = '0';
+        } else {
+            sidebar.style.left = '-250px';
+        }
+    </script>
+
+</footer>
+
+    </body>
+</html>

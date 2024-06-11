@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html>
+    <head>
+	<meta name="generator" content="Hugo 0.118.2">
+        <meta charset="utf-8">
+<meta name="viewport" content="width=device-width,minimum-scale=1">
+
+
+
+
+<title>Abner的博客</title>
+<link rel="canonical" href="https://abnerxc.github.io/">
+<meta property="og:type" content="article" />
+<meta property="og:title" content="Abner的博客" />
+<meta property="og:url" content="https://abnerxc.github.io/" />
+<link rel="alternate" type="application/rss+xml" href="https://abnerxc.github.io/index.xml" title="Abner的博客" />
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/icofont/icofont.min.css" />
+<link rel="stylesheet" href="/css/syntax.css" />
+<link rel="stylesheet" href="/css/style.css" />
+<link rel="shortcut icon" href="/images/favicon.ico" type="image/x-icon" />
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3672527868545324" crossorigin="anonymous"></script>
+
+    </head>
+
+    <body>
+        <header class="header-wrapper">
+    <div class="header">
+        <a class="site-title" href="https://abnerxc.github.io">Abner的博客</a>
+
+        <nav class="menu">
+            
+        </nav>
+    </div>
+</header>
+
+        <main class="main-wrapper">
+            <div class="main">
+                
+
+<div class="max-wrapper">
+    <div id="list-page">
+        
+            <section class="list-item">
+                <h1 class="title"><a href="/note/mysql-%E6%80%BB%E7%BB%93/">mysql总结</a></h1>
+
+                <div class="tips">
+                    <div class="date">
+                        <time datetime="2021-01-25 22:07:58 &#43;0800 CST">2021/01/25</time>
+                    </div>
+
+                    
+                        <div class="categories">
+                            <span>Categories:</span>
+                            
+                                <a href="/categories/%E9%9D%A2%E8%AF%95">面试</a>
+                            
+                        </div>
+                    
+
+                    
+                </div>
+
+                <div class="summary">
+                    
+                        宏观了解 🔗
+查询缓存 🔗我们先通过show variables like '%query_cache%'来看一下默认的数据库配置，query_cache_type=ON
+原理：MYSQL的查询缓存实质上是缓存SQL的hash值和该SQL的查询结果，如果运行相同的SQL,服务器直接从缓存中去掉结果，而不再去解析，优化，寻找最低成本的执行计划等一系列操作，大大提升了查询速度。 弊端：执行的SQL语句必须一样（大小写，间隔等），如果不一样将会产生不同的hash值 场景：通过观察云厂商，大部分情况下都是关闭查询缓存 引擎 🔗 MyISAM存储引擎 MyISAM基于ISAM存储引擎，并对其进行扩展。使用MyISAM引擎创建数据库，将产生3个文件,文件的名字以表名字开始，扩展名之处文件类型：frm文件存储表定义、数据文件的扩展名为.
+                    
+                </div>
+            </section>
+        
+            <section class="list-item">
+                <h1 class="title"><a href="/note/redis-%E6%80%BB%E7%BB%93/">redis总结</a></h1>
+
+                <div class="tips">
+                    <div class="date">
+                        <time datetime="2021-01-25 22:07:58 &#43;0800 CST">2021/01/25</time>
+                    </div>
+
+                    
+                        <div class="categories">
+                            <span>Categories:</span>
+                            
+                                <a href="/categories/%E9%9D%A2%E8%AF%95">面试</a>
+                            
+                        </div>
+                    
+
+                    
+                </div>
+
+                <div class="summary">
+                    
+                        Redis为什么那么快 🔗 纯内存操作 单线程操作，避免了频繁的上下文切换 采用了非阻塞I/O多路复用机制 我们的redis-client在操作的时候，会产生具有不同事件类型的socket。在服务端，有一段I/0多路复用程序，将其置入队列之中。然后，文件事件分派器，依次去队列中取，转发到不同的事件处理器中。 Redis数据类型 🔗 String,Hash,List,Set,SortedSet Pub/Sub HyperLogLog(2.
+                    
+                </div>
+            </section>
+        
+            <section class="list-item">
+                <h1 class="title"><a href="/note/redis-%E5%8D%95%E7%BA%BF%E7%A8%8B%E7%9A%84redis%E4%B8%BA%E4%BB%80%E4%B9%88%E5%BF%AB/">单线程的redis为什么快</a></h1>
+
+                <div class="tips">
+                    <div class="date">
+                        <time datetime="2021-01-25 22:07:58 &#43;0800 CST">2021/01/25</time>
+                    </div>
+
+                    
+                        <div class="categories">
+                            <span>Categories:</span>
+                            
+                                <a href="/categories/%E9%9D%A2%E8%AF%95">面试</a>
+                            
+                        </div>
+                    
+
+                    
+                </div>
+
+                <div class="summary">
+                    
+                        基本概念 🔗Redis性能如此高的原因，我总结了如下几点：
+纯内存操作 单线程 高效的数据结构 合理的数据编码 其他方面的优化 在 Redis 中，常用的几种数据结构和应用场景如下：
+                    
+                </div>
+            </section>
+        
+            <section class="list-item">
+                <h1 class="title"><a href="/note/rdis-%E7%BC%93%E5%AD%98%E7%A9%BF%E9%80%8F%E9%9B%AA%E5%B4%A9%E5%87%BB%E7%A9%BF%E7%9A%84%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95/">缓存穿透、雪崩、击穿的解决方法</a></h1>
+
+                <div class="tips">
+                    <div class="date">
+                        <time datetime="2021-01-25 22:07:58 &#43;0800 CST">2021/01/25</time>
+                    </div>
+
+                    
+                        <div class="categories">
+                            <span>Categories:</span>
+                            
+                                <a href="/categories/%E9%9D%A2%E8%AF%95">面试</a>
+                            
+                        </div>
+                    
+
+                    
+                </div>
+
+                <div class="summary">
+                    
+                        1.缓存穿透 🔗缓存穿透是指查询一个一定不存在的数据，由于缓存是不命中时需要从数据库查询，查不到数据则不写入缓存，这将导致这个不存在的数据每次请求都要到数据库查询，失去了缓存的意义。在流量大时，可能DB就挂掉了，要是有人利用不存在的key频繁攻击我们的应用，这就是漏洞。
+例如下图:
+1.1解决办法 🔗 将不存在的key设置默认的值
+如果有人利用ID攻击应用，可以将这个key预先设置一个null或者程序可判断的值，决定应用是否进行下面的执行。当缓存失效或者缓存key经过轮训以后不再为空，则进行程序的后续执行
+布隆过滤器
+                    
+                </div>
+            </section>
+        
+            <section class="list-item">
+                <h1 class="title"><a href="/android/%E5%85%A5%E9%97%A8/">逆向环境-杂</a></h1>
+
+                <div class="tips">
+                    <div class="date">
+                        <time datetime="2021-01-25 22:07:58 &#43;0800 CST">2021/01/25</time>
+                    </div>
+
+                    
+                        <div class="categories">
+                            <span>Categories:</span>
+                            
+                                <a href="/categories/%E9%80%86%E5%90%91">逆向</a>
+                            
+                        </div>
+                    
+
+                    
+                </div>
+
+                <div class="summary">
+                    
+                        macOS起步问题 🔗 执行system_profiler SPUSBDataType里面找到Android的Vendor ID 将vendor id的值写入 /User/你对应的用户文件夹/.android/adb_usb.ini文件。若该文件不存在，则新建一个。 adb kill-server &amp;&amp; adb start-server &amp;&amp; adb devices 华为手机无法识别：https://www.
+                    
+                </div>
+            </section>
+        
+            <section class="list-item">
+                <h1 class="title"><a href="/go/mod%E8%AF%A6%E8%A7%A3/">go modules 详解</a></h1>
+
+                <div class="tips">
+                    <div class="date">
+                        <time datetime="2019-01-15 18:35:11 &#43;0800 CST">2019/01/15</time>
+                    </div>
+
+                    
+                        <div class="categories">
+                            <span>Categories:</span>
+                            
+                                <a href="/categories/go">Go</a>
+                            
+                        </div>
+                    
+
+                    
+                </div>
+
+                <div class="summary">
+                    
+                        go mod的介绍 🔗我们以前用 go get 获取依赖其实是有潜在危险的，因为我们不确定最新版依赖是否会破坏掉我们项目对依赖包的使用方式，即当前项目可能会出现不兼容最新依赖包的问题。随着 go1.11 的发布，go 给我们带来了 module 新特性，这是 Go 语言新的一套依赖管理系统。
+                    
+                </div>
+            </section>
+        
+            <section class="list-item">
+                <h1 class="title"><a href="/go/log%E6%97%A5%E5%BF%97/">Go-log日志</a></h1>
+
+                <div class="tips">
+                    <div class="date">
+                        <time datetime="2019-01-15 18:35:11 &#43;0800 CST">2019/01/15</time>
+                    </div>
+
+                    
+                        <div class="categories">
+                            <span>Categories:</span>
+                            
+                                <a href="/categories/go">Go</a>
+                            
+                        </div>
+                    
+
+                    
+                </div>
+
+                <div class="summary">
+                    
+                        日志使用 🔗o语言为我们提供了标准的log包，来跟踪日志的记录。下面我们看看日志包log的使用
+func main() { log.Println(&#34;这是百度地址:&#34;,&#34;http://www.baidu.com&#34;) log.Printf(&#34;这是百度地址域名：%s\n&#34;,&#34;baidu.com&#34;) } 2019/08/28 13:18:44 这是百度地址: http://www.
+                    
+                </div>
+            </section>
+        
+            <section class="list-item">
+                <h1 class="title"><a href="/go/sync/">Golang sync 包的相关使用方法</a></h1>
+
+                <div class="tips">
+                    <div class="date">
+                        <time datetime="2019-01-15 18:35:11 &#43;0800 CST">2019/01/15</time>
+                    </div>
+
+                    
+                        <div class="categories">
+                            <span>Categories:</span>
+                            
+                                <a href="/categories/go">Go</a>
+                            
+                        </div>
+                    
+
+                    
+                </div>
+
+                <div class="summary">
+                    
+                        为什么需要锁 🔗在并发的情况下，多个线程或协程同时去修改一个变量，可能会出现如下情况：
+package main import ( &#34;fmt&#34; &#34;sync&#34; &#34;time&#34; ) func main() { var a = 0 // 启动 100 个协程，需要足够大 // var lock sync.
+                    
+                </div>
+            </section>
+        
+            <section class="list-item">
+                <h1 class="title"><a href="/go/pprof/">golang的pprof使用技巧</a></h1>
+
+                <div class="tips">
+                    <div class="date">
+                        <time datetime="2019-01-15 18:35:11 &#43;0800 CST">2019/01/15</time>
+                    </div>
+
+                    
+                        <div class="categories">
+                            <span>Categories:</span>
+                            
+                                <a href="/categories/go">Go</a>
+                            
+                        </div>
+                    
+
+                    
+                </div>
+
+                <div class="summary">
+                    
+                        1.安装易用的pprof 🔗golang自带的prof包是runtime/pprof，这个是低级别的，需要你手动做一些设置等等周边工作，不利于我们快速上手，利用pprof帮助我们解决实际的问题。这里推荐davecheney封装的pprof，它可以1行代码，让你用上pprof，专心解决自己的代码问题，下载：
+go get github.com/pkg/profile 2.安装graphviz 🔗pprof生成的prof文件时二进制的，需要把这个二进制的文件转换为我们人类可读的，graphviz可以帮助我们把二进制的prof文件转换为图像。Mac安装：
+brew install graphviz 3.
+                    
+                </div>
+            </section>
+        
+            <section class="list-item">
+                <h1 class="title"><a href="/go/base1.iota/">Go基础-iota</a></h1>
+
+                <div class="tips">
+                    <div class="date">
+                        <time datetime="2019-01-15 18:35:11 &#43;0800 CST">2019/01/15</time>
+                    </div>
+
+                    
+                        <div class="categories">
+                            <span>Categories:</span>
+                            
+                                <a href="/categories/go">Go</a>
+                            
+                        </div>
+                    
+
+                    
+                </div>
+
+                <div class="summary">
+                    
+                        iota-go语言中的常量计数器，只能在常量表达式中使用
+iota只能在常量的表达式中使用。 🔗fmt.Println(iota) 编译错误： undefined: iota 每次 const 出现时，都会让 iota 初始化为0.
+                    
+                </div>
+            </section>
+        
+
+    </div>
+    
+
+<nav class="pagination">
+
+    
+    
+    
+    
+    
+        
+            
+            
+
+            
+                <a class="enabled" href="/">1</a>
+            
+
+        
+    
+        
+            
+            
+
+            
+                <a class="enabled" href="/page/2/">2</a>
+            
+
+        
+    
+        
+            
+            
+
+            
+                <a class="enabled current" href="/page/3/">3</a>
+            
+
+        
+    
+        
+            
+            
+
+            
+                <a class="enabled" href="/page/4/">4</a>
+            
+
+        
+    
+
+</nav>
+</div>
+
+            </div>
+            <div class="side">
+                <div class="side-categories">
+    <h2>Categories</h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/categories/go">go(21)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E4%BB%A3%E7%A0%81">代码(1)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E5%B7%A5%E5%85%B7">工具(7)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E9%80%86%E5%90%91">逆向(2)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E9%9D%A2%E8%AF%95">面试(4)</a>
+            </li>
+        
+    </ul>
+</div>
+
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/note/">Recent Note</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/note/spring6%E5%AD%A6%E4%B9%A0%E8%AF%BE%E4%BB%B6/">Spring6学习课件</a>
+            </li>
+        
+            <li>
+                <a href="/note/rdis-%E7%BC%93%E5%AD%98%E7%A9%BF%E9%80%8F%E9%9B%AA%E5%B4%A9%E5%87%BB%E7%A9%BF%E7%9A%84%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95/">缓存穿透、雪崩、击穿的解决方法</a>
+            </li>
+        
+            <li>
+                <a href="/note/redis-%E5%8D%95%E7%BA%BF%E7%A8%8B%E7%9A%84redis%E4%B8%BA%E4%BB%80%E4%B9%88%E5%BF%AB/">单线程的redis为什么快</a>
+            </li>
+        
+            <li>
+                <a href="/note/redis-%E6%80%BB%E7%BB%93/">redis总结</a>
+            </li>
+        
+            <li>
+                <a href="/note/mysql-%E6%80%BB%E7%BB%93/">mysql总结</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/go/">Recent Go</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/go/%E9%A1%B9%E7%9B%AE%E6%89%93%E5%8C%85%E5%8F%91%E5%B8%83/">基于Scratch创建最小且安全的golang docker镜像</a>
+            </li>
+        
+            <li>
+                <a href="/go/%E9%94%99%E8%AF%AF%E5%A4%84%E7%90%86%E6%96%B9%E6%A1%88/">Go-错误(error)处理方案</a>
+            </li>
+        
+            <li>
+                <a href="/go/%E7%9B%B8%E5%AF%B9%E8%B7%AF%E5%BE%84%E9%97%AE%E9%A2%98/">Go相对路径问题</a>
+            </li>
+        
+            <li>
+                <a href="/go/gmp%E6%A8%A1%E5%9E%8B/">Go-GMP模型</a>
+            </li>
+        
+            <li>
+                <a href="/go/gin_validator/">gin_validator</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/tool/">Recent Tool</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/tool/vscode%E6%8A%98%E8%85%BE/">vscode折腾</a>
+            </li>
+        
+            <li>
+                <a href="/tool/linux-ubuntu%E4%BC%98%E5%8C%96/">Ubuntu开机优化</a>
+            </li>
+        
+            <li>
+                <a href="/tool/shell-ssh_script/">ssh常用脚本</a>
+            </li>
+        
+            <li>
+                <a href="/tool/mac-%E4%BC%98%E5%8C%96/">Mac优化</a>
+            </li>
+        
+            <li>
+                <a href="/tool/git-%E5%91%BD%E4%BB%A4%E5%A4%A7%E5%85%A8/">git命令大全</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/android/">Recent Android</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/android/%E5%85%A5%E9%97%A8/">逆向环境-杂</a>
+            </li>
+        
+            <li>
+                <a href="/android/frida%E6%95%99%E7%A8%8B/">frida教程</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+
+                <div class="side-tags">
+    <h2>Tags</h2>
+    <hr />
+
+    <ul>
+        
+    </ul>
+</div>
+
+            </div>
+        </main>
+        <footer class="footer">
+    <div class="footer-row">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+    </div>
+
+    
+    <script>
+        var _hmt = _hmt || [];
+        (function() {
+            var hm = document.createElement("script");
+            hm.src = "https://hm.baidu.com/hm.js?c7c71c25f37f41a6ca2ef0b894a383e3";
+            var s = document.getElementsByTagName("script")[0];
+            s.parentNode.insertBefore(hm, s);
+        })();
+    </script>
+    <script>
+        
+        const sidebar = document.querySelector('.toc');
+        const screenWidth = window.innerWidth;
+
+        
+        window.addEventListener('resize', () => {
+            const newScreenWidth = window.innerWidth;
+
+            
+            if (newScreenWidth >= 768) {
+                sidebar.style.left = '0';
+            } else {
+                sidebar.style.left = '-250px';
+            }
+        });
+
+        
+        if (screenWidth >= 768) {
+            sidebar.style.left = '0';
+        } else {
+            sidebar.style.left = '-250px';
+        }
+    </script>
+
+</footer>
+
+    </body>
+</html>
