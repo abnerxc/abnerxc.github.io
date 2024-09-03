@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html>
+    <head>
+	<meta name="generator" content="Hugo 0.133.1">
+        <meta charset="utf-8">
+<meta name="viewport" content="width=device-width,minimum-scale=1">
+
+
+
+
+<title>Abner的博客</title>
+<link rel="canonical" href="https://abnerxc.github.io/">
+<meta property="og:type" content="article" />
+<meta property="og:title" content="Abner的博客" />
+<meta property="og:url" content="https://abnerxc.github.io/" />
+<link rel="alternate" type="application/rss+xml" href="https://abnerxc.github.io/index.xml" title="Abner的博客" />
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/icofont/icofont.min.css" />
+<link rel="stylesheet" href="/css/syntax.css" />
+<link rel="stylesheet" href="/css/style.css" />
+<link rel="shortcut icon" href="/images/favicon.ico" type="image/x-icon" />
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3672527868545324" crossorigin="anonymous"></script>
+
+    </head>
+
+    <body>
+        <header class="header-wrapper">
+    <div class="header">
+        <a class="site-title" href="https://abnerxc.github.io/">Abner的博客</a>
+
+        <nav class="menu">
+            
+        </nav>
+    </div>
+</header>
+
+        <main class="main-wrapper">
+            <div class="main">
+                
+
+<div class="max-wrapper">
+    <div id="list-page">
+        
+            <section class="list-item">
+                <h1 class="title"><a href="/go/base5.channel/">Go基础-信道</a></h1>
+
+                <div class="tips">
+                    <div class="date">
+                        <time datetime="2019-01-15 18:35:11 &#43;0800 CST">2019/01/15</time>
+                    </div>
+
+                    
+                        <div class="categories">
+                            <span>Categories:</span>
+                            
+                                <a href="/categories/go">Go</a>
+                            
+                        </div>
+                    
+
+                    
+                </div>
+
+                <div class="summary">
+                    
+                        信道是协程之间通信的管道，从一端发送数据，另一端接收数据。
+信道声明 🔗 var c chan int,声明了 nil 信道。nil 信道没什么作用，既不能发送数据也不能接受数据 c:=make(chan int),使用 make 函数创建了可用的信道 c。 +++
+                    
+                </div>
+            </section>
+        
+            <section class="list-item">
+                <h1 class="title"><a href="/go/base3.%E5%88%87%E7%89%87/">Go基础-切片</a></h1>
+
+                <div class="tips">
+                    <div class="date">
+                        <time datetime="2019-01-15 18:35:11 &#43;0800 CST">2019/01/15</time>
+                    </div>
+
+                    
+                        <div class="categories">
+                            <span>Categories:</span>
+                            
+                                <a href="/categories/go">Go</a>
+                            
+                        </div>
+                    
+
+                    
+                </div>
+
+                <div class="summary">
+                    
+                        内部实现 🔗切片是基于数组实现的，它的底层是数组，它自己本身非常小，可以理解为对底层数组的抽象 切片对象非常小，是因为它是只有3个字段的数据结构：一个是指向底层数组的指针，一个是切片的长度，一个是切片的容量
++++
+声明和初始化 🔗slice:=make([]int,5) 使用内置的make函数时，需要传入一个参数，指定切片的长度，例子中我们使用的时5，这时候切片的容量也是5。当然我们也可以单独指定切片的容量。
+slice:=make([]int,5,10) 创建的切片长度是5，容量是10,需要注意的这个容量10其实对应的是切片底层数组的。
+                    
+                </div>
+            </section>
+        
+            <section class="list-item">
+                <h1 class="title"><a href="/go/base0.%E5%9F%BA%E7%A1%80%E6%A6%82%E5%BF%B5/">Go基础-基本类型</a></h1>
+
+                <div class="tips">
+                    <div class="date">
+                        <time datetime="2019-01-15 18:35:11 &#43;0800 CST">2019/01/15</time>
+                    </div>
+
+                    
+                        <div class="categories">
+                            <span>Categories:</span>
+                            
+                                <a href="/categories/go">Go</a>
+                            
+                        </div>
+                    
+
+                    
+                </div>
+
+                <div class="summary">
+                    
+                        内建类型种类 🔗 bool：布尔类型,可选 true|false,默认初始化零值 false
+整型 8bit=1字节，int(8)表示8个bit位
+类型 字节 取值 (u)int(8) 2^0=1 2^8=-127~128 (u)int(16) 2^1=2 2^16 (u)int(32) 2^2=4 2^32 (u)int(64) 2^3=8 2^64 (u)int 跟随操作系统位数(32or64位) - uintptr:一个足够大的无符号整型， 用来表示任意地址;一个uintptr是一个整数，不是一个引用。把一个Pointer转换为uintptr后，实际是剥离了原有的指针的语义，只取了地址的整数值。p = unsafe.
+                    
+                </div>
+            </section>
+        
+            <section class="list-item">
+                <h1 class="title"><a href="/go/base2.%E5%AD%97%E7%AC%A6%E4%B8%B2%E9%AB%98%E6%95%88%E6%8B%BC%E6%8E%A5/">Go基础-字符串高效拼</a></h1>
+
+                <div class="tips">
+                    <div class="date">
+                        <time datetime="2019-01-15 18:35:11 &#43;0800 CST">2019/01/15</time>
+                    </div>
+
+                    
+                        <div class="categories">
+                            <span>Categories:</span>
+                            
+                                <a href="/categories/go">Go</a>
+                            
+                        </div>
+                    
+
+                    
+                </div>
+
+                <div class="summary">
+                    
+                        +号拼接 🔗这种拼接最简单，也最容易被我们使用，因为它是不限编程语言的，比如Go语言有，Java也有，它们是+号运算符，在运行时计算的。现在演示下这种拼接的代码，虽然比较简单。
+func StringPlus() string{var s strings+=&#34;昵称&#34;+&#34;:&#34;+&#34;飞雪无情&#34;+&#34;\n&#34;s+=&#34;博客&#34;+&#34;:&#34;+&#34;http://www.
+                    
+                </div>
+            </section>
+        
+            <section class="list-item">
+                <h1 class="title"><a href="/go/base4.%E6%8E%A5%E5%8F%A3/">Go基础-接口</a></h1>
+
+                <div class="tips">
+                    <div class="date">
+                        <time datetime="2019-01-15 18:35:11 &#43;0800 CST">2019/01/15</time>
+                    </div>
+
+                    
+                        <div class="categories">
+                            <span>Categories:</span>
+                            
+                                <a href="/categories/go">Go</a>
+                            
+                        </div>
+                    
+
+                    
+                </div>
+
+                <div class="summary">
+                    
+                        什么是接口 🔗在一些面向对象的编程语言中，例如 Java、PHP 等，接口定义了对象的行为，只指定了对象应该做什么。行为的具体实现取决于对象。
+在 Go 语言中，接口是一组方法的集合，但不包含方法的实现、是抽象的，接口中也不能包含变量。当一个类型 T 提供了接口中所有方法的定义时，就说 T 实现了接口。接口指定类型应该有哪些方法，类型决定如何去实现这些方法。
+                    
+                </div>
+            </section>
+        
+            <section class="list-item">
+                <h1 class="title"><a href="/go/go%E8%AF%AD%E8%A8%80%E7%BC%96%E7%A8%8B%E6%A8%A1%E5%BC%8F/">go语言编程模式</a></h1>
+
+                <div class="tips">
+                    <div class="date">
+                        <time datetime="2019-01-15 18:35:11 &#43;0800 CST">2019/01/15</time>
+                    </div>
+
+                    
+                        <div class="categories">
+                            <span>Categories:</span>
+                            
+                                <a href="/categories/go">Go</a>
+                            
+                        </div>
+                    
+
+                    
+                </div>
+
+                <div class="summary">
+                    
+                        性能提示 🔗 如果需要把数字转换成字符串，使用 strconv.Itoa() 比 fmt.Sprintf() 要快一倍左右。 尽可能避免把String转成[]Byte ，这个转换会导致性能下降。 如果在 for-loop 里对某个 Slice 使用 append()，请先把 Slice 的容量扩充到位，这样可以避免内存重新分配以及系统自动按 2 的 N 次方幂进行扩展但又用不到的情况，从而避免浪费内存。 使用StringBuffer 或是StringBuild 来拼接字符串，性能会比使用 + 或 +=高三到四个数量级。 尽可能使用并发的 goroutine，然后使用 sync.
+                    
+                </div>
+            </section>
+        
+
+    </div>
+    
+
+<nav class="pagination">
+
+    
+    
+    
+    
+    
+        
+            
+            
+
+            
+                <a class="enabled" href="/">1</a>
+            
+
+        
+    
+        
+            
+            
+
+            
+                <a class="enabled" href="/page/2/">2</a>
+            
+
+        
+    
+        
+            
+            
+
+            
+                <a class="enabled" href="/page/3/">3</a>
+            
+
+        
+    
+        
+            
+            
+
+            
+                <a class="enabled current" href="/page/4/">4</a>
+            
+
+        
+    
+
+</nav>
+</div>
+
+            </div>
+            <div class="side">
+                <div class="side-categories">
+    <h2>Categories</h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/categories/go">go(21)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E4%BB%A3%E7%A0%81">代码(1)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E5%B7%A5%E5%85%B7">工具(7)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E9%80%86%E5%90%91">逆向(2)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E9%9D%A2%E8%AF%95">面试(4)</a>
+            </li>
+        
+    </ul>
+</div>
+
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/note/">Recent Note</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/note/spring6%E5%AD%A6%E4%B9%A0%E8%AF%BE%E4%BB%B6/">Spring6学习课件</a>
+            </li>
+        
+            <li>
+                <a href="/note/rdis-%E7%BC%93%E5%AD%98%E7%A9%BF%E9%80%8F%E9%9B%AA%E5%B4%A9%E5%87%BB%E7%A9%BF%E7%9A%84%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95/">缓存穿透、雪崩、击穿的解决方法</a>
+            </li>
+        
+            <li>
+                <a href="/note/redis-%E5%8D%95%E7%BA%BF%E7%A8%8B%E7%9A%84redis%E4%B8%BA%E4%BB%80%E4%B9%88%E5%BF%AB/">单线程的redis为什么快</a>
+            </li>
+        
+            <li>
+                <a href="/note/redis-%E6%80%BB%E7%BB%93/">redis总结</a>
+            </li>
+        
+            <li>
+                <a href="/note/mysql-%E6%80%BB%E7%BB%93/">mysql总结</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/go/">Recent Go</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/go/%E9%A1%B9%E7%9B%AE%E6%89%93%E5%8C%85%E5%8F%91%E5%B8%83/">基于Scratch创建最小且安全的golang docker镜像</a>
+            </li>
+        
+            <li>
+                <a href="/go/%E9%94%99%E8%AF%AF%E5%A4%84%E7%90%86%E6%96%B9%E6%A1%88/">Go-错误(error)处理方案</a>
+            </li>
+        
+            <li>
+                <a href="/go/%E7%9B%B8%E5%AF%B9%E8%B7%AF%E5%BE%84%E9%97%AE%E9%A2%98/">Go相对路径问题</a>
+            </li>
+        
+            <li>
+                <a href="/go/gmp%E6%A8%A1%E5%9E%8B/">Go-GMP模型</a>
+            </li>
+        
+            <li>
+                <a href="/go/gin_validator/">gin_validator</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/tool/">Recent Tool</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/tool/vscode%E6%8A%98%E8%85%BE/">vscode折腾</a>
+            </li>
+        
+            <li>
+                <a href="/tool/linux-ubuntu%E4%BC%98%E5%8C%96/">Ubuntu开机优化</a>
+            </li>
+        
+            <li>
+                <a href="/tool/shell-ssh_script/">ssh常用脚本</a>
+            </li>
+        
+            <li>
+                <a href="/tool/mac-%E4%BC%98%E5%8C%96/">Mac优化</a>
+            </li>
+        
+            <li>
+                <a href="/tool/git-%E5%91%BD%E4%BB%A4%E5%A4%A7%E5%85%A8/">git命令大全</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/android/">Recent Android</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/android/%E5%85%A5%E9%97%A8/">逆向环境-杂</a>
+            </li>
+        
+            <li>
+                <a href="/android/frida%E6%95%99%E7%A8%8B/">frida教程</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+
+                <div class="side-tags">
+    <h2>Tags</h2>
+    <hr />
+
+    <ul>
+        
+    </ul>
+</div>
+
+            </div>
+        </main>
+        <footer class="footer">
+    <div class="footer-row">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+    </div>
+
+    
+    <script>
+        var _hmt = _hmt || [];
+        (function() {
+            var hm = document.createElement("script");
+            hm.src = "https://hm.baidu.com/hm.js?c7c71c25f37f41a6ca2ef0b894a383e3";
+            var s = document.getElementsByTagName("script")[0];
+            s.parentNode.insertBefore(hm, s);
+        })();
+    </script>
+    <script>
+        
+        const sidebar = document.querySelector('.toc');
+        const screenWidth = window.innerWidth;
+
+        
+        window.addEventListener('resize', () => {
+            const newScreenWidth = window.innerWidth;
+
+            
+            if (newScreenWidth >= 768) {
+                sidebar.style.left = '0';
+            } else {
+                sidebar.style.left = '-250px';
+            }
+        });
+
+        
+        if (screenWidth >= 768) {
+            sidebar.style.left = '0';
+        } else {
+            sidebar.style.left = '-250px';
+        }
+    </script>
+
+</footer>
+
+    </body>
+</html>

@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+<meta name="viewport" content="width=device-width,minimum-scale=1">
+
+
+
+
+<title>vscode折腾 | Abner的博客</title>
+<link rel="canonical" href="https://abnerxc.github.io/tool/vscode%E6%8A%98%E8%85%BE/">
+<meta name="description" content="基本设置 🔗0.使用快捷键组合【Ctrl&#43;Shift&#43;p】，在搜索框中输入“configure display language”，选择install 安装简体中文
+Auto Close Tag ，自动添加 HTML/XML 的闭合标签，像 Visual Studio IDE 或 Sublime Text 一样。 Beautify，在 Visual Studio Code 中格式化 javascript 、JSON 、 CSS 、Sass，以及 HTML。 GitLens 可以增强 VSCode 内置 Git 的功能。例如 commits 搜索，历史记录和显示的代码作者身份具体功能可以查看Feature list Git History - 显示提交历史记录的美丽图表等等 PHP环境 🔗 php intelephense，PHP 的代码提示、补全、跳转定义、格式化插件，功能强大，无需配置；优秀，必装。 setting." />
+<meta property="og:type" content="article" />
+<meta property="og:title" content="vscode折腾 | Abner的博客" />
+<meta property="og:url" content="https://abnerxc.github.io/tool/vscode%E6%8A%98%E8%85%BE/" />
+<meta property="og:description" content="基本设置 🔗0.使用快捷键组合【Ctrl&#43;Shift&#43;p】，在搜索框中输入“configure display language”，选择install 安装简体中文
+Auto Close Tag ，自动添加 HTML/XML 的闭合标签，像 Visual Studio IDE 或 Sublime Text 一样。 Beautify，在 Visual Studio Code 中格式化 javascript 、JSON 、 CSS 、Sass，以及 HTML。 GitLens 可以增强 VSCode 内置 Git 的功能。例如 commits 搜索，历史记录和显示的代码作者身份具体功能可以查看Feature list Git History - 显示提交历史记录的美丽图表等等 PHP环境 🔗 php intelephense，PHP 的代码提示、补全、跳转定义、格式化插件，功能强大，无需配置；优秀，必装。 setting." />
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/icofont/icofont.min.css" />
+<link rel="stylesheet" href="/css/syntax.css" />
+<link rel="stylesheet" href="/css/style.css" />
+<link rel="shortcut icon" href="/images/favicon.ico" type="image/x-icon" />
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3672527868545324" crossorigin="anonymous"></script>
+
+    </head>
+
+    <body>
+        <header class="header-wrapper">
+    <div class="header">
+        <a class="site-title" href="https://abnerxc.github.io/">Abner的博客</a>
+
+        <nav class="menu">
+            
+        </nav>
+    </div>
+</header>
+
+        <main class="main-wrapper">
+            <div class="main">
+                
+
+<section class="single">
+    <h1 class="title">vscode折腾</h1>
+
+    <div class="tip">
+        <time datetime="2022-07-21 18:35:11 &#43;0800 CST">2022/07/21</time>
+        <span class="split">·</span>
+        <span> 387 words </span>
+        <span class="split">·</span>
+        <span>
+            2 minutes to read
+        </span>
+    </div>
+
+
+
+
+
+
+    <div class="taxonomies">
+        
+        <div>
+            Categories:
+            
+                <a href="/categories/%E5%B7%A5%E5%85%B7">工具</a>
+            
+        </div>
+        
+
+        
+    </div>
+
+    <hr />
+
+    <div class="content">
+        <h1 id="基本设置">基本设置 <a href="#%e5%9f%ba%e6%9c%ac%e8%ae%be%e7%bd%ae" class="anchor">🔗</a></h1><p>0.使用快捷键组合【Ctrl+Shift+p】，在搜索框中输入“configure display language”，选择<code>install</code> 安装简体中文</p>
+<ol>
+<li>Auto Close Tag ，自动添加 HTML/XML 的闭合标签，像 Visual Studio IDE 或 Sublime Text 一样。</li>
+<li>Beautify，在 Visual Studio Code 中格式化 javascript 、JSON 、 CSS 、Sass，以及 HTML。</li>
+<li>GitLens 可以增强 VSCode 内置 Git 的功能。例如 commits 搜索，历史记录和显示的代码作者身份具体功能可以查看Feature list</li>
+<li>Git History  - 显示提交历史记录的美丽图表等等</li>
+</ol>
+<h1 id="php环境">PHP环境 <a href="#php%e7%8e%af%e5%a2%83" class="anchor">🔗</a></h1><ol>
+<li>php intelephense，PHP 的代码提示、补全、跳转定义、格式化插件，功能强大，无需配置；优秀，必装。 <code>setting.json</code> 添加如下配置</li>
+</ol>
+<pre tabindex="0"><code>&#34;php.suggest.basic&#34;: false, //禁用基本建议
+    &#34;editor.quickSuggestions&#34;: {  //在评论/注释中启用自动完成功能
+        &#34;comments&#34;: true 
+    },
+</code></pre><ol start="2">
+<li>PHP DocBlocker，注释插件</li>
+<li>PHP Snippets from PHPStrom,使用和 PHPStrom 一样的快捷代码片段，pubf + tab？</li>
+<li>PHP Namespace Resolver,PHP 命名空间解析器；可以导入和扩展类；还可以排序。优秀，必装。</li>
+<li>Better Align,可以实现变量和数组的等号对齐。优秀，必装。</li>
+<li>php.validate.executablepath,配置成docker 容器中的php路径，办法
+<ol>
+<li>新建文件 Create a file named php in <code>你自己的路径</code></li>
+<li>写入内容<code>#!/bin/bash docker exec -i --user=1000:1000 php7-vscode php &quot;$@&quot;</code></li>
+<li>修改可执行<code>sudo chmod +x php</code></li>
+<li>php.validate.executablepath=<code>你自己的路径</code>/php</li>
+</ol>
+</li>
+</ol>
+<h1 id="go环境">go环境 <a href="#go%e7%8e%af%e5%a2%83" class="anchor">🔗</a></h1><ol>
+<li>设置代理  set GOPROXY=&ldquo;<a href="https://goproxy.cn">https://goproxy.cn</a>&rdquo;</li>
+<li>vscode添加go插件</li>
+<li>安装go-tools，command+shift+p，输入 go:install 选择 install/update tools</li>
+<li>Code Runer,运行代码</li>
+</ol>
+<h1 id="settingjson">setting.json <a href="#settingjson" class="anchor">🔗</a></h1><pre tabindex="0"><code>{
+	&#34;security.workspace.trust.untrustedFiles&#34;: &#34;open&#34;,
+	//工作台
+	&#34;workbench.iconTheme&#34;: &#34;material-icon-theme&#34;,
+	&#34;workbench.tree.indent&#34;: 22,
+	&#34;workbench.tree.renderIndentGuides&#34;: &#34;always&#34;,
+	&#34;workbench.tree.expandMode&#34;: &#34;doubleClick&#34;,
+	&#34;workbench.preferredHighContrastColorTheme&#34;: &#34;Monokai&#34;,
+	&#34;workbench.preferredDarkColorTheme&#34;: &#34;Monokai&#34;,
+	&#34;workbench.preferredLightColorTheme&#34;: &#34;Monokai&#34;,
+	&#34;workbench.startupEditor&#34;: &#34;none&#34;,
+	&#34;workbench.editor.untitled.hint&#34;: &#34;hidden&#34;,
+	&#34;workbench.colorTheme&#34;: &#34;Monokai&#34;,
+	&#34;workbench.tree.horizontalScrolling&#34;: true,
+	&#34;workbench.editor.enablePreview&#34;: false,
+	&#34;workbench.editorAssociations&#34;: {
+		&#34;*.html&#34;: &#34;default&#34;
+	},
+	//git
+	&#34;git.autofetch&#34;: true,
+	&#34;git.confirmSync&#34;: false,
+	&#34;git.ignoreMissingGitWarning&#34;: true,
+	//终端
+	&#34;terminal.integrated.fontSize&#34;: 16,
+	&#34;terminal.integrated.tabs.enabled&#34;: true,
+	&#34;terminal.external.osxExec&#34;: &#34;iTerm.app&#34;,
+	&#34;terminal.integrated.fontFamily&#34;: &#34;Monaco&#34;,
+	&#34;terminal.integrated.gpuAcceleration&#34;: &#34;off&#34;,
+	&#34;editor.suggest.snippetsPreventQuickSuggestions&#34;: false,
+	&#34;editor.snippetSuggestions&#34;: &#34;top&#34;,
+	&#34;editor.renderControlCharacters&#34;: true,
+	&#34;editor.rename.enablePreview&#34;: false,
+	&#34;editor.wordWrap&#34;: &#34;on&#34;,
+	&#34;editor.quickSuggestions&#34;: {
+		//注释中启用自动完成功能
+		&#34;comments&#34;: true
+	},
+	&#34;editor.minimap.renderCharacters&#34;: false,
+	&#34;editor.mouseWheelZoom&#34;: true,
+	&#34;editor.minimap.size&#34;: &#34;fit&#34;,
+	&#34;diffEditor.wordWrap&#34;: &#34;on&#34;,
+	&#34;alignment.operatorPadding&#34;: &#34;right&#34;,
+	&#34;alignment.indentBase&#34;: &#34;dontchange&#34;,
+	&#34;intelephense.telemetry.enabled&#34;: true,
+	&#34;debug.console.lineHeight&#34;: 18,
+	&#34;debug.console.fontSize&#34;: 14,
+	//php
+	&#34;[php]&#34;: {
+		&#34;editor.defaultFormatter&#34;: &#34;bmewburn.vscode-intelephense-client&#34;
+	},
+	&#34;php.suggest.basic&#34;: false,
+	&#34;intelephense.compatibility.correctForBaseClassStaticUnionTypes&#34;: false,
+	&#34;php-docblocker.gap&#34;: false,
+	&#34;php-docblocker.qualifyClassNames&#34;: true,
+	&#34;php-docblocker.author&#34;: {
+		&#34;name&#34;: &#34;abner&#34;,
+		&#34;email&#34;: &#34;abnerxc666@gmail.com&#34;
+	},
+	//go
+	&#34;go.autocompleteUnimportedPackages&#34;: true,
+	&#34;go.docsTool&#34;: &#34;gogetdoc&#34;,
+	&#34;go.testFlags&#34;: [
+		&#34;-v&#34;,
+		&#34;-count=1&#34;
+	],
+	&#34;go.languageServerFlags&#34;: [
+		&#34;-remote=auto&#34;, &#34;-logfile=auto&#34;, &#34;-debug=:0&#34;, &#34;-rpc.trace&#34;,
+	],
+	&#34;go.buildTags&#34;: &#34;&#34;,
+	&#34;go.buildFlags&#34;: [],
+	&#34;go.lintFlags&#34;: [],
+	&#34;go.vetFlags&#34;: [],
+	&#34;go.coverOnSave&#34;: false,
+	&#34;go.useCodeSnippetsOnFunctionSuggest&#34;: false,
+	&#34;go.useCodeSnippetsOnFunctionSuggestWithoutType&#34;: true,
+	&#34;go.useLanguageServer&#34;: true,
+	&#34;go.formatTool&#34;: &#34;goreturns&#34;,
+	&#34;go.gocodeAutoBuild&#34;: false,
+	&#34;go.gocodePackageLookupMode&#34;: &#34;go&#34;,
+	&#34;go.gotoSymbol.includeImports&#34;: true,
+	&#34;go.formatOnSave&#34;: true,
+	&#34;go.trace.server&#34;: &#34;verbose&#34;,
+	&#34;gopls&#34;: {
+		&#34;analyses&#34;: {
+			&#34;composites&#34;: false
+		},
+		&#34;usePlaceholders&#34;: false,
+	},
+	&#34;go.testTimeout&#34;: &#34;1800s&#34;,
+	&#34;go.toolsManagement.autoUpdate&#34;: true,
+	&#34;go.alternateTools&#34;: { //禁用基本建议
+	},
+	&#34;go.inferGopath&#34;: true,
+	&#34;[go]&#34;: {
+		&#34;editor.formatOnSave&#34;: true,
+		&#34;editor.codeActionsOnSave&#34;: {
+			&#34;source.organizeImports&#34;: true,
+		},
+	},
+	&#34;[go.mod]&#34;: {
+		&#34;editor.formatOnSave&#34;: true,
+		&#34;editor.codeActionsOnSave&#34;: {
+			&#34;source.organizeImports&#34;: true,
+		},
+	},
+	&#34;explorer.confirmDelete&#34;: false,
+	&#34;explorer.compactFolders&#34;: false,
+	//排除文件
+	&#34;files.exclude&#34;: {
+		&#34;/.classpath&#34;: true,
+		&#34;/.project&#34;: true,
+		&#34;/.settings&#34;: true,
+		&#34;/.factorypath&#34;: true,
+		&#34;/.idea&#34;: true,
+		&#34;/.metadata&#34;: true,
+		&#34;/.vscode&#34;: true,
+		&#34;/.svn&#34;: true
+	},
+	&#34;search.exclude&#34;: {
+		&#34;/idea&#34;: true,
+		&#34;/svn&#34;: true,
+		&#34;/node_modules&#34;: true,
+		&#34;/bower_components&#34;: true,
+		&#34;/env&#34;: true,
+		&#34;/venv&#34;: true
+	},
+	&#34;files.autoSave&#34;: &#34;afterDelay&#34;,
+	&#34;files.associations&#34;: {
+		&#34;*.vue&#34;: &#34;html&#34;,
+		&#34;*.module&#34;: &#34;php&#34;
+	},
+	&#34;files.watcherExclude&#34;: {
+		&#34;/.idea/&#34;: true,
+		&#34;/.svn/&#34;: true,
+		&#34;/.git/objects/&#34;: true,
+		&#34;/.git/subtree-cache/&#34;: true,
+		&#34;/node_modules/&#34;: true,
+		&#34;/env/&#34;: true,
+		&#34;/venv/&#34;: true,
+		&#34;env-*&#34;: true
+	},
+	&#34;editor.inlineSuggest.enabled&#34;: true,
+	&#34;auto-rename-tag.activationOnLanguage&#34;: [
+		&#34;html&#34;,
+		&#34;xml&#34;,
+		&#34;php&#34;,
+		&#34;javascript&#34;
+	],
+	&#34;editor.minimap.enabled&#34;: false,
+	&#34;window.zoomLevel&#34;: -1,
+	&#34;editor.fontSize&#34;: 16,
+	&#34;editor.bracketPairColorization.enabled&#34;: true,
+}
+</code></pre>
+    </div>
+
+    
+</section>
+
+
+            </div>
+            <div class="side">
+                <div class="side-categories">
+    <h2>Categories</h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/categories/go">go(21)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E4%BB%A3%E7%A0%81">代码(1)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E5%B7%A5%E5%85%B7">工具(7)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E9%80%86%E5%90%91">逆向(2)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E9%9D%A2%E8%AF%95">面试(4)</a>
+            </li>
+        
+    </ul>
+</div>
+
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/note/">Recent Note</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/note/spring6%E5%AD%A6%E4%B9%A0%E8%AF%BE%E4%BB%B6/">Spring6学习课件</a>
+            </li>
+        
+            <li>
+                <a href="/note/rdis-%E7%BC%93%E5%AD%98%E7%A9%BF%E9%80%8F%E9%9B%AA%E5%B4%A9%E5%87%BB%E7%A9%BF%E7%9A%84%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95/">缓存穿透、雪崩、击穿的解决方法</a>
+            </li>
+        
+            <li>
+                <a href="/note/redis-%E5%8D%95%E7%BA%BF%E7%A8%8B%E7%9A%84redis%E4%B8%BA%E4%BB%80%E4%B9%88%E5%BF%AB/">单线程的redis为什么快</a>
+            </li>
+        
+            <li>
+                <a href="/note/redis-%E6%80%BB%E7%BB%93/">redis总结</a>
+            </li>
+        
+            <li>
+                <a href="/note/mysql-%E6%80%BB%E7%BB%93/">mysql总结</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/go/">Recent Go</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/go/%E9%A1%B9%E7%9B%AE%E6%89%93%E5%8C%85%E5%8F%91%E5%B8%83/">基于Scratch创建最小且安全的golang docker镜像</a>
+            </li>
+        
+            <li>
+                <a href="/go/%E9%94%99%E8%AF%AF%E5%A4%84%E7%90%86%E6%96%B9%E6%A1%88/">Go-错误(error)处理方案</a>
+            </li>
+        
+            <li>
+                <a href="/go/%E7%9B%B8%E5%AF%B9%E8%B7%AF%E5%BE%84%E9%97%AE%E9%A2%98/">Go相对路径问题</a>
+            </li>
+        
+            <li>
+                <a href="/go/gmp%E6%A8%A1%E5%9E%8B/">Go-GMP模型</a>
+            </li>
+        
+            <li>
+                <a href="/go/gin_validator/">gin_validator</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/tool/">Recent Tool</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/tool/vscode%E6%8A%98%E8%85%BE/">vscode折腾</a>
+            </li>
+        
+            <li>
+                <a href="/tool/linux-ubuntu%E4%BC%98%E5%8C%96/">Ubuntu开机优化</a>
+            </li>
+        
+            <li>
+                <a href="/tool/shell-ssh_script/">ssh常用脚本</a>
+            </li>
+        
+            <li>
+                <a href="/tool/mac-%E4%BC%98%E5%8C%96/">Mac优化</a>
+            </li>
+        
+            <li>
+                <a href="/tool/git-%E5%91%BD%E4%BB%A4%E5%A4%A7%E5%85%A8/">git命令大全</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/android/">Recent Android</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/android/%E5%85%A5%E9%97%A8/">逆向环境-杂</a>
+            </li>
+        
+            <li>
+                <a href="/android/frida%E6%95%99%E7%A8%8B/">frida教程</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+
+                <div class="side-tags">
+    <h2>Tags</h2>
+    <hr />
+
+    <ul>
+        
+    </ul>
+</div>
+
+            </div>
+        </main>
+        <footer class="footer">
+    <div class="footer-row">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+            
+        
+    </div>
+
+    
+    <script>
+        var _hmt = _hmt || [];
+        (function() {
+            var hm = document.createElement("script");
+            hm.src = "https://hm.baidu.com/hm.js?c7c71c25f37f41a6ca2ef0b894a383e3";
+            var s = document.getElementsByTagName("script")[0];
+            s.parentNode.insertBefore(hm, s);
+        })();
+    </script>
+    <script>
+        
+        const sidebar = document.querySelector('.toc');
+        const screenWidth = window.innerWidth;
+
+        
+        window.addEventListener('resize', () => {
+            const newScreenWidth = window.innerWidth;
+
+            
+            if (newScreenWidth >= 768) {
+                sidebar.style.left = '0';
+            } else {
+                sidebar.style.left = '-250px';
+            }
+        });
+
+        
+        if (screenWidth >= 768) {
+            sidebar.style.left = '0';
+        } else {
+            sidebar.style.left = '-250px';
+        }
+    </script>
+
+</footer>
+
+    </body>
+</html>
