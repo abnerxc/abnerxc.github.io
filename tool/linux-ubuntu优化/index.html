@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+<meta name="viewport" content="width=device-width,minimum-scale=1">
+
+
+
+
+<title>Ubuntu开机优化 | Abner的博客</title>
+<link rel="canonical" href="https://abnerxc.github.io/tool/linux-ubuntu%E4%BC%98%E5%8C%96/">
+<meta property="og:type" content="article" />
+<meta property="og:title" content="Ubuntu开机优化 | Abner的博客" />
+<meta property="og:url" content="https://abnerxc.github.io/tool/linux-ubuntu%E4%BC%98%E5%8C%96/" />
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/icofont/icofont.min.css" />
+<link rel="stylesheet" href="/css/syntax.css" />
+<link rel="stylesheet" href="/css/style.css" />
+<script src="/js/copy-code-block.js"></script>
+<link rel="shortcut icon" href="/images/favicon.ico" type="image/x-icon" />
+
+    </head>
+
+    <body>
+        <header class="header-wrapper">
+    <div class="header">
+        <a class="site-title" href="https://abnerxc.github.io/">Abner的博客</a>
+
+        <nav class="menu">
+            
+        </nav>
+    </div>
+</header>
+
+        <main class="main-wrapper">
+            <div class="main">
+                
+
+<section class="single">
+    <h1 class="title">Ubuntu开机优化</h1>
+
+    <div class="tip">
+        <time datetime="2022-07-21 18:35:11 &#43;0800 CST">2022/07/21</time>
+        <span class="split">·</span>
+        <span> 452 words </span>
+        <span class="split">·</span>
+        <span>
+            3 minutes to read
+        </span>
+    </div>
+
+    <div class="taxonomies">
+        
+        <div>
+            Categories:
+            
+                <a href="/categories/%E5%B7%A5%E5%85%B7">工具</a>
+            
+        </div>
+        
+
+        
+    </div>
+
+    <hr />
+
+    <div class="content">
+        
+<h4 id="安装openssh-server">安装openssh-server </h4><ul>
+<li>sudo apt-get install openssh-server vim git</li>
+</ul>
+
+<h4 id="内核升级">内核升级 </h4><ul>
+<li>sudo apt update &amp;&amp; sudo apt upgrade -y &amp;&amp; sudo reboot</li>
+<li>查看可用内核，<code>apt list linux-headers-5.15.*-*-generic linux-image-5.15.*-*-generic</code></li>
+<li>安装指定版本，<code>sudo apt install linux-headers-5.15.0-46-generic linux-image-5.15.0-46-generic</code></li>
+</ul>
+
+<h4 id="开启root">开启root </h4><ul>
+<li>sudo vi /etc/ssh/sshd_config(33行)， #PermitRootLogin prohibit-password 修改为 <code>PermitRootLogin yes</code></li>
+<li>//使用sudo获得root权限 <code>sudo su</code> //输入新密码并确认 <code>passwd root</code></li>
+</ul>
+
+<h4 id="替换国内源">替换国内源 </h4><ul>
+<li>sudo cp /etc/apt/sources.list /etc/apt/sources.list.bak</li>
+<li>sudo sed -i &rsquo;s/archive.ubuntu.com/mirrors.aliyun.com/g&rsquo; /etc/apt/sources.list</li>
+<li>sudo apt-get update</li>
+</ul>
+
+<h4 id="删除libreoffice">删除libreoffice </h4><ul>
+<li>sudo apt-get remove libreoffice</li>
+</ul>
+
+<h4 id="删除amazon的链接">删除Amazon的链接 </h4><ul>
+<li>sudo apt-get remove unity-webapps-common</li>
+</ul>
+
+<h4 id="删掉基本不用的自带软件用的时候再装也来得及">删掉基本不用的自带软件（用的时候再装也来得及） </h4><ul>
+<li>sudo apt-get  remove   libreoffice-common   unity-webapps-common thunderbird totem rhythmbox  simple-scan gnome-mahjongg aisleriot gnome-mines cheese transmission-common gnome-orca gnome-sudoku webbrowser-app onboard deja-dup</li>
+</ul>
+
+<h4 id="删除自带的软件中心">删除自带的软件中心 </h4><ul>
+<li>sudo apt-get remove software-center</li>
+</ul>
+
+<h4 id="删除自带的图片编辑软件">删除自带的图片编辑软件 </h4><ul>
+<li>sudo apt-get remove imagemagick</li>
+</ul>
+
+<h4 id="关闭dash在线资源搜索">关闭dash在线资源搜索 </h4><ul>
+<li>gsettings set com.canonical.Unity.Lenses remote-content-search &rsquo;none'</li>
+</ul>
+<hr>
+
+<h4 id="gdebi安装deb包更好的软件">gdebi安装deb包更好的软件 </h4><ul>
+<li>sudo apt-get install gdebi</li>
+</ul>
+
+<h4 id="rpm安装">rpm安装 </h4><ul>
+<li>sudo apt-get install alien ##alien默认没有安装，所以首先要安装它</li>
+<li>sudo alien xxxx.rpm ##将rpm转换位deb，完成后会生成一个同名的xxxx.deb</li>
+<li>sudo dpkg -i xxxx.deb ##安装</li>
+</ul>
+
+<h4 id="安装app-grid软件中心">安装App Grid软件中心 </h4><ul>
+<li>sudo add-apt-repository ppa:appgrid/stable</li>
+<li>sudo apt-get update &amp;&amp; sudo apt-get install appgrid</li>
+</ul>
+
+<h4 id="微信">微信 </h4><p><a href="https://github.com/geeeeeeeeek/electronic-wechat/releases">微信客户端</a></p>
+
+<h4 id="设置时间使用utc">设置时间使用UTC </h4><ul>
+<li>sudo vim /etc/default/rcS  ###将UTC=no改为UTC=yes</li>
+</ul>
+
+<h4 id="安装chrome">安装Chrome </h4><ul>
+<li>sudo add-apt-repository  ppa:chromium-daily/stable</li>
+<li>sudo apt-get install chromium-browser chromium-browser-l10n</li>
+</ul>
+
+<h4 id="安装搜狗输入法">安装搜狗输入法 </h4><ul>
+<li>vim /etc/apt/sources.list.d/ubuntukylin.list文件，加入ubuntu kylin的apt源</li>
+<li>deb <a href="http://archive.ubuntukylin.com:10006/ubuntukylin">http://archive.ubuntukylin.com:10006/ubuntukylin</a> trusty main</li>
+<li>sudo apt-get update</li>
+<li>sudo apt-get install sogoupinyin</li>
+</ul>
+
+<h4 id="安装wps-office">安装WPS Office </h4><ul>
+<li>sudo apt-get install wps-office</li>
+</ul>
+
+<h4 id="java">Java </h4><pre tabindex="0"><code>sudo vim ~/.bashrc
+export JAVA_HOME=/home/abner/jdk1.8.0
+export JRE_HOME=${JAVA_HOME}/jre  
+export CLASSPATH=.:${JAVA_HOME}/lib:${JRE_HOME}/lib  
+export PATH=${JAVA_HOME}/bin:$PATH
+source ~/.bashrc
+</code></pre>
+<h4 id="安装sublime-text-3">安装Sublime Text 3 </h4><ul>
+<li>sudo add-apt-repository ppa:webupd8team/sublime-text-3</li>
+<li>sudo apt-get update</li>
+<li>sudo apt-get install sublime-text</li>
+</ul>
+
+<h4 id="安装经典菜单指示器">安装经典菜单指示器 </h4><ul>
+<li>sudo add-apt-repository ppa:diesch/testing</li>
+<li>sudo apt-get update</li>
+<li>sudo apt-get install classicmenu-indicator</li>
+</ul>
+
+<h4 id="安装系统指示器syspeek">安装系统指示器SysPeek </h4><ul>
+<li>sudo add-apt-repository ppa:nilarimogard/webupd8</li>
+<li>sudo apt-get update</li>
+<li>sudo apt-get install syspeek</li>
+</ul>
+
+<h4 id="自定义dhcp网络的dns-server-ip地址">自定义DHCP网络的DNS Server IP地址 </h4><ul>
+<li>sudo vim /etc/dhcp/dhclient.conf文件，在第21行#prepend domain-name-servers 127.0.0.1;下一行添加如下2行使用aliyun和114的DNS</li>
+<li>prepend domain-name-servers 114.114.114.114;</li>
+<li>prepend domain-name-servers 223.5.5.5;</li>
+<li>这样可以优先使用aliyun的dns，次要使用114的DNS。</li>
+</ul>
+
+<h4 id="安装axel多线程下载工具">安装axel(多线程下载工具) </h4><ul>
+<li>sudo apt-get install axel</li>
+</ul>
+<pre tabindex="0"><code>#常见用法
+直接下载这个文件
+axel http://www.baidu.com/img/bdlogo.gif
+多线程下载这个文件（10个线程）：
+axel -n 10 http://www.baidu.com/img/bdlogo.gif
+指定输出目录：
+axel -o ~/Pictures/ http://www.baidu.com/img/bdlogo.gif
+</code></pre>
+<h4 id="安装exfat文件系统驱动">安装ExFat文件系统驱动 </h4><ul>
+<li>sudo apt-get install exfat-fuse</li>
+</ul>
+
+<h4 id="安装unrar">安装unrar </h4><ul>
+<li>sudo apt-get install unrar</li>
+<li>使用方法：unrar x test.rar</li>
+</ul>
+
+<h4 id="安装美化主题">安装美化主题 </h4><ul>
+<li>sudo apt-get install unity-tweak-tool</li>
+<li>sudo apt-get install unity-webapps-common</li>
+<li>下载主题包https://github.com/anmoljagetia/Flatabulous/archive/master.zip 解压到/usr/share/themes目录下。</li>
+<li>sudo add-apt-repository ppa:noobslab/icons &amp;&amp; sudo apt-get update &amp;&amp; sudo apt-get install ultra-flat-icon</li>
+<li>安装好之后，打开Ubuntu Tweak 工具，主题选择Flatabulous，icons主题选择ultra-flat-icons</li>
+</ul>
+
+<h4 id="zsh_ohmyzsh">ZSH_OHMYZSH </h4><ul>
+<li>sudo apt-get install zsh</li>
+<li>wget &ndash;no-check-certificate <a href="https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh">https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh</a> -O - | sh</li>
+<li>chsh -s /bin/zsh</li>
+<li>sudo reboot</li>
+</ul>
+
+<h4 id="nodejs">node.js </h4><ul>
+<li>curl -sL <a href="https://deb.nodesource.com/setup_8.x">https://deb.nodesource.com/setup_8.x</a> | sudo -E bash -</li>
+<li>sudo apt-get install -y nodejs</li>
+</ul>
+<hr>
+
+<h4 id="双击软件都无法打开">双击软件都无法打开 </h4><ul>
+<li>sudo rm /home/sophie/.gnome2 -rf</li>
+</ul>
+
+<h4 id="安装cmake">安装cmake </h4><pre tabindex="0"><code>sudo apt-get install build-essential
+wget http://www.cmake.org/files/v3.11/cmake-3.11.3.tar.gz ,
+解压进入目录 sudo ./configure --prefix=/usr/local/cmake/
+</code></pre>
+<h4 id="wls2-ubuntu优化">wls2 ubuntu优化 </h4><ul>
+<li>导出：wsl &ndash;export Ubuntu-20.04 d:\vm\ubuntu-20.04.tar</li>
+<li>删除：wsl &ndash;unregister Ubuntu-20.04</li>
+<li>导入：wsl &ndash;import Ubuntu-20.04 d:\vm d:\vm\ubuntu-20.04.tar</li>
+<li>停止：wsl &ndash;shutdown</li>
+<li>查看：wsl -l -v</li>
+<li>安装docker&amp;&amp;docker-composer</li>
+</ul>
+<pre tabindex="0"><code>sudo apt-get update &amp;&amp; sudo apt-get -y install  curl vim &amp;&amp; curl -fsSL http://mirrors.aliyun.com/docker-ce/linux/ubuntu/gpg | sudo apt-key add - &amp;&amp; sudo add-apt-repository &#34;deb [arch=amd64] http://mirrors.aliyun.com/docker-ce/linux/ubuntu $(lsb_release -cs) stable&#34; &amp;&amp; sudo apt-get -y update &amp;&amp; sudo apt-get -y install docker-ce &amp;&amp; mkdir -p /etc/docker  &amp;&amp; echo &#39;{&#34;registry-mirrors&#34;:[&#34;https://l714mp7z.mirror.aliyuncs.com&#34;]}&#39;&gt;&gt; /etc/docker/daemon.json &amp;&amp; curl -L  https://ghproxy.com/https://github.com/docker/compose/releases/download/v2.16.0/docker-compose-`uname -s`-`uname -m` -o /usr/local/bin/docker-compose &amp;&amp; chmod -R 777 /usr/local/bin/docker-compose
+</code></pre>
+<h4 id="文件格式问题">文件格式问题 </h4><pre tabindex="0"><code>sed -i -e &#39;s/\r$//&#39; a.sh
+</code></pre>
+<h4 id="docker安装">docker安装 </h4><pre tabindex="0"><code>curl -fsSL https://get.docker.com | bash -s docker --mirror Aliyun
+sudo wget -c -t 0 https://github.com/docker/compose/releases/download/v2.19.1/docker-compose-`uname -s`-`uname -m` -O /usr/local/bin/docker-compose
+sudo chmod a+rx /usr/local/bin/docker-compose
+</code></pre>
+    </div>
+
+    
+</section>
+
+
+            </div>
+            <div class="side">
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/llm/">Recent Llm</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/llm/tokenizer%E5%9F%BA%E7%A1%80%E4%BD%BF%E7%94%A8/">Tokenizer基础使用</a>
+            </li>
+        
+            <li>
+                <a href="/llm/%E6%A8%A1%E5%9E%8Bvllm%E9%83%A8%E7%BD%B2/">AI模型VLLM部署</a>
+            </li>
+        
+            <li>
+                <a href="/llm/%E6%A8%A1%E5%9E%8B%E5%BE%AE%E8%B0%83/">AI模型微调</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/note/">Recent Note</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/note/spring6%E5%AD%A6%E4%B9%A0%E8%AF%BE%E4%BB%B6/">Spring6学习课件</a>
+            </li>
+        
+            <li>
+                <a href="/note/rdis-%E7%BC%93%E5%AD%98%E7%A9%BF%E9%80%8F%E9%9B%AA%E5%B4%A9%E5%87%BB%E7%A9%BF%E7%9A%84%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95/">缓存穿透、雪崩、击穿的解决方法</a>
+            </li>
+        
+            <li>
+                <a href="/note/redis-%E5%8D%95%E7%BA%BF%E7%A8%8B%E7%9A%84redis%E4%B8%BA%E4%BB%80%E4%B9%88%E5%BF%AB/">单线程的redis为什么快</a>
+            </li>
+        
+            <li>
+                <a href="/note/redis-%E6%80%BB%E7%BB%93/">redis总结</a>
+            </li>
+        
+            <li>
+                <a href="/note/mysql-%E6%80%BB%E7%BB%93/">mysql总结</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/go/">Recent Go</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/go/%E9%A1%B9%E7%9B%AE%E6%89%93%E5%8C%85%E5%8F%91%E5%B8%83/">基于Scratch创建最小且安全的golang docker镜像</a>
+            </li>
+        
+            <li>
+                <a href="/go/%E9%94%99%E8%AF%AF%E5%A4%84%E7%90%86%E6%96%B9%E6%A1%88/">Go-错误(error)处理方案</a>
+            </li>
+        
+            <li>
+                <a href="/go/%E7%9B%B8%E5%AF%B9%E8%B7%AF%E5%BE%84%E9%97%AE%E9%A2%98/">Go相对路径问题</a>
+            </li>
+        
+            <li>
+                <a href="/go/gmp%E6%A8%A1%E5%9E%8B/">Go-GMP模型</a>
+            </li>
+        
+            <li>
+                <a href="/go/gin_validator/">gin_validator</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/tool/">Recent Tool</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/tool/vscode%E6%8A%98%E8%85%BE/">vscode折腾</a>
+            </li>
+        
+            <li>
+                <a href="/tool/linux-ubuntu%E4%BC%98%E5%8C%96/">Ubuntu开机优化</a>
+            </li>
+        
+            <li>
+                <a href="/tool/shell-ssh_script/">ssh常用脚本</a>
+            </li>
+        
+            <li>
+                <a href="/tool/mac-%E4%BC%98%E5%8C%96/">Mac优化</a>
+            </li>
+        
+            <li>
+                <a href="/tool/git-%E5%91%BD%E4%BB%A4%E5%A4%A7%E5%85%A8/">git命令大全</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/android/">Recent Android</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/android/%E5%85%A5%E9%97%A8/">逆向环境-杂</a>
+            </li>
+        
+            <li>
+                <a href="/android/frida%E6%95%99%E7%A8%8B/">frida教程</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                <div class="side-categories">
+    <h2>Categories</h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/categories/ai">ai(3)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/go">go(21)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E4%BB%A3%E7%A0%81">代码(1)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E5%B7%A5%E5%85%B7">工具(7)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E9%80%86%E5%90%91">逆向(2)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E9%9D%A2%E8%AF%95">面试(4)</a>
+            </li>
+        
+    </ul>
+</div>
+
+                <div class="side-tags">
+    <h2>Tags</h2>
+    <hr />
+
+    <ul>
+        
+    </ul>
+</div>
+
+            </div>
+        </main>
+        <footer class="footer">
+    <div class="footer-row">
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/llm/index.xml">
+                    Feed of Llm
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/note/index.xml">
+                    Feed of Note
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/go/index.xml">
+                    Feed of Go
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/tool/index.xml">
+                    Feed of Tool
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/android/index.xml">
+                    Feed of Android
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+
+        
+            
+            
+        
+    </div>
+
+    
+</footer>
+
+    </body>
+</html>
