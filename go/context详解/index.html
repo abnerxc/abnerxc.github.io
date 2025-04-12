@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+<meta name="viewport" content="width=device-width,minimum-scale=1">
+
+
+
+
+<title>Go-context详解 | Abner的博客</title>
+<link rel="canonical" href="https://abnerxc.github.io/go/context%E8%AF%A6%E8%A7%A3/">
+<meta property="og:type" content="article" />
+<meta property="og:title" content="Go-context详解 | Abner的博客" />
+<meta property="og:url" content="https://abnerxc.github.io/go/context%E8%AF%A6%E8%A7%A3/" />
+
+
+    <script src="/js/meraid-9.0.0.min.js"></script>
+    <script>mermaid.initialize({ startOnLoad: true });</script>
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/icofont/icofont.min.css" />
+<link rel="stylesheet" href="/css/syntax.css" />
+<link rel="stylesheet" href="/css/style.css" />
+<link rel="shortcut icon" href="/images/favicon.ico" type="image/x-icon" />
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3672527868545324" crossorigin="anonymous"></script>
+
+    </head>
+
+    <body>
+        <header class="header-wrapper">
+    <div class="header">
+        <a class="site-title" href="https://abnerxc.github.io/">Abner的博客</a>
+
+        <nav class="menu">
+            
+        </nav>
+    </div>
+</header>
+
+        <main class="main-wrapper">
+            <div class="main">
+                
+
+<section class="single">
+    <h1 class="title">Go-context详解</h1>
+
+    <div class="tip">
+        <time datetime="2021-03-15 18:35:11 &#43;0800 CST">2021/03/15</time>
+        <span class="split">·</span>
+        <span> 526 words </span>
+        <span class="split">·</span>
+        <span>
+            3 minutes to read
+        </span>
+    </div>
+
+
+
+
+
+
+    <div class="taxonomies">
+        
+        <div>
+            Categories:
+            
+                <a href="/categories/go">Go</a>
+            
+        </div>
+        
+
+        
+    </div>
+
+    <hr />
+
+    <div class="content">
+        <h1 id="背景">背景 <a href="#%e8%83%8c%e6%99%af" class="anchor">🔗</a></h1><p>golang在1.6.2的时候还没有自己的context，在1.7的版本中就把golang.org/x/net/context包被加入到了官方的库中。golang 的 Context包，是专门用来简化对于处理单个请求的多个goroutine之间与请求域的数据、取消信号、截止时间等相关操作，这些操作可能涉及多个 API 调用。</p>
+<p>比如有一个网络请求Request，每个Request都需要开启一个goroutine做一些事情，这些goroutine又可能会开启其他的goroutine。这样的话， 我们就可以通过Context，来跟踪这些goroutine，并且通过Context来控制他们的目的，这就是Go语言为我们提供的Context，中文可以称之为“上下文”。</p>
+<p>另外一个实际例子是，在Go服务器程序中，每个请求都会有一个goroutine去处理。然而，处理程序往往还需要创建额外的goroutine去访问后端资源，比如数据库、RPC服务等。由于这些goroutine都是在处理同一个请求，所以它们往往需要访问一些共享的资源，比如用户身份信息、认证token、请求截止时间等。而且如果请求超时或者被取消后，所有的goroutine都应该马上退出并且释放相关的资源。这种情况也需要用Context来为我们取消掉所有goroutine</p>
+<p>如果要使用可以通过 go get golang.org/x/net/context 命令获取这个包。</p>
+<h1 id="context原理">Context原理 <a href="#context%e5%8e%9f%e7%90%86" class="anchor">🔗</a></h1><p>Context 的调用应该是链式的，通过<code>WithCancel</code>，<code>WithDeadline</code>，<code>WithTimeout</code>或<code>WithValue</code>派生出新的 Context.当父 Context 被取消时，其派生的所有 Context 都将取消.</p>
+<p>通过<code>context.WithXXX</code>都将返回新的 Context 和 CancelFunc.调用 CancelFunc 将取消子代，移除父代对子代的引用，并且停止所有定时器.未能调用 CancelFunc 将泄漏子代，直到父代被取消或定时器触发.go vet工具检查所有流程控制路径上使用 CancelFuncs.</p>
+<h1 id="遵循规则">遵循规则 <a href="#%e9%81%b5%e5%be%aa%e8%a7%84%e5%88%99" class="anchor">🔗</a></h1><p>遵循以下规则，以保持包之间的接口一致，并启用静态分析工具以检查上下文传播.</p>
+<ul>
+<li>不要将 Contexts 放入结构体，相反<code>context</code>应该作为第一个参数传入，命名为<code>ctx. func DoSomething（ctx context.Context，arg Arg）error { // ... use ctx ... }</code></li>
+<li>即使函数允许，也不要传入<code>nil</code>的 Context.如果不知道用哪种 Context，可以使用<code>context.TODO()</code>.</li>
+<li>使用context的Value相关方法只应该用于在程序和接口中传递的和请求相关的元数据，不要用它来传递一些可选的参数.</li>
+<li>相同的 Context 可以传递给在不同的goroutine；Context 是并发安全的.</li>
+</ul>
+<h1 id="context包">Context包 <a href="#context%e5%8c%85" class="anchor">🔗</a></h1><p>Context结构</p>
+<div class="mermaid">type Context interface {
+    // 在Context超时或取消时（即结束了）返回一个关闭的channel
+    // 即如果当前Context超时或取消时，Done方法会返回一个channel，然后其他地方就可以通过判断Done方法是否有返回（channel），如果有则说明Context已结束
+    // 故其可以作为广播通知其他相关方本Context已结束，请做相关处理.
+    Done() <-chan struct{}
+
+    // 返回Context取消的原因
+    Err() error
+
+    // 返回Context的超时时间（超时返回场景）
+    Deadline() (deadline time.Time, ok bool)
+
+    // 值返回与键关联的值，如果没有则返回nil。
+    Value(key interface{}) interface{}
+}
+</div>
+<p>所有方法</p>
+<div class="mermaid">func Background() Context
+func TODO() Context
+
+func WithCancel(parent Context) (ctx Context, cancel CancelFunc)
+func WithDeadline(parent Context, deadline time.Time) (Context, CancelFunc)
+func WithTimeout(parent Context, timeout time.Duration) (Context, CancelFunc)
+func WithValue(parent Context, key, val interface{}) Context
+</div>
+<p>上面可以看到Context是一个接口，想要使用就得实现其方法.在context包内部已经为我们实现好了两个空的Context，可以通过调用Background()和TODO()方法获取.一般的将它们作为Context的根，往下派生.</p>
+<h1 id="withcancel-例子">WithCancel 例子 <a href="#withcancel-%e4%be%8b%e5%ad%90" class="anchor">🔗</a></h1><p>WithCancel 以一个新的 Done channel 返回一个父 Context 的拷贝.</p>
+<div class="mermaid"> func WithCancel(parent Context) (ctx Context, cancel CancelFunc) {
+         c := newCancelCtx(parent)
+         propagateCancel(parent, &c)
+         return &c, func() { c.cancel(true, Canceled) }
+     }
+     
+     // newCancelCtx returns an initialized cancelCtx.
+     func newCancelCtx(parent Context) cancelCtx {
+         return cancelCtx{
+             Context: parent,
+             done:    make(chan struct{}),
+         }
+     }
+</div>
+<p>此示例演示使用一个可取消的上下文，以防止 goroutine 泄漏.示例函数结束时，defer 调用 cancel 方法，gen goroutine 将返回而不泄漏.</p>
+<div class="mermaid">package main
+
+import (
+    "context"
+    "fmt"
+)
+
+func main() {
+    gen := func(ctx context.Context) <-chan int {
+        dst := make(chan int)
+        n := 1
+        go func() {
+            for {
+                select {
+                case <-ctx.Done():
+                    return // returning not to leak the goroutine
+                case dst <- n:
+                    n++
+                }
+            }
+        }()
+        return dst
+    }
+
+    ctx, cancel := context.WithCancel(context.Background())
+    defer cancel() // cancel when we are finished consuming integers
+
+    for n := range gen(ctx) {
+        fmt.Println(n)
+        if n == 5 {
+            break
+        }
+    }
+}
+</div>
+<h1 id="withdeadline-例子">WithDeadline 例子 <a href="#withdeadline-%e4%be%8b%e5%ad%90" class="anchor">🔗</a></h1><div class="mermaid">  func WithDeadline(parent Context, deadline time.Time) (Context, CancelFunc) {
+         if cur, ok := parent.Deadline(); ok && cur.Before(deadline) {
+             // The current deadline is already sooner than the new one.
+             return WithCancel(parent)
+         }
+         c := &timerCtx{
+             cancelCtx: newCancelCtx(parent),
+             deadline:  deadline,
+         }
+   ......
+</div>
+<p>可以清晰的看到，当派生出的子 Context 的deadline在父Context之后，直接返回了一个父Context的拷贝.故语义上等效为父.</p>
+<p>WithDeadline 的最后期限调整为不晚于 d 返回父上下文的副本.如果父母的截止日期已经早于 d，WithDeadline （父，d） 是在语义上等效为父.返回的上下文完成的通道关闭的最后期限期满后，返回的取消函数调用时，或当父上下文完成的通道关闭，以先发生者为准.</p>
+<p>看看官方的例子：</p>
+<div class="mermaid">package main
+
+import (
+    "context"
+    "fmt"
+    "time"
+)
+
+func main() {
+    d := time.Now().Add(50 * time.Millisecond)
+    ctx, cancel := context.WithDeadline(context.Background(), d)
+
+    //即使ctx将会过期，还是最好将其调用
+    //在任何情况下都具有取消功能。 否则可能会使
+    //上下文及其父对象的生存时间超出了必要。
+    defer cancel()
+
+    select {
+    case <-time.After(1 * time.Second):
+        fmt.Println("overslept")
+    case <-ctx.Done():
+        fmt.Println(ctx.Err())
+    }
+}
+</div>
+<h1 id="withtimeout-例子">WithTimeout 例子 <a href="#withtimeout-%e4%be%8b%e5%ad%90" class="anchor">🔗</a></h1><div class="mermaid">func WithTimeout(parent Context, timeout time.Duration) (Context, CancelFunc) {
+         return WithDeadline(parent, time.Now().Add(timeout))
+     }
+</div>
+<p>官方例子：</p>
+<div class="mermaid">package main
+
+import (
+    "context"
+    "fmt"
+    "time"
+)
+
+func main() {
+    // Pass a context with a timeout to tell a blocking function that it
+    // should abandon its work after the timeout elapses.
+    ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
+    defer cancel()
+
+    select {
+    case <-time.After(1 * time.Second):
+        fmt.Println("overslept")
+    case <-ctx.Done():
+        fmt.Println(ctx.Err()) // prints "context deadline exceeded"
+    }
+}
+</div>
+<h1 id="withvalue">WithValue <a href="#withvalue" class="anchor">🔗</a></h1><div class="mermaid">  func WithValue(parent Context, key, val interface{}) Context {
+         if key == nil {
+             panic("nil key")
+         }
+         if !reflect.TypeOf(key).Comparable() {
+             panic("key is not comparable")
+         }
+         return &valueCtx{parent, key, val}
+     }
+</div>
+<p>WithValue 返回的父与键关联的值在 val 的副本.</p>
+<p>使用上下文值仅为过渡进程和 Api 的请求范围的数据，而不是将可选参数传递给函数.</p>
+<p>提供的键必须是可比性和应该不是字符串类型或任何其他内置的类型以避免包使用的上下文之间的碰撞.WithValue 用户应该定义自己的键的类型.为了避免分配分配给接口 {} 时，上下文键经常有具体类型结构 {}.另外，导出的上下文关键变量静态类型应该是一个指针或接口.</p>
+<p>看看官方例子：</p>
+<div class="mermaid">package main
+
+import (
+    "context"
+    "fmt"
+)
+
+func main() {
+    type favContextKey string
+
+    f := func(ctx context.Context, k favContextKey) {
+        if v := ctx.Value(k); v != nil {
+            fmt.Println("found value:", v)
+            return
+        }
+        fmt.Println("key not found:", k)
+    }
+
+    k := favContextKey("language")
+    ctx := context.WithValue(context.Background(), k, "Go")
+
+    f(ctx, k)
+    f(ctx, favContextKey("color"))
+}
+</div>
+<blockquote>
+<p>文章来源：https://mojotv.cn/2019/06/26/golang-context</p></blockquote>
+
+    </div>
+
+    
+</section>
+
+
+            </div>
+            <div class="side">
+                <div class="side-categories">
+    <h2>Categories</h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/categories/ai">ai(3)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/go">go(21)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E4%BB%A3%E7%A0%81">代码(1)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E5%B7%A5%E5%85%B7">工具(7)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E9%80%86%E5%90%91">逆向(2)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E9%9D%A2%E8%AF%95">面试(4)</a>
+            </li>
+        
+    </ul>
+</div>
+
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/llm/">Recent Llm</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/llm/transformers-%E5%85%A5%E9%97%A8%E7%AF%87/">Transformers-入门篇</a>
+            </li>
+        
+            <li>
+                <a href="/llm/%E6%A8%A1%E5%9E%8Bvllm%E9%83%A8%E7%BD%B2/">AI模型VLLM部署</a>
+            </li>
+        
+            <li>
+                <a href="/llm/%E6%A8%A1%E5%9E%8B%E5%BE%AE%E8%B0%83/">AI模型微调</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/go/">Recent Go</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/go/%E9%A1%B9%E7%9B%AE%E6%89%93%E5%8C%85%E5%8F%91%E5%B8%83/">基于Scratch创建最小且安全的golang docker镜像</a>
+            </li>
+        
+            <li>
+                <a href="/go/%E9%94%99%E8%AF%AF%E5%A4%84%E7%90%86%E6%96%B9%E6%A1%88/">Go-错误(error)处理方案</a>
+            </li>
+        
+            <li>
+                <a href="/go/%E7%9B%B8%E5%AF%B9%E8%B7%AF%E5%BE%84%E9%97%AE%E9%A2%98/">Go相对路径问题</a>
+            </li>
+        
+            <li>
+                <a href="/go/gmp%E6%A8%A1%E5%9E%8B/">Go-GMP模型</a>
+            </li>
+        
+            <li>
+                <a href="/go/gin_validator/">gin_validator</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/tool/">Recent Tool</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/tool/vscode%E6%8A%98%E8%85%BE/">vscode折腾</a>
+            </li>
+        
+            <li>
+                <a href="/tool/linux-ubuntu%E4%BC%98%E5%8C%96/">Ubuntu开机优化</a>
+            </li>
+        
+            <li>
+                <a href="/tool/shell-ssh_script/">ssh常用脚本</a>
+            </li>
+        
+            <li>
+                <a href="/tool/mac-%E4%BC%98%E5%8C%96/">Mac优化</a>
+            </li>
+        
+            <li>
+                <a href="/tool/git-%E5%91%BD%E4%BB%A4%E5%A4%A7%E5%85%A8/">git命令大全</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/android/">Recent Android</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/android/%E5%85%A5%E9%97%A8/">逆向环境-杂</a>
+            </li>
+        
+            <li>
+                <a href="/android/frida%E6%95%99%E7%A8%8B/">frida教程</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/note/">Recent Note</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/note/rdis-%E7%BC%93%E5%AD%98%E7%A9%BF%E9%80%8F%E9%9B%AA%E5%B4%A9%E5%87%BB%E7%A9%BF%E7%9A%84%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95/">缓存穿透、雪崩、击穿的解决方法</a>
+            </li>
+        
+            <li>
+                <a href="/note/redis-%E5%8D%95%E7%BA%BF%E7%A8%8B%E7%9A%84redis%E4%B8%BA%E4%BB%80%E4%B9%88%E5%BF%AB/">单线程的redis为什么快</a>
+            </li>
+        
+            <li>
+                <a href="/note/redis-%E6%80%BB%E7%BB%93/">redis总结</a>
+            </li>
+        
+            <li>
+                <a href="/note/mysql-%E6%80%BB%E7%BB%93/">mysql总结</a>
+            </li>
+        
+            <li>
+                <a href="/note/java-httpclient%E4%BD%BF%E7%94%A8%E6%8A%80%E5%B7%A7/">HttpClient使用技巧</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+
+                <div class="side-tags">
+    <h2>Tags</h2>
+    <hr />
+
+    <ul>
+        
+    </ul>
+</div>
+
+            </div>
+        </main>
+        <footer class="footer">
+    <div class="footer-row">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+            
+        
+    </div>
+
+    
+    <script>
+        var _hmt = _hmt || [];
+        (function() {
+            var hm = document.createElement("script");
+            hm.src = "https://hm.baidu.com/hm.js?c7c71c25f37f41a6ca2ef0b894a383e3";
+            var s = document.getElementsByTagName("script")[0];
+            s.parentNode.insertBefore(hm, s);
+        })();
+    </script>
+    <script>
+        
+        const sidebar = document.querySelector('.toc');
+        const screenWidth = window.innerWidth;
+
+        
+        window.addEventListener('resize', () => {
+            const newScreenWidth = window.innerWidth;
+
+            
+            if (newScreenWidth >= 768) {
+                sidebar.style.left = '0';
+            } else {
+                sidebar.style.left = '-250px';
+            }
+        });
+
+        
+        if (screenWidth >= 768) {
+            sidebar.style.left = '0';
+        } else {
+            sidebar.style.left = '-250px';
+        }
+    </script>
+
+</footer>
+
+    </body>
+</html>

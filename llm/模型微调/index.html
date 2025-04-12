@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+<meta name="viewport" content="width=device-width,minimum-scale=1">
+
+
+
+
+<title>AI模型微调 | Abner的博客</title>
+<link rel="canonical" href="https://abnerxc.github.io/llm/%E6%A8%A1%E5%9E%8B%E5%BE%AE%E8%B0%83/">
+<meta property="og:type" content="article" />
+<meta property="og:title" content="AI模型微调 | Abner的博客" />
+<meta property="og:url" content="https://abnerxc.github.io/llm/%E6%A8%A1%E5%9E%8B%E5%BE%AE%E8%B0%83/" />
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/icofont/icofont.min.css" />
+<link rel="stylesheet" href="/css/syntax.css" />
+<link rel="stylesheet" href="/css/style.css" />
+<link rel="shortcut icon" href="/images/favicon.ico" type="image/x-icon" />
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3672527868545324" crossorigin="anonymous"></script>
+
+    </head>
+
+    <body>
+        <header class="header-wrapper">
+    <div class="header">
+        <a class="site-title" href="https://abnerxc.github.io/">Abner的博客</a>
+
+        <nav class="menu">
+            
+        </nav>
+    </div>
+</header>
+
+        <main class="main-wrapper">
+            <div class="main">
+                
+
+<section class="single">
+    <h1 class="title">AI模型微调</h1>
+
+    <div class="tip">
+        <time datetime="2025-03-03 18:07:58 &#43;0800 CST">2025/03/03</time>
+        <span class="split">·</span>
+        <span> 539 words </span>
+        <span class="split">·</span>
+        <span>
+            3 minutes to read
+        </span>
+    </div>
+
+
+
+
+
+
+    <div class="taxonomies">
+        
+        <div>
+            Categories:
+            
+                <a href="/categories/ai">AI</a>
+            
+        </div>
+        
+
+        
+    </div>
+
+    <hr />
+
+    <div class="content">
+        <h1 id="基础操作">基础操作 <a href="#%e5%9f%ba%e7%a1%80%e6%93%8d%e4%bd%9c" class="anchor">🔗</a></h1><h2 id="安装依赖">安装依赖 <a href="#%e5%ae%89%e8%a3%85%e4%be%9d%e8%b5%96" class="anchor">🔗</a></h2><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#75715e"># 安装 unsloth 包。unsloth 是一个用于微调大型语言模型（LLM）的工具，可以让模型运行更快、占用更少内存。</span>
+</span></span><span style="display:flex;"><span>pip install unsloth 
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 卸载当前已安装的 unsloth 包（如果已安装），然后从 GitHub 的源代码安装最新版本。</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 这样可以确保我们使用的是最新功能和修复。</span>
+</span></span><span style="display:flex;"><span>pip uninstall unsloth <span style="color:#f92672">-</span>y <span style="color:#f92672">&amp;&amp;</span> pip install <span style="color:#f92672">--</span>upgrade <span style="color:#f92672">--</span>no<span style="color:#f92672">-</span>cache<span style="color:#f92672">-</span>dir <span style="color:#f92672">--</span>no<span style="color:#f92672">-</span>deps git<span style="color:#f92672">+</span>https:<span style="color:#f92672">//</span>github<span style="color:#f92672">.</span>com<span style="color:#f92672">/</span>unslothai<span style="color:#f92672">/</span>unsloth<span style="color:#f92672">.</span>git
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 安装 bitsandbytes 和 unsloth_zoo 包。</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># bitsandbytes 是一个用于量化和优化模型的库，可以帮助减少模型占用的内存。</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># unsloth_zoo 可能包含了一些预训练模型或其他工具，方便我们使用。</span>
+</span></span><span style="display:flex;"><span>pip install bitsandbytes unsloth_zoo 
+</span></span></code></pre></div><h2 id="加载预训练模型">加载预训练模型 <a href="#%e5%8a%a0%e8%bd%bd%e9%a2%84%e8%ae%ad%e7%bb%83%e6%a8%a1%e5%9e%8b" class="anchor">🔗</a></h2><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#f92672">from</span> unsloth <span style="color:#f92672">import</span> FastLanguageModel  <span style="color:#75715e"># 导入FastLanguageModel类，用来加载和使用模型</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> torch  <span style="color:#75715e"># 导入torch工具，用于处理模型的数学运算</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>max_seq_length <span style="color:#f92672">=</span> <span style="color:#ae81ff">2048</span>  <span style="color:#75715e"># 设置模型处理文本的最大长度，相当于给模型设置一个“最大容量”</span>
+</span></span><span style="display:flex;"><span>dtype <span style="color:#f92672">=</span> <span style="color:#66d9ef">None</span>  <span style="color:#75715e"># 设置数据类型，让模型自动选择最适合的精度</span>
+</span></span><span style="display:flex;"><span>load_in_4bit <span style="color:#f92672">=</span> <span style="color:#66d9ef">True</span>  <span style="color:#75715e"># 使用4位量化来节省内存，就像把大箱子压缩成小箱子</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 加载预训练模型，并获取tokenizer工具</span>
+</span></span><span style="display:flex;"><span>model, tokenizer <span style="color:#f92672">=</span> FastLanguageModel<span style="color:#f92672">.</span>from_pretrained(
+</span></span><span style="display:flex;"><span>    model_name<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;unsloth/DeepSeek-R1-Distill-Llama-8B&#34;</span>,  <span style="color:#75715e"># 指定要加载的模型名称</span>
+</span></span><span style="display:flex;"><span>    max_seq_length<span style="color:#f92672">=</span>max_seq_length,  <span style="color:#75715e"># 使用前面设置的最大长度</span>
+</span></span><span style="display:flex;"><span>    dtype<span style="color:#f92672">=</span>dtype,  <span style="color:#75715e"># 使用前面设置的数据类型</span>
+</span></span><span style="display:flex;"><span>    load_in_4bit<span style="color:#f92672">=</span>load_in_4bit,  <span style="color:#75715e"># 使用4位量化</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># token=&#34;hf_...&#34;,  # 如果需要访问授权模型，可以在这里填入密钥</span>
+</span></span><span style="display:flex;"><span>)
+</span></span></code></pre></div><h2 id="微调前测试">微调前测试 <a href="#%e5%be%ae%e8%b0%83%e5%89%8d%e6%b5%8b%e8%af%95" class="anchor">🔗</a></h2><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>prompt_style <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;&#34;&#34;以下是描述任务的指令，以及提供进一步上下文的输入。
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">请写出一个适当完成请求的回答。
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">在回答之前，请仔细思考问题，并创建一个逻辑连贯的思考过程，以确保回答准确无误。
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">### 指令：
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">你是一位资深银行营销专家，需要根据客户需求生成完整的银行领域活动方案。
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">请回答以下问题。
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">### 问题：
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74"></span><span style="color:#e6db74">{question}</span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">### 回答：
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">&lt;think&gt;</span><span style="color:#e6db74">{answer}</span><span style="color:#e6db74">&#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 定义提示风格的字符串模板，用于格式化问题</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>question <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;请为年轻白领设计信用卡开卡促销活动&#34;</span>
+</span></span><span style="display:flex;"><span>FastLanguageModel<span style="color:#f92672">.</span>for_inference(model)
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 准备模型以进行推理</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>inputs <span style="color:#f92672">=</span> tokenizer([prompt_style<span style="color:#f92672">.</span>format(question, <span style="color:#e6db74">&#34;&#34;</span>)], return_tensors<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;pt&#34;</span>)<span style="color:#f92672">.</span>to(<span style="color:#e6db74">&#34;cuda&#34;</span>)
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 使用 tokenizer 对格式化后的问题进行编码，并移动到 GPU</span>
+</span></span><span style="display:flex;"><span>outputs <span style="color:#f92672">=</span> model<span style="color:#f92672">.</span>generate(
+</span></span><span style="display:flex;"><span>    input_ids<span style="color:#f92672">=</span>inputs<span style="color:#f92672">.</span>input_ids,
+</span></span><span style="display:flex;"><span>    attention_mask<span style="color:#f92672">=</span>inputs<span style="color:#f92672">.</span>attention_mask,
+</span></span><span style="display:flex;"><span>    max_new_tokens<span style="color:#f92672">=</span><span style="color:#ae81ff">1200</span>,
+</span></span><span style="display:flex;"><span>    use_cache<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>,
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 使用模型生成回答</span>
+</span></span><span style="display:flex;"><span>response <span style="color:#f92672">=</span> tokenizer<span style="color:#f92672">.</span>batch_decode(outputs)
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 解码模型生成的输出为可读文本</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>print(response[<span style="color:#ae81ff">0</span>])
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 打印生成的回答部分</span>
+</span></span></code></pre></div><h2 id="数据准备">数据准备 <a href="#%e6%95%b0%e6%8d%ae%e5%87%86%e5%a4%87" class="anchor">🔗</a></h2><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>EOS_TOKEN <span style="color:#f92672">=</span> tokenizer<span style="color:#f92672">.</span>eos_token  <span style="color:#75715e"># 必须添加结束标记</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 导入数据集加载函数</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">from</span> datasets <span style="color:#f92672">import</span> load_dataset
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 加载指定的数据集，选择中文语言和训练集的前500条记录</span>
+</span></span><span style="display:flex;"><span>dataset <span style="color:#f92672">=</span> load_dataset(path<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;json&#39;</span>, data_files<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;/home/ubuntu/code/all.jsonl&#34;</span>, split<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;train[0:500]&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 打印数据集的列名，查看数据集中有哪些字段</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">formatting_prompts_func</span>(examples):
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># 从数据集中提取问题和回答</span>
+</span></span><span style="display:flex;"><span>    texts <span style="color:#f92672">=</span> []  <span style="color:#75715e"># 用于存储格式化后的文本</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">for</span> messages <span style="color:#f92672">in</span> examples[<span style="color:#e6db74">&#34;messages&#34;</span>]:
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e"># 提取用户问题（第二个消息）</span>
+</span></span><span style="display:flex;"><span>        question <span style="color:#f92672">=</span> messages[<span style="color:#ae81ff">1</span>][<span style="color:#e6db74">&#34;content&#34;</span>]
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e"># 提取助手回答（第三个消息）</span>
+</span></span><span style="display:flex;"><span>        answer <span style="color:#f92672">=</span> messages[<span style="color:#ae81ff">2</span>][<span style="color:#e6db74">&#34;content&#34;</span>]
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e"># 格式化模板</span>
+</span></span><span style="display:flex;"><span>        formatted_text <span style="color:#f92672">=</span> prompt_style<span style="color:#f92672">.</span>format(question<span style="color:#f92672">=</span>question, answer<span style="color:#f92672">=</span>answer)<span style="color:#f92672">+</span>EOS_TOKEN
+</span></span><span style="display:flex;"><span>        texts<span style="color:#f92672">.</span>append(formatted_text)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;text&#34;</span>: texts,  <span style="color:#75715e"># 返回包含所有格式化文本的字典</span>
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>dataset <span style="color:#f92672">=</span> dataset<span style="color:#f92672">.</span>map(formatting_prompts_func, batched<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># print(dataset[&#34;text&#34;][0])</span>
+</span></span></code></pre></div><h2 id="执行微调">执行微调 <a href="#%e6%89%a7%e8%a1%8c%e5%be%ae%e8%b0%83" class="anchor">🔗</a></h2><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>FastLanguageModel<span style="color:#f92672">.</span>for_training(model)
+</span></span><span style="display:flex;"><span>model <span style="color:#f92672">=</span> FastLanguageModel<span style="color:#f92672">.</span>get_peft_model(
+</span></span><span style="display:flex;"><span>    model,  <span style="color:#75715e"># 传入已经加载好的预训练模型</span>
+</span></span><span style="display:flex;"><span>    r <span style="color:#f92672">=</span> <span style="color:#ae81ff">16</span>,  <span style="color:#75715e"># 设置 LoRA 的秩，决定添加的可训练参数数量</span>
+</span></span><span style="display:flex;"><span>    target_modules <span style="color:#f92672">=</span> [<span style="color:#e6db74">&#34;q_proj&#34;</span>, <span style="color:#e6db74">&#34;k_proj&#34;</span>, <span style="color:#e6db74">&#34;v_proj&#34;</span>, <span style="color:#e6db74">&#34;o_proj&#34;</span>,  <span style="color:#75715e"># 指定模型中需要微调的关键模块</span>
+</span></span><span style="display:flex;"><span>                      <span style="color:#e6db74">&#34;gate_proj&#34;</span>, <span style="color:#e6db74">&#34;up_proj&#34;</span>, <span style="color:#e6db74">&#34;down_proj&#34;</span>],
+</span></span><span style="display:flex;"><span>    lora_alpha <span style="color:#f92672">=</span> <span style="color:#ae81ff">16</span>,  <span style="color:#75715e"># 设置 LoRA 的超参数，影响可训练参数的训练方式</span>
+</span></span><span style="display:flex;"><span>    lora_dropout <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>,  <span style="color:#75715e"># 设置防止过拟合的参数，这里设置为 0 表示不丢弃任何参数</span>
+</span></span><span style="display:flex;"><span>    bias <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;none&#34;</span>,    <span style="color:#75715e"># 设置是否添加偏置项，这里设置为 &#34;none&#34; 表示不添加</span>
+</span></span><span style="display:flex;"><span>    use_gradient_checkpointing <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;unsloth&#34;</span>,  <span style="color:#75715e"># 使用优化技术节省显存并支持更大的批量大小</span>
+</span></span><span style="display:flex;"><span>    random_state <span style="color:#f92672">=</span> <span style="color:#ae81ff">3407</span>,  <span style="color:#75715e"># 设置随机种子，确保每次运行代码时模型的初始化方式相同</span>
+</span></span><span style="display:flex;"><span>    use_rslora <span style="color:#f92672">=</span> <span style="color:#66d9ef">False</span>,  <span style="color:#75715e"># 设置是否使用 Rank Stabilized LoRA 技术，这里设置为 False 表示不使用</span>
+</span></span><span style="display:flex;"><span>    loftq_config <span style="color:#f92672">=</span> <span style="color:#66d9ef">None</span>,  <span style="color:#75715e"># 设置是否使用 LoftQ 技术，这里设置为 None 表示不使用</span>
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">from</span> trl <span style="color:#f92672">import</span> SFTTrainer  <span style="color:#75715e"># 导入 SFTTrainer，用于监督式微调</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">from</span> transformers <span style="color:#f92672">import</span> TrainingArguments  <span style="color:#75715e"># 导入 TrainingArguments，用于设置训练参数</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">from</span> unsloth <span style="color:#f92672">import</span> is_bfloat16_supported  <span style="color:#75715e"># 导入函数，检查是否支持 bfloat16 数据格式</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>trainer <span style="color:#f92672">=</span> SFTTrainer(  <span style="color:#75715e"># 创建一个 SFTTrainer 实例</span>
+</span></span><span style="display:flex;"><span>    model<span style="color:#f92672">=</span>model,  <span style="color:#75715e"># 传入要微调的模型</span>
+</span></span><span style="display:flex;"><span>    tokenizer<span style="color:#f92672">=</span>tokenizer,  <span style="color:#75715e"># 传入 tokenizer，用于处理文本数据</span>
+</span></span><span style="display:flex;"><span>    train_dataset<span style="color:#f92672">=</span>dataset,  <span style="color:#75715e"># 传入训练数据集</span>
+</span></span><span style="display:flex;"><span>    dataset_text_field<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;text&#34;</span>,  <span style="color:#75715e"># 指定数据集中文本字段的名称</span>
+</span></span><span style="display:flex;"><span>    max_seq_length<span style="color:#f92672">=</span>max_seq_length,  <span style="color:#75715e"># 设置最大序列长度</span>
+</span></span><span style="display:flex;"><span>    dataset_num_proc<span style="color:#f92672">=</span><span style="color:#ae81ff">2</span>,  <span style="color:#75715e"># 设置数据处理的并行进程数</span>
+</span></span><span style="display:flex;"><span>    packing<span style="color:#f92672">=</span><span style="color:#66d9ef">False</span>,  <span style="color:#75715e"># 是否启用打包功能（这里设置为 False，打包可以让训练更快，但可能影响效果）</span>
+</span></span><span style="display:flex;"><span>    args<span style="color:#f92672">=</span>TrainingArguments(  <span style="color:#75715e"># 定义训练参数</span>
+</span></span><span style="display:flex;"><span>        per_device_train_batch_size<span style="color:#f92672">=</span><span style="color:#ae81ff">2</span>,  <span style="color:#75715e"># 每个设备（如 GPU）上的批量大小</span>
+</span></span><span style="display:flex;"><span>        gradient_accumulation_steps<span style="color:#f92672">=</span><span style="color:#ae81ff">4</span>,  <span style="color:#75715e"># 梯度累积步数，用于模拟大批次训练</span>
+</span></span><span style="display:flex;"><span>        warmup_steps<span style="color:#f92672">=</span><span style="color:#ae81ff">5</span>,  <span style="color:#75715e"># 预热步数，训练开始时学习率逐渐增加的步数</span>
+</span></span><span style="display:flex;"><span>        max_steps<span style="color:#f92672">=</span><span style="color:#ae81ff">75</span>,  <span style="color:#75715e"># 最大训练步数</span>
+</span></span><span style="display:flex;"><span>        learning_rate<span style="color:#f92672">=</span><span style="color:#ae81ff">2e-4</span>,  <span style="color:#75715e"># 学习率，模型学习新知识的速度</span>
+</span></span><span style="display:flex;"><span>        fp16<span style="color:#f92672">=</span><span style="color:#f92672">not</span> is_bfloat16_supported(),  <span style="color:#75715e"># 是否使用 fp16 格式加速训练（如果环境不支持 bfloat16）</span>
+</span></span><span style="display:flex;"><span>        bf16<span style="color:#f92672">=</span>is_bfloat16_supported(),  <span style="color:#75715e"># 是否使用 bfloat16 格式加速训练（如果环境支持）</span>
+</span></span><span style="display:flex;"><span>        logging_steps<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>,  <span style="color:#75715e"># 每隔多少步记录一次训练日志</span>
+</span></span><span style="display:flex;"><span>        optim<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;adamw_8bit&#34;</span>,  <span style="color:#75715e"># 使用的优化器，用于调整模型参数</span>
+</span></span><span style="display:flex;"><span>        weight_decay<span style="color:#f92672">=</span><span style="color:#ae81ff">0.01</span>,  <span style="color:#75715e"># 权重衰减，防止模型过拟合</span>
+</span></span><span style="display:flex;"><span>        lr_scheduler_type<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;linear&#34;</span>,  <span style="color:#75715e"># 学习率调度器类型，控制学习率的变化方式</span>
+</span></span><span style="display:flex;"><span>        seed<span style="color:#f92672">=</span><span style="color:#ae81ff">3407</span>,  <span style="color:#75715e"># 随机种子，确保训练结果可复现</span>
+</span></span><span style="display:flex;"><span>        output_dir<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;outputs&#34;</span>,  <span style="color:#75715e"># 训练结果保存的目录</span>
+</span></span><span style="display:flex;"><span>        report_to<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;none&#34;</span>,  <span style="color:#75715e"># 是否将训练结果报告到外部工具（如 WandB），这里设置为不报告</span>
+</span></span><span style="display:flex;"><span>    ),
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>trainer_stats <span style="color:#f92672">=</span> trainer<span style="color:#f92672">.</span>train() <span style="color:#75715e"># 开始训练</span>
+</span></span></code></pre></div><h2 id="微调后测试">微调后测试 <a href="#%e5%be%ae%e8%b0%83%e5%90%8e%e6%b5%8b%e8%af%95" class="anchor">🔗</a></h2><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#75715e"># 将模型切换到推理模式，准备回答问题</span>
+</span></span><span style="display:flex;"><span>FastLanguageModel<span style="color:#f92672">.</span>for_inference(model)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 将问题转换成模型能理解的格式，并发送到 GPU 上</span>
+</span></span><span style="display:flex;"><span>inputs <span style="color:#f92672">=</span> tokenizer([prompt_style<span style="color:#f92672">.</span>format(question, <span style="color:#e6db74">&#34;&#34;</span>)], return_tensors<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;pt&#34;</span>)<span style="color:#f92672">.</span>to(<span style="color:#e6db74">&#34;cuda&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 让模型根据问题生成回答，最多生成 4000 个新词</span>
+</span></span><span style="display:flex;"><span>outputs <span style="color:#f92672">=</span> model<span style="color:#f92672">.</span>generate(
+</span></span><span style="display:flex;"><span>    input_ids<span style="color:#f92672">=</span>inputs<span style="color:#f92672">.</span>input_ids,  <span style="color:#75715e"># 输入的数字序列</span>
+</span></span><span style="display:flex;"><span>    attention_mask<span style="color:#f92672">=</span>inputs<span style="color:#f92672">.</span>attention_mask,  <span style="color:#75715e"># 注意力遮罩，帮助模型理解哪些部分重要</span>
+</span></span><span style="display:flex;"><span>    max_new_tokens<span style="color:#f92672">=</span><span style="color:#ae81ff">4000</span>,  <span style="color:#75715e"># 最多生成 4000 个新词</span>
+</span></span><span style="display:flex;"><span>    use_cache<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>,  <span style="color:#75715e"># 使用缓存加速生成</span>
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 将生成的回答从数字转换回文字</span>
+</span></span><span style="display:flex;"><span>response <span style="color:#f92672">=</span> tokenizer<span style="color:#f92672">.</span>batch_decode(outputs)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 打印回答</span>
+</span></span><span style="display:flex;"><span>print(response[<span style="color:#ae81ff">0</span>])
+</span></span></code></pre></div><h2 id="将微调后的模型保存为-gguf-格式">将微调后的模型保存为 GGUF 格式 <a href="#%e5%b0%86%e5%be%ae%e8%b0%83%e5%90%8e%e7%9a%84%e6%a8%a1%e5%9e%8b%e4%bf%9d%e5%ad%98%e4%b8%ba-gguf-%e6%a0%bc%e5%bc%8f" class="anchor">🔗</a></h2><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#75715e"># 导入 Google Colab 的 userdata 模块，用于访问用户数据</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">from</span> google.colab <span style="color:#f92672">import</span> userdata
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 从 Google Colab 用户数据中获取 Hugging Face 的 API 令牌</span>
+</span></span><span style="display:flex;"><span>HUGGINGFACE_TOKEN <span style="color:#f92672">=</span> userdata<span style="color:#f92672">.</span>get(<span style="color:#e6db74">&#39;HUGGINGFACE_TOKEN&#39;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 将模型保存为 8 位量化格式（Q8_0）</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 这种格式文件小且运行快，适合部署到资源受限的设备</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#66d9ef">True</span>: model<span style="color:#f92672">.</span>save_pretrained_gguf(<span style="color:#e6db74">&#34;model&#34;</span>, tokenizer,)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 将模型保存为 16 位量化格式（f16）</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 16 位量化精度更高，但文件稍大</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#66d9ef">False</span>: model<span style="color:#f92672">.</span>save_pretrained_gguf(<span style="color:#e6db74">&#34;model_f16&#34;</span>, tokenizer, quantization_method <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;f16&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 将模型保存为 4 位量化格式（q4_k_m）</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 4 位量化文件最小，但精度可能稍低</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#66d9ef">False</span>: model<span style="color:#f92672">.</span>save_pretrained_gguf(<span style="color:#e6db74">&#34;model&#34;</span>, tokenizer, quantization_method <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;q4_k_m&#34;</span>)
+</span></span></code></pre></div><h2 id="模型上传huggingface">模型上传HuggingFace <a href="#%e6%a8%a1%e5%9e%8b%e4%b8%8a%e4%bc%a0huggingface" class="anchor">🔗</a></h2><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#75715e"># 导入 Hugging Face Hub 的 create_repo 函数，用于创建一个新的模型仓库</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">from</span> huggingface_hub <span style="color:#f92672">import</span> create_repo
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 在 Hugging Face Hub 上创建一个新的模型仓库</span>
+</span></span><span style="display:flex;"><span>create_repo(<span style="color:#e6db74">&#34;Conard/fortunetelling&#34;</span>, token<span style="color:#f92672">=</span>HUGGINGFACE_TOKEN, exist_ok<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 将模型和分词器上传到 Hugging Face Hub 上的仓库</span>
+</span></span><span style="display:flex;"><span>model<span style="color:#f92672">.</span>push_to_hub_gguf(<span style="color:#e6db74">&#34;Conard/fortunetelling&#34;</span>, tokenizer, token<span style="color:#f92672">=</span>HUGGINGFACE_TOKEN)
+</span></span></code></pre></div>
+    </div>
+
+    
+</section>
+
+
+            </div>
+            <div class="side">
+                <div class="side-categories">
+    <h2>Categories</h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/categories/ai">ai(3)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/go">go(21)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E4%BB%A3%E7%A0%81">代码(1)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E5%B7%A5%E5%85%B7">工具(7)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E9%80%86%E5%90%91">逆向(2)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E9%9D%A2%E8%AF%95">面试(4)</a>
+            </li>
+        
+    </ul>
+</div>
+
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/llm/">Recent Llm</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/llm/transformers-%E5%85%A5%E9%97%A8%E7%AF%87/">Transformers-入门篇</a>
+            </li>
+        
+            <li>
+                <a href="/llm/%E6%A8%A1%E5%9E%8Bvllm%E9%83%A8%E7%BD%B2/">AI模型VLLM部署</a>
+            </li>
+        
+            <li>
+                <a href="/llm/%E6%A8%A1%E5%9E%8B%E5%BE%AE%E8%B0%83/">AI模型微调</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/go/">Recent Go</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/go/%E9%A1%B9%E7%9B%AE%E6%89%93%E5%8C%85%E5%8F%91%E5%B8%83/">基于Scratch创建最小且安全的golang docker镜像</a>
+            </li>
+        
+            <li>
+                <a href="/go/%E9%94%99%E8%AF%AF%E5%A4%84%E7%90%86%E6%96%B9%E6%A1%88/">Go-错误(error)处理方案</a>
+            </li>
+        
+            <li>
+                <a href="/go/%E7%9B%B8%E5%AF%B9%E8%B7%AF%E5%BE%84%E9%97%AE%E9%A2%98/">Go相对路径问题</a>
+            </li>
+        
+            <li>
+                <a href="/go/gmp%E6%A8%A1%E5%9E%8B/">Go-GMP模型</a>
+            </li>
+        
+            <li>
+                <a href="/go/gin_validator/">gin_validator</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/tool/">Recent Tool</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/tool/vscode%E6%8A%98%E8%85%BE/">vscode折腾</a>
+            </li>
+        
+            <li>
+                <a href="/tool/linux-ubuntu%E4%BC%98%E5%8C%96/">Ubuntu开机优化</a>
+            </li>
+        
+            <li>
+                <a href="/tool/shell-ssh_script/">ssh常用脚本</a>
+            </li>
+        
+            <li>
+                <a href="/tool/mac-%E4%BC%98%E5%8C%96/">Mac优化</a>
+            </li>
+        
+            <li>
+                <a href="/tool/git-%E5%91%BD%E4%BB%A4%E5%A4%A7%E5%85%A8/">git命令大全</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/android/">Recent Android</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/android/%E5%85%A5%E9%97%A8/">逆向环境-杂</a>
+            </li>
+        
+            <li>
+                <a href="/android/frida%E6%95%99%E7%A8%8B/">frida教程</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/note/">Recent Note</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/note/rdis-%E7%BC%93%E5%AD%98%E7%A9%BF%E9%80%8F%E9%9B%AA%E5%B4%A9%E5%87%BB%E7%A9%BF%E7%9A%84%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95/">缓存穿透、雪崩、击穿的解决方法</a>
+            </li>
+        
+            <li>
+                <a href="/note/redis-%E5%8D%95%E7%BA%BF%E7%A8%8B%E7%9A%84redis%E4%B8%BA%E4%BB%80%E4%B9%88%E5%BF%AB/">单线程的redis为什么快</a>
+            </li>
+        
+            <li>
+                <a href="/note/redis-%E6%80%BB%E7%BB%93/">redis总结</a>
+            </li>
+        
+            <li>
+                <a href="/note/mysql-%E6%80%BB%E7%BB%93/">mysql总结</a>
+            </li>
+        
+            <li>
+                <a href="/note/java-httpclient%E4%BD%BF%E7%94%A8%E6%8A%80%E5%B7%A7/">HttpClient使用技巧</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+
+                <div class="side-tags">
+    <h2>Tags</h2>
+    <hr />
+
+    <ul>
+        
+    </ul>
+</div>
+
+            </div>
+        </main>
+        <footer class="footer">
+    <div class="footer-row">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+            
+        
+    </div>
+
+    
+    <script>
+        var _hmt = _hmt || [];
+        (function() {
+            var hm = document.createElement("script");
+            hm.src = "https://hm.baidu.com/hm.js?c7c71c25f37f41a6ca2ef0b894a383e3";
+            var s = document.getElementsByTagName("script")[0];
+            s.parentNode.insertBefore(hm, s);
+        })();
+    </script>
+    <script>
+        
+        const sidebar = document.querySelector('.toc');
+        const screenWidth = window.innerWidth;
+
+        
+        window.addEventListener('resize', () => {
+            const newScreenWidth = window.innerWidth;
+
+            
+            if (newScreenWidth >= 768) {
+                sidebar.style.left = '0';
+            } else {
+                sidebar.style.left = '-250px';
+            }
+        });
+
+        
+        if (screenWidth >= 768) {
+            sidebar.style.left = '0';
+        } else {
+            sidebar.style.left = '-250px';
+        }
+    </script>
+
+</footer>
+
+    </body>
+</html>
