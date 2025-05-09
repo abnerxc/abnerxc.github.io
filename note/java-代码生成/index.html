@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+<meta name="viewport" content="width=device-width,minimum-scale=1">
+
+
+
+
+<title>JAVA代码生成 | Abner的博客</title>
+<link rel="canonical" href="https://abnerxc.github.io/note/java-%E4%BB%A3%E7%A0%81%E7%94%9F%E6%88%90/">
+<meta property="og:type" content="article" />
+<meta property="og:title" content="JAVA代码生成 | Abner的博客" />
+<meta property="og:url" content="https://abnerxc.github.io/note/java-%E4%BB%A3%E7%A0%81%E7%94%9F%E6%88%90/" />
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/icofont/icofont.min.css" />
+<link rel="stylesheet" href="/css/syntax.css" />
+<link rel="stylesheet" href="/css/style.css" />
+<link rel="shortcut icon" href="/images/favicon.ico" type="image/x-icon" />
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3672527868545324" crossorigin="anonymous"></script>
+
+    </head>
+
+    <body>
+        <header class="header-wrapper">
+    <div class="header">
+        <a class="site-title" href="https://abnerxc.github.io/">Abner的博客</a>
+
+        <nav class="menu">
+            
+        </nav>
+    </div>
+</header>
+
+        <main class="main-wrapper">
+            <div class="main">
+                
+
+<section class="single">
+    <h1 class="title">JAVA代码生成</h1>
+
+    <div class="tip">
+        <time datetime="2021-01-25 22:07:58 &#43;0800 CST">2021/01/25</time>
+        <span class="split">·</span>
+        <span> 296 words </span>
+        <span class="split">·</span>
+        <span>
+            2 minutes to read
+        </span>
+    </div>
+
+
+
+
+
+
+    <div class="taxonomies">
+        
+        <div>
+            Categories:
+            
+                <a href="/categories/%E4%BB%A3%E7%A0%81">代码</a>
+            
+        </div>
+        
+
+        
+    </div>
+
+    <hr />
+
+    <div class="content">
+        <h1 id="依赖包版本">依赖包版本 <a href="#%e4%be%9d%e8%b5%96%e5%8c%85%e7%89%88%e6%9c%ac" class="anchor">🔗</a></h1><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-xml" data-lang="xml"><span style="display:flex;"><span><span style="color:#f92672">&lt;dependency&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&lt;groupId&gt;</span>com.baomidou<span style="color:#f92672">&lt;/groupId&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&lt;artifactId&gt;</span>mybatis-plus-generator<span style="color:#f92672">&lt;/artifactId&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&lt;version&gt;</span>3.5.3.1<span style="color:#f92672">&lt;/version&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&lt;scope&gt;</span>test<span style="color:#f92672">&lt;/scope&gt;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">&lt;/dependency&gt;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">&lt;dependency&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&lt;groupId&gt;</span>org.freemarker<span style="color:#f92672">&lt;/groupId&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&lt;artifactId&gt;</span>freemarker<span style="color:#f92672">&lt;/artifactId&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&lt;version&gt;</span>2.3.32<span style="color:#f92672">&lt;/version&gt;</span> <span style="color:#75715e">&lt;!-- or latest version --&gt;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">&lt;/dependency&gt;</span>
+</span></span></code></pre></div><h1 id="java代码生成">Java代码生成 <a href="#java%e4%bb%a3%e7%a0%81%e7%94%9f%e6%88%90" class="anchor">🔗</a></h1><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-Java" data-lang="Java"><span style="display:flex;"><span><span style="color:#f92672">import</span> com.baomidou.mybatisplus.generator.FastAutoGenerator;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> com.baomidou.mybatisplus.generator.config.OutputFile;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> com.baomidou.mybatisplus.generator.config.rules.DbColumnType;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> com.baomidou.mybatisplus.generator.engine.FreemarkerTemplateEngine;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> com.baomidou.mybatisplus.generator.config.builder.CustomFile;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> java.sql.Types;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> java.util.*;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">CodeGeneratorTest</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">main</span>(String<span style="color:#f92672">[]</span> args) {
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// 数据库配置</span>
+</span></span><span style="display:flex;"><span>        String url <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;jdbc:mysql://127.0.01:3306/test?useUnicode=true&amp;characterEncoding=UTF8&amp;useSSL=false&amp;serverTimezone=Asia/Shanghai&#34;</span>;
+</span></span><span style="display:flex;"><span>        String username <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;root&#34;</span>;
+</span></span><span style="display:flex;"><span>        String password <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;123456&#34;</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// 表名配置</span>
+</span></span><span style="display:flex;"><span>        String<span style="color:#f92672">[]</span> tableName <span style="color:#f92672">=</span> {<span style="color:#e6db74">&#34;sys_subject&#34;</span>};
+</span></span><span style="display:flex;"><span>        String<span style="color:#f92672">[]</span> tablePreFix <span style="color:#f92672">=</span> {<span style="color:#e6db74">&#34;sys_&#34;</span>, <span style="color:#e6db74">&#34;tpl_&#34;</span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// 项目配置</span>
+</span></span><span style="display:flex;"><span>        String projectName <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;com-server-demo-provider&#34;</span>;
+</span></span><span style="display:flex;"><span>        String basePkg <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;com.server.demo.provider&#34;</span>;
+</span></span><span style="display:flex;"><span>        String moduleName <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;subject&#34;</span>;
+</span></span><span style="display:flex;"><span>        String author <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;abner&#34;</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        String rootPath <span style="color:#f92672">=</span> System.<span style="color:#a6e22e">getProperty</span>(<span style="color:#e6db74">&#34;user.dir&#34;</span>);
+</span></span><span style="display:flex;"><span>        String mainPath <span style="color:#f92672">=</span> rootPath <span style="color:#f92672">+</span> <span style="color:#e6db74">&#34;/&#34;</span> <span style="color:#f92672">+</span> projectName <span style="color:#f92672">+</span> <span style="color:#e6db74">&#34;/src/main&#34;</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        FastAutoGenerator.<span style="color:#a6e22e">create</span>(url, username, password)
+</span></span><span style="display:flex;"><span>                .<span style="color:#a6e22e">globalConfig</span>(builder <span style="color:#f92672">-&gt;</span> {
+</span></span><span style="display:flex;"><span>                    builder.<span style="color:#a6e22e">author</span>(author)
+</span></span><span style="display:flex;"><span>                            .<span style="color:#a6e22e">fileOverride</span>()
+</span></span><span style="display:flex;"><span>                            .<span style="color:#a6e22e">outputDir</span>(mainPath <span style="color:#f92672">+</span> <span style="color:#e6db74">&#34;/java&#34;</span>);
+</span></span><span style="display:flex;"><span>                })
+</span></span><span style="display:flex;"><span>                .<span style="color:#a6e22e">dataSourceConfig</span>(builder <span style="color:#f92672">-&gt;</span> builder.<span style="color:#a6e22e">typeConvertHandler</span>((globalConfig, typeRegistry, metaInfo) <span style="color:#f92672">-&gt;</span> {
+</span></span><span style="display:flex;"><span>                    <span style="color:#66d9ef">int</span> typeCode <span style="color:#f92672">=</span> metaInfo.<span style="color:#a6e22e">getJdbcType</span>().<span style="color:#a6e22e">TYPE_CODE</span>;
+</span></span><span style="display:flex;"><span>                    <span style="color:#66d9ef">if</span> (typeCode <span style="color:#f92672">==</span> Types.<span style="color:#a6e22e">SMALLINT</span>) {
+</span></span><span style="display:flex;"><span>                        <span style="color:#66d9ef">return</span> DbColumnType.<span style="color:#a6e22e">INTEGER</span>;
+</span></span><span style="display:flex;"><span>                    }
+</span></span><span style="display:flex;"><span>                    <span style="color:#66d9ef">return</span> typeRegistry.<span style="color:#a6e22e">getColumnType</span>(metaInfo);
+</span></span><span style="display:flex;"><span>                }))
+</span></span><span style="display:flex;"><span>                .<span style="color:#a6e22e">packageConfig</span>(builder <span style="color:#f92672">-&gt;</span> {
+</span></span><span style="display:flex;"><span>                    builder.<span style="color:#a6e22e">parent</span>(basePkg)
+</span></span><span style="display:flex;"><span>                            .<span style="color:#a6e22e">moduleName</span>(moduleName)
+</span></span><span style="display:flex;"><span>                            .<span style="color:#a6e22e">entity</span>(<span style="color:#e6db74">&#34;model.entity&#34;</span>)  <span style="color:#75715e">// 实体类放在model包下</span>
+</span></span><span style="display:flex;"><span>                            .<span style="color:#a6e22e">pathInfo</span>(Collections.<span style="color:#a6e22e">singletonMap</span>(OutputFile.<span style="color:#a6e22e">xml</span>, mainPath <span style="color:#f92672">+</span> <span style="color:#e6db74">&#34;/mapper/&#34;</span> <span style="color:#f92672">+</span> moduleName));
+</span></span><span style="display:flex;"><span>                })
+</span></span><span style="display:flex;"><span>                .<span style="color:#a6e22e">strategyConfig</span>(builder <span style="color:#f92672">-&gt;</span> {
+</span></span><span style="display:flex;"><span>                    builder.<span style="color:#a6e22e">addInclude</span>(tableName)
+</span></span><span style="display:flex;"><span>                            .<span style="color:#a6e22e">addTablePrefix</span>(tablePreFix);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>                    <span style="color:#75715e">// 实体类配置</span>
+</span></span><span style="display:flex;"><span>                    builder.<span style="color:#a6e22e">entityBuilder</span>()
+</span></span><span style="display:flex;"><span>                            .<span style="color:#a6e22e">enableChainModel</span>()
+</span></span><span style="display:flex;"><span>                            .<span style="color:#a6e22e">enableLombok</span>()
+</span></span><span style="display:flex;"><span>                            .<span style="color:#a6e22e">disableSerialVersionUID</span>()
+</span></span><span style="display:flex;"><span>                            .<span style="color:#a6e22e">enableTableFieldAnnotation</span>();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>                    <span style="color:#75715e">// Mapper配置</span>
+</span></span><span style="display:flex;"><span>                    builder.<span style="color:#a6e22e">mapperBuilder</span>()
+</span></span><span style="display:flex;"><span>                            .<span style="color:#a6e22e">enableBaseColumnList</span>()
+</span></span><span style="display:flex;"><span>                            .<span style="color:#a6e22e">enableMapperAnnotation</span>();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>                    <span style="color:#75715e">// Service配置</span>
+</span></span><span style="display:flex;"><span>                    builder.<span style="color:#a6e22e">serviceBuilder</span>()
+</span></span><span style="display:flex;"><span>                            .<span style="color:#a6e22e">formatServiceFileName</span>(<span style="color:#e6db74">&#34;%sService&#34;</span>);
+</span></span><span style="display:flex;"><span>                })
+</span></span><span style="display:flex;"><span>                .<span style="color:#a6e22e">injectionConfig</span>(builder <span style="color:#f92672">-&gt;</span> {
+</span></span><span style="display:flex;"><span>                    Map<span style="color:#f92672">&lt;</span>String, Object<span style="color:#f92672">&gt;</span> customMap <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> HashMap<span style="color:#f92672">&lt;&gt;</span>();
+</span></span><span style="display:flex;"><span>                    <span style="color:#75715e">// 添加父包路径变量</span>
+</span></span><span style="display:flex;"><span>                    customMap.<span style="color:#a6e22e">put</span>(<span style="color:#e6db74">&#34;packageName&#34;</span>, basePkg <span style="color:#f92672">+</span> <span style="color:#e6db74">&#34;.&#34;</span> <span style="color:#f92672">+</span> moduleName);
+</span></span><span style="display:flex;"><span>                    customMap.<span style="color:#a6e22e">put</span>(<span style="color:#e6db74">&#34;dtoPackage&#34;</span>, <span style="color:#e6db74">&#34;model.dto&#34;</span>);
+</span></span><span style="display:flex;"><span>                    customMap.<span style="color:#a6e22e">put</span>(<span style="color:#e6db74">&#34;voPackage&#34;</span>, <span style="color:#e6db74">&#34;model.vo&#34;</span>);
+</span></span><span style="display:flex;"><span>                    customMap.<span style="color:#a6e22e">put</span>(<span style="color:#e6db74">&#34;convertPackage&#34;</span>, <span style="color:#e6db74">&#34;model.convert&#34;</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>                    builder.<span style="color:#a6e22e">customMap</span>(customMap)
+</span></span><span style="display:flex;"><span>                            <span style="color:#75715e">// DTO模板</span>
+</span></span><span style="display:flex;"><span>                            .<span style="color:#a6e22e">customFile</span>(<span style="color:#66d9ef">new</span> CustomFile.<span style="color:#a6e22e">Builder</span>()
+</span></span><span style="display:flex;"><span>                                    .<span style="color:#a6e22e">fileName</span>(<span style="color:#e6db74">&#34;Dto.java&#34;</span>)
+</span></span><span style="display:flex;"><span>                                    .<span style="color:#a6e22e">templatePath</span>(<span style="color:#e6db74">&#34;/templates/dto.java.ftl&#34;</span>)
+</span></span><span style="display:flex;"><span>                                    .<span style="color:#a6e22e">packageName</span>(<span style="color:#e6db74">&#34;model.dto&#34;</span>)
+</span></span><span style="display:flex;"><span>                                    .<span style="color:#a6e22e">build</span>())
+</span></span><span style="display:flex;"><span>                            <span style="color:#75715e">// VO模板</span>
+</span></span><span style="display:flex;"><span>                            .<span style="color:#a6e22e">customFile</span>(<span style="color:#66d9ef">new</span> CustomFile.<span style="color:#a6e22e">Builder</span>()
+</span></span><span style="display:flex;"><span>                                    .<span style="color:#a6e22e">fileName</span>(<span style="color:#e6db74">&#34;Vo.java&#34;</span>)
+</span></span><span style="display:flex;"><span>                                    .<span style="color:#a6e22e">templatePath</span>(<span style="color:#e6db74">&#34;/templates/vo.java.ftl&#34;</span>)
+</span></span><span style="display:flex;"><span>                                    .<span style="color:#a6e22e">packageName</span>(<span style="color:#e6db74">&#34;model.vo&#34;</span>)
+</span></span><span style="display:flex;"><span>                                    .<span style="color:#a6e22e">build</span>())
+</span></span><span style="display:flex;"><span>                            <span style="color:#75715e">// Convert模板</span>
+</span></span><span style="display:flex;"><span>                            .<span style="color:#a6e22e">customFile</span>(<span style="color:#66d9ef">new</span> CustomFile.<span style="color:#a6e22e">Builder</span>()
+</span></span><span style="display:flex;"><span>                                    .<span style="color:#a6e22e">fileName</span>(<span style="color:#e6db74">&#34;Convert.java&#34;</span>)
+</span></span><span style="display:flex;"><span>                                    .<span style="color:#a6e22e">templatePath</span>(<span style="color:#e6db74">&#34;/templates/convert.java.ftl&#34;</span>)
+</span></span><span style="display:flex;"><span>                                    .<span style="color:#a6e22e">packageName</span>(<span style="color:#e6db74">&#34;model.convert&#34;</span>)
+</span></span><span style="display:flex;"><span>                                    .<span style="color:#a6e22e">build</span>());
+</span></span><span style="display:flex;"><span>                })
+</span></span><span style="display:flex;"><span>                .<span style="color:#a6e22e">templateEngine</span>(<span style="color:#66d9ef">new</span> FreemarkerTemplateEngine())
+</span></span><span style="display:flex;"><span>                .<span style="color:#a6e22e">execute</span>();
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><h1 id="freemarker模板">Freemarker模板 <a href="#freemarker%e6%a8%a1%e6%9d%bf" class="anchor">🔗</a></h1><p>convert.java.ftl</p>
+<pre tabindex="0"><code class="language-ftl" data-lang="ftl">package ${packageName}.${convertPackage};
+
+import ${package.Entity}.${entity};
+import ${package.Entity?replace(&#34;entity&#34;,&#34;dto&#34;)}.${entity}Dto;
+import ${package.Entity?replace(&#34;entity&#34;,&#34;vo&#34;)}.${entity}Vo;
+import org.mapstruct.Mapper;
+import org.mapstruct.factory.Mappers;
+import java.util.List;
+
+@Mapper(componentModel = &#34;spring&#34;)
+public interface ${entity}Convert {
+
+${entity}Convert INSTANCE = Mappers.getMapper(${entity}Convert.class);
+
+${entity}Dto entityToDto(${entity} entity);
+
+${entity} dtoToEntity(${entity}Dto dto);
+
+${entity} voToEntity(${entity}Vo vo);
+
+List&lt;${entity}Dto&gt; entityListToDto(List&lt;${entity}&gt; entities);
+}
+</code></pre><p>dto.java.ftl</p>
+<pre tabindex="0"><code class="language-ftl" data-lang="ftl">package ${packageName}.${dtoPackage};
+
+    import lombok.Data;
+    import lombok.experimental.Accessors;
+
+    @Data
+    @Accessors(chain = true)
+    public class ${table.entityName}Dto {
+
+    }
+</code></pre><p>vo.java.ftl</p>
+<pre tabindex="0"><code class="language-ftl" data-lang="ftl">package ${packageName}.${voPackage};
+
+    import lombok.Data;
+    import lombok.experimental.Accessors;
+
+    @Data
+    @Accessors(chain = true)
+    public class ${table.entityName}Vo {
+
+    }
+</code></pre>
+    </div>
+
+    
+</section>
+
+
+            </div>
+            <div class="side">
+                <div class="side-categories">
+    <h2>Categories</h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/categories/ai">ai(3)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/go">go(21)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E4%BB%A3%E7%A0%81">代码(2)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E5%B7%A5%E5%85%B7">工具(7)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E9%80%86%E5%90%91">逆向(2)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E9%9D%A2%E8%AF%95">面试(4)</a>
+            </li>
+        
+    </ul>
+</div>
+
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/llm/">Recent Llm</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/llm/transformers-%E5%85%A5%E9%97%A8%E7%AF%87/">Transformers-入门篇</a>
+            </li>
+        
+            <li>
+                <a href="/llm/%E6%A8%A1%E5%9E%8Bvllm%E9%83%A8%E7%BD%B2/">AI模型VLLM部署</a>
+            </li>
+        
+            <li>
+                <a href="/llm/%E6%A8%A1%E5%9E%8B%E5%BE%AE%E8%B0%83/">AI模型微调</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/go/">Recent Go</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/go/%E9%A1%B9%E7%9B%AE%E6%89%93%E5%8C%85%E5%8F%91%E5%B8%83/">基于Scratch创建最小且安全的golang docker镜像</a>
+            </li>
+        
+            <li>
+                <a href="/go/%E9%94%99%E8%AF%AF%E5%A4%84%E7%90%86%E6%96%B9%E6%A1%88/">Go-错误(error)处理方案</a>
+            </li>
+        
+            <li>
+                <a href="/go/%E7%9B%B8%E5%AF%B9%E8%B7%AF%E5%BE%84%E9%97%AE%E9%A2%98/">Go相对路径问题</a>
+            </li>
+        
+            <li>
+                <a href="/go/gmp%E6%A8%A1%E5%9E%8B/">Go-GMP模型</a>
+            </li>
+        
+            <li>
+                <a href="/go/gin_validator/">gin_validator</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/tool/">Recent Tool</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/tool/vscode%E6%8A%98%E8%85%BE/">vscode折腾</a>
+            </li>
+        
+            <li>
+                <a href="/tool/linux-ubuntu%E4%BC%98%E5%8C%96/">Ubuntu开机优化</a>
+            </li>
+        
+            <li>
+                <a href="/tool/shell-ssh_script/">ssh常用脚本</a>
+            </li>
+        
+            <li>
+                <a href="/tool/mac-%E4%BC%98%E5%8C%96/">Mac优化</a>
+            </li>
+        
+            <li>
+                <a href="/tool/git-%E5%91%BD%E4%BB%A4%E5%A4%A7%E5%85%A8/">git命令大全</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/android/">Recent Android</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/android/%E5%85%A5%E9%97%A8/">逆向环境-杂</a>
+            </li>
+        
+            <li>
+                <a href="/android/frida%E6%95%99%E7%A8%8B/">frida教程</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/note/">Recent Note</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/note/rdis-%E7%BC%93%E5%AD%98%E7%A9%BF%E9%80%8F%E9%9B%AA%E5%B4%A9%E5%87%BB%E7%A9%BF%E7%9A%84%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95/">缓存穿透、雪崩、击穿的解决方法</a>
+            </li>
+        
+            <li>
+                <a href="/note/redis-%E5%8D%95%E7%BA%BF%E7%A8%8B%E7%9A%84redis%E4%B8%BA%E4%BB%80%E4%B9%88%E5%BF%AB/">单线程的redis为什么快</a>
+            </li>
+        
+            <li>
+                <a href="/note/redis-%E6%80%BB%E7%BB%93/">redis总结</a>
+            </li>
+        
+            <li>
+                <a href="/note/mysql-%E6%80%BB%E7%BB%93/">mysql总结</a>
+            </li>
+        
+            <li>
+                <a href="/note/java-%E4%BB%A3%E7%A0%81%E7%94%9F%E6%88%90/">JAVA代码生成</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+
+                <div class="side-tags">
+    <h2>Tags</h2>
+    <hr />
+
+    <ul>
+        
+    </ul>
+</div>
+
+            </div>
+        </main>
+        <footer class="footer">
+    <div class="footer-row">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+            
+        
+    </div>
+
+    
+    <script>
+        var _hmt = _hmt || [];
+        (function() {
+            var hm = document.createElement("script");
+            hm.src = "https://hm.baidu.com/hm.js?c7c71c25f37f41a6ca2ef0b894a383e3";
+            var s = document.getElementsByTagName("script")[0];
+            s.parentNode.insertBefore(hm, s);
+        })();
+    </script>
+    <script>
+        
+        const sidebar = document.querySelector('.toc');
+        const screenWidth = window.innerWidth;
+
+        
+        window.addEventListener('resize', () => {
+            const newScreenWidth = window.innerWidth;
+
+            
+            if (newScreenWidth >= 768) {
+                sidebar.style.left = '0';
+            } else {
+                sidebar.style.left = '-250px';
+            }
+        });
+
+        
+        if (screenWidth >= 768) {
+            sidebar.style.left = '0';
+        } else {
+            sidebar.style.left = '-250px';
+        }
+    </script>
+
+</footer>
+
+    </body>
+</html>
