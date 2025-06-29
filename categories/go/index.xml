@@ -1,0 +1,4066 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Go on Abner的博客</title>
+    <link>https://abnerxc.github.io/categories/go/</link>
+    <description>Recent content in Go on Abner的博客</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-CN</language>
+    <lastBuildDate>Mon, 12 Sep 2022 18:35:11 +0800</lastBuildDate><atom:link href="https://abnerxc.github.io/categories/go/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>基于Scratch创建最小且安全的golang docker镜像</title>
+      <link>https://abnerxc.github.io/go/%E9%A1%B9%E7%9B%AE%E6%89%93%E5%8C%85%E5%8F%91%E5%B8%83/</link>
+      <pubDate>Mon, 12 Sep 2022 18:35:11 +0800</pubDate>
+      
+      <guid>https://abnerxc.github.io/go/%E9%A1%B9%E7%9B%AE%E6%89%93%E5%8C%85%E5%8F%91%E5%B8%83/</guid>
+      <description>&lt;h1 id=&#34;golang打包镜像对比&#34;&gt;golang打包镜像对比 &lt;a href=&#34;#golang%e6%89%93%e5%8c%85%e9%95%9c%e5%83%8f%e5%af%b9%e6%af%94&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;从docker官方下载了镜像以后，发现一个运行go的环境需要779M,我得项目才3~4M，这是不可以接受的&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;$ docker image list
+golang    latest       1c1309ff8e0d        10 days ago         779MB
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;就算使用alpine镜像也有269M&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;$ docker image list
+golang     alpine      bbab7aea1231        7 weeks ago         269MB
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;于是打算自己构建golang运行的最小镜像.&lt;/p&gt;
+&lt;h1 id=&#34;docker的multi-stage-builds&#34;&gt;docker的Multi-stage builds &lt;a href=&#34;#docker%e7%9a%84multi-stage-builds&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;多阶段构建是需要Docker 17.05或更高版本的新功能。在此之前，我们将看到docker scratch image，Zero Bytes Image。非常适合嵌入我们的静态二进制文件。&lt;/p&gt;
+&lt;p&gt;先上代码,例子说明&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;FROM        golang:alpine AS builder
+MAINTAINER  Chen Xu &amp;lt;abner510@126.com&amp;gt;
+RUN         apk update &amp;amp;&amp;amp; apk add --no-cache git ca-certificates tzdata &amp;amp;&amp;amp; update-ca-certificates &amp;amp;&amp;amp; adduser -D -g &amp;#39;&amp;#39; appuser
+ENV         GOPROXY https://mirrors.aliyun.com/goproxy/
+ENV         GO111MODULE on
+WORKDIR     /go/cache
+ADD         go.mod .
+ADD         go.sum .
+RUN         go mod download
+WORKDIR     /go/src/ginx
+ADD        . /go/src/ginx
+RUN         CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -installsuffix cgo -ldflags=&amp;#34;-w -s&amp;#34; -o server
+
+#容器构建
+FROM        scratch AS prod
+COPY        --from=builder /etc/passwd /etc/passwd
+COPY        --from=builder /usr/share/zoneinfo /usr/share/zoneinfo
+COPY        --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+COPY        --from=builder /go/src/ginx/config /app/config
+COPY        --from=builder /go/src/ginx/server /app
+USER        appuser
+EXPOSE      9000
+CMD         [&amp;#34;/app/server&amp;#34;, &amp;#34;-e=prod&amp;#34;]
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;代码示例说明&#34;&gt;代码示例说明 &lt;a href=&#34;#%e4%bb%a3%e7%a0%81%e7%a4%ba%e4%be%8b%e8%af%b4%e6%98%8e&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;h3 id=&#34;添加ssl证书支持https和时区&#34;&gt;添加SSL证书支持HTTPS和时区 &lt;a href=&#34;#%e6%b7%bb%e5%8a%a0ssl%e8%af%81%e4%b9%a6%e6%94%af%e6%8c%81https%e5%92%8c%e6%97%b6%e5%8c%ba&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h3&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;apk add --no-cache git ca-certificates tzdata &amp;amp;&amp;amp; update-ca-certificates
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;添加运行golang的用户&#34;&gt;添加运行golang的用户 &lt;a href=&#34;#%e6%b7%bb%e5%8a%a0%e8%bf%90%e8%a1%8cgolang%e7%9a%84%e7%94%a8%e6%88%b7&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h3&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;adduser -D -g &amp;#39;&amp;#39; appuser
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;go-mod模式项目包管理加快构建速度&#34;&gt;go mod模式项目包管理，加快构建速度 &lt;a href=&#34;#go-mod%e6%a8%a1%e5%bc%8f%e9%a1%b9%e7%9b%ae%e5%8c%85%e7%ae%a1%e7%90%86%e5%8a%a0%e5%bf%ab%e6%9e%84%e5%bb%ba%e9%80%9f%e5%ba%a6&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h3&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;ENV         GOPROXY https://goproxy.io   #设置代理，国内的墙你懂的
+ENV         GO111MODULE on  #开启go mod 模式  ，老版本GO111MODULE=auto 默认是自动
+WORKDIR     /go/cache  # 设置包的下载目录
+ADD         go.mod .
+ADD         go.sum .
+RUN         go mod download
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;img src=&#34;https://abnerxc.github.io/img/go-alilog.jpeg&#34; alt=&#34;&#34;&gt;&lt;/p&gt;
+&lt;h3 id=&#34;cgo编译使用&#34;&gt;CGO编译使用 &lt;a href=&#34;#cgo%e7%bc%96%e8%af%91%e4%bd%bf%e7%94%a8&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h3&gt;&lt;p&gt;由于scratch是空镜像，&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -installsuffix cgo -ldflags=&amp;#34;-w -s&amp;#34; -o server
+&lt;/code&gt;&lt;/pre&gt;&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;CGO_ENABLED=0&lt;/code&gt; ，CGO_ENABLED 是因为 交叉编译不支持 CGO，我们这里禁用它&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;-a -installsuffix cgo&lt;/code&gt; , &lt;code&gt;-a&lt;/code&gt;:强制重新编译，简单来说，就是不利用缓存或已编译好的部分文件，直接所有包都是最新的代码重新编译和关联; &lt;code&gt;installsuffix&lt;/code&gt;:在软件包安装的目录中增加后缀标识，以保持输出与默认版本分开&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;制作golang运行的容器&#34;&gt;制作golang运行的容器 &lt;a href=&#34;#%e5%88%b6%e4%bd%9cgolang%e8%bf%90%e8%a1%8c%e7%9a%84%e5%ae%b9%e5%99%a8&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h3&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;FROM        scratch AS prod #镜像版本
+COPY        --from=builder /etc/passwd /etc/passwd  #这里需要使用appuer账号信息
+COPY        --from=builder /usr/share/zoneinfo /usr/share/zoneinfo #时区
+COPY        --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ #SSL证书文件
+COPY        --from=builder /go/src/ginx/config /app/config #应用配置文件
+COPY        --from=builder /go/src/ginx/server /app #应用二进制文件
+USER        appuser #运行用户
+EXPOSE      9000 #暴露端口
+CMD         [&amp;#34;/app/server&amp;#34;, &amp;#34;-e=prod&amp;#34;] #运行应用，传入运行参数
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;阿里云加速翻墙速度&#34;&gt;阿里云加速翻墙速度 &lt;a href=&#34;#%e9%98%bf%e9%87%8c%e4%ba%91%e5%8a%a0%e9%80%9f%e7%bf%bb%e5%a2%99%e9%80%9f%e5%ba%a6&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h3&gt;&lt;p&gt;1、创建镜像仓库
+&lt;img src=&#34;https://abnerxc.github.io/img/go-aliset1.jpeg&#34; alt=&#34;&#34;&gt;
+2、选择仓库&lt;code&gt;管理&lt;/code&gt;，进行配置仓库
+3、选择git仓库版本，这里本人是放在github上，所以选择github，进行授权，选择自己的仓库和项目，配置如下具体dockerfile文件根据自己仓库路径配置
+&lt;img src=&#34;https://abnerxc.github.io/img/go-aliset2.jpeg&#34; alt=&#34;&#34;&gt;
+4、选择构建即可&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Go-错误(error)处理方案</title>
+      <link>https://abnerxc.github.io/go/%E9%94%99%E8%AF%AF%E5%A4%84%E7%90%86%E6%96%B9%E6%A1%88/</link>
+      <pubDate>Thu, 21 Jul 2022 18:35:11 +0800</pubDate>
+      
+      <guid>https://abnerxc.github.io/go/%E9%94%99%E8%AF%AF%E5%A4%84%E7%90%86%E6%96%B9%E6%A1%88/</guid>
+      <description>&lt;h1 id=&#34;error接口&#34;&gt;error接口 &lt;a href=&#34;#error%e6%8e%a5%e5%8f%a3&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;&lt;code&gt;error&lt;/code&gt;其实是一个接口，内置的，看下他的定义&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;// The error built-in interface type is the conventional interface for
+// representing an error condition, with the nil value representing no error.
+type error interface {
+	Error() string
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;它只有一个方法 &lt;code&gt;Error&lt;/code&gt;，只要实现了这个方法，就是实现了&lt;code&gt;error&lt;/code&gt;。现在我们自己定义一个错误试试。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type fileError struct {
+}
+
+func (fe *fileError) Error() string {
+	return &amp;#34;文件错误&amp;#34;
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;自定义-error&#34;&gt;自定义 error &lt;a href=&#34;#%e8%87%aa%e5%ae%9a%e4%b9%89-error&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;自定义了一个&lt;code&gt;fileError&lt;/code&gt;类型，实现了&lt;code&gt;error&lt;/code&gt;接口。现在测试下看看效果。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func main() {
+	conent, err := openFile()
+	if err != nil {
+		fmt.Println(err)
+	} else {
+		fmt.Println(string(conent))
+	}
+}
+
+//只是模拟一个错误
+func openFile() ([]byte, error) {
+	return nil, &amp;amp;fileError{}
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;运行模拟的代码，可以看到&lt;code&gt;文件错误&lt;/code&gt;的通知。&lt;/p&gt;
+&lt;p&gt;在实际的使用过程中，我们可能遇到很多错误，他们的区别是错误信息不一样，一种做法是每种错误都类似上面一样定义一个错误类型，但是这样太麻烦了。我们发现&lt;code&gt;Error&lt;/code&gt;返回的其实是个字符串，我们可以修改下，让这个字符串可以设置就可以了。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type fileError struct {
+	s string
+}
+
+func (fe *fileError) Error() string {
+	return fe.s
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;这样改造后，我们就可以在声明&lt;code&gt;fileError&lt;/code&gt;的时候，设置好要提示的错误文字，就可以满足我们不同的需要了。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;//只是模拟一个错误
+func openFile() ([]byte, error) {
+	return nil, &amp;amp;fileError{&amp;#34;文件错误，自定义&amp;#34;}
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;修改fileError的名字，再创建一个辅助函数，便于我们创建不同的错误类型。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;//blog:www.flysnow.org
+//wechat:flysnow_org
+func New(text string) error {
+	return &amp;amp;errorString{text}
+}
+
+type errorString struct {
+	s string
+}
+
+func (e *errorString) Error() string {
+	return e.s
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;可以通过&lt;code&gt;New&lt;/code&gt;函数，辅助我们创建不同的错误了，这其实就是我们经常用到的&lt;code&gt;errors.New&lt;/code&gt;函数，被我们一步步剖析演化而来&lt;/p&gt;
+&lt;p&gt;但是上面的方案只是解决了文案提示的错误自定义，能否像PHP那样指定到错误的文件行数，具体是哪一个方法错误呢&lt;/p&gt;
+&lt;h1 id=&#34;推荐的方案&#34;&gt;推荐的方案 &lt;a href=&#34;#%e6%8e%a8%e8%8d%90%e7%9a%84%e6%96%b9%e6%a1%88&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;因为Go语言提供的错误太简单了，以至于简单的我们无法更好的处理问题，甚至不能为我们处理错误，提供更有用的信息，所以诞生了很多对错误处理的库，&lt;code&gt;github.com/pkg/errors&lt;/code&gt;是比较简洁的一样，并且功能非常强大，受到了大量开发者的欢迎，使用者很多。&lt;/p&gt;
+&lt;p&gt;它的使用非常简单，如果我们要新生成一个错误，可以使用&lt;code&gt;New&lt;/code&gt;函数,生成的错误，自带调用堆栈信息。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func New(message string) error
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;如果有一个现成的&lt;code&gt;error&lt;/code&gt;，我们需要对他进行再次包装处理，这时候有三个函数可以选择。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;//只附加新的信息
+func WithMessage(err error, message string) error
+
+//只附加调用堆栈信息
+func WithStack(err error) error
+
+//同时附加堆栈和信息
+func Wrap(err error, message string) error
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;其实上面的包装，很类似于Java的异常包装，被包装的error，其实就是Cause,在前面的章节提到错误的根本原因，就是这个Cause。所以这个错误处理库为我们提供了Cause函数让我们可以获得最根本的错误原因。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func Cause(err error) error {
+	type causer interface {
+		Cause() error
+	}
+
+	for err != nil {
+		cause, ok := err.(causer)
+		if !ok {
+			break
+		}
+		err = cause.Cause()
+	}
+	return err
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;使用&lt;code&gt;for&lt;/code&gt;循环一直找到最根本（最底层）的那个&lt;code&gt;error&lt;/code&gt;。&lt;/p&gt;
+&lt;p&gt;以上的错误我们都包装好了，也收集好了，那么怎么把他们里面存储的堆栈、错误原因等这些信息打印出来呢？其实，这个错误处理库的错误类型，都实现了&lt;code&gt;Formatter&lt;/code&gt;接口，我们可以通过&lt;code&gt;fmt.Printf&lt;/code&gt;函数输出对应的错误信息。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;%s,%v //功能一样，输出错误信息，不包含堆栈
+%q //输出的错误信息带引号，不包含堆栈
+%+v //输出错误信息和堆栈
+&lt;/code&gt;&lt;/pre&gt;</description>
+    </item>
+    
+    <item>
+      <title>Go相对路径问题</title>
+      <link>https://abnerxc.github.io/go/%E7%9B%B8%E5%AF%B9%E8%B7%AF%E5%BE%84%E9%97%AE%E9%A2%98/</link>
+      <pubDate>Tue, 03 May 2022 18:35:11 +0800</pubDate>
+      
+      <guid>https://abnerxc.github.io/go/%E7%9B%B8%E5%AF%B9%E8%B7%AF%E5%BE%84%E9%97%AE%E9%A2%98/</guid>
+      <description>&lt;h2 id=&#34;问题&#34;&gt;问题 &lt;a href=&#34;#%e9%97%ae%e9%a2%98&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;1、 go run 我们上移目录层级，到 $GOPATH/src 下，执行 go run gin-blog/main.go&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;[$]# go run gin-blog/main.go
+Fail to parse &amp;#39;conf/app.yam&amp;#39;: open conf/app.ini: no such file or directory
+exit status 1
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;2、 go build，执行 ./gin-blog/main&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;[$]# ./gin-blog/main
+ Fail to parse &amp;#39;conf/app.ini&amp;#39;: open conf/app.ini: no such file or directory
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;测试&#34;&gt;测试 &lt;a href=&#34;#%e6%b5%8b%e8%af%95&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;编写获取当前路径的方法&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;import (
+	&amp;#34;path/filepath&amp;#34;
+	&amp;#34;os&amp;#34;
+	&amp;#34;os/exec&amp;#34;
+	&amp;#34;string&amp;#34;
+)
+
+func GetAppPath() string {
+    file, _ := exec.LookPath(os.Args[0])
+    path, _ := filepath.Abs(file)
+    index := strings.LastIndex(path, string(os.PathSeparator))
+
+    return path[:index]
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;执行&lt;code&gt;go run&lt;/code&gt; 得到&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;$ go run main.go
+C:\Users\abner（~1\AppData\Local\Temp\go-build536365654\b001\exe
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;剖析&#34;&gt;剖析 &lt;a href=&#34;#%e5%89%96%e6%9e%90&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;我们聚焦在 &lt;code&gt;go run&lt;/code&gt; 的输出结果上，发现它是一个临时文件的地址，这是为什么呢？&lt;/p&gt;
+&lt;p&gt;在go help run中，我们可以看到&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;A Go source file is defined to be a file ending in a literal &amp;#34;.go&amp;#34; suffix.
+也就是 go run 执行时会将文件放到 /tmp/go-build... 目录下，编译并运行
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;因此&lt;code&gt;go run main.go&lt;/code&gt;出现/tmp/go-build536365654/b001/exe结果也不奇怪了，因为它已经跑到临时目录下去执行可执行文件了&lt;/p&gt;
+&lt;p&gt;这就已经很清楚了，那么我们想想，会出现哪些问题呢&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;依赖相对路径的文件，出现路径出错的问题&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;go run&lt;/code&gt; 和 &lt;code&gt;go build&lt;/code&gt; 不一样，一个到临时目录下执行，一个可手动在编译后的目录下执行，路径的处理方式会不同&lt;/li&gt;
+&lt;li&gt;不断go run，不断产生新的临时文件
+这其实就是根本原因了，因为 go run 和 go build 的编译文件执行路径并不同，执行的层级也有可能不一样，自然而然就出现各种读取不到的奇怪问题了&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;解决方案&#34;&gt;解决方案 &lt;a href=&#34;#%e8%a7%a3%e5%86%b3%e6%96%b9%e6%a1%88&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;一、获取编译后可执行文件路径
+1.	将配置文件的相对路径与GetAppPath()的结果相拼接，可解决go build main.go的可执行文件跨目录执行的问题（如：./src/gin-blog/main）
+2.	通过传递参数指定绝对路径，可解决go run的问题
+二、增加os.Getwd()进行多层判断
+参见 &lt;a href=&#34;https://github.com/astaxie/beego/blob/develop/config/config.go&#34;&gt;beego&lt;/a&gt; 读取 app.conf 的代码&lt;/p&gt;
+&lt;p&gt;该写法可兼容 go build 和在项目根目录执行 &lt;code&gt;go run&lt;/code&gt; ，但是若跨目录执行 &lt;code&gt;go run&lt;/code&gt; 就不行
+三、配置全局系统变量
+我们可以通过os.Getenv来获取系统全局变量，然后与相对路径进行拼接&lt;/p&gt;
+&lt;p&gt;1、 设置项目工作区&lt;/p&gt;
+&lt;p&gt;简单来说，就是设置项目（应用）的工作路径，然后与配置文件、日志文件等相对路径进行拼接，达到相对的绝对路径来保证路径一致&lt;/p&gt;
+&lt;p&gt;参见 gogs 读取GOGS_WORK_DIR进行拼接的代码&lt;/p&gt;
+&lt;p&gt;2、 利用系统自带变量&lt;/p&gt;
+&lt;p&gt;简单来说就是通过系统自带的全局变量，例如$HOME等，将配置文件存放在$HOME/conf或/etc/conf下&lt;/p&gt;
+&lt;p&gt;这样子就能更加固定的存放配置文件，不需要额外去设置一个环境变量&lt;/p&gt;
+&lt;h2 id=&#34;拓展&#34;&gt;拓展 &lt;a href=&#34;#%e6%8b%93%e5%b1%95&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;&lt;code&gt;go test&lt;/code&gt; 在一些场景下也会遇到路径问题，因为&lt;code&gt;go test&lt;/code&gt;只能够在当前目录执行，所以在执行测试用例的时候，你的执行目录已经是测试目录了&lt;/p&gt;
+&lt;p&gt;需要注意的是，如果采用获取外部参数的办法，用 os.args 时，go test -args 和 go run、go build 会有命令行参数位置的不一致问题&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>gin_validator</title>
+      <link>https://abnerxc.github.io/go/gin_validator/</link>
+      <pubDate>Sun, 13 Jun 2021 18:35:11 +0800</pubDate>
+      
+      <guid>https://abnerxc.github.io/go/gin_validator/</guid>
+      <description>&lt;h1 id=&#34;概述&#34;&gt;概述 &lt;a href=&#34;#%e6%a6%82%e8%bf%b0&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;在接口开发经常会遇到一个问题是后端需要写大量的繁琐代码进行数据校验，所以就想着有没有像前端校验一样写规则进行匹配校验，然后就发现了validator包，一个比较强大的校验工具包下面是一些学习总结，详细内容可以查看&lt;a href=&#34;https://github.com/go-playground/validator&#34;&gt;validator&lt;/a&gt;
+包下载：go get github.com/go-playground/validator/v10&lt;/p&gt;
+&lt;h1 id=&#34;操作符说明&#34;&gt;操作符说明 &lt;a href=&#34;#%e6%93%8d%e4%bd%9c%e7%ac%a6%e8%af%b4%e6%98%8e&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;table&gt;
+  &lt;thead&gt;
+      &lt;tr&gt;
+          &lt;th&gt;标记&lt;/th&gt;
+          &lt;th&gt;标记说明&lt;/th&gt;
+      &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+      &lt;tr&gt;
+          &lt;td&gt;,&lt;/td&gt;
+          &lt;td&gt;多操作符分割&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;|&lt;/td&gt;
+          &lt;td&gt;或操作符&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;-&lt;/td&gt;
+          &lt;td&gt;跳过验证字段&lt;/td&gt;
+      &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+&lt;h1 id=&#34;常用标记说明&#34;&gt;常用标记说明 &lt;a href=&#34;#%e5%b8%b8%e7%94%a8%e6%a0%87%e8%ae%b0%e8%af%b4%e6%98%8e&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;table&gt;
+  &lt;thead&gt;
+      &lt;tr&gt;
+          &lt;th&gt;标记&lt;/th&gt;
+          &lt;th&gt;标记说明&lt;/th&gt;
+          &lt;th&gt;例&lt;/th&gt;
+      &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+      &lt;tr&gt;
+          &lt;td&gt;required&lt;/td&gt;
+          &lt;td&gt;必填&lt;/td&gt;
+          &lt;td&gt;Field或Structvalidate:&amp;ldquo;required&amp;rdquo;,如果int,0作为特殊可通过*int判断&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;omitempty&lt;/td&gt;
+          &lt;td&gt;空时忽略&lt;/td&gt;
+          &lt;td&gt;Field或Structvalidate:&amp;ldquo;omitempty&amp;rdquo;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;len&lt;/td&gt;
+          &lt;td&gt;长度&lt;/td&gt;
+          &lt;td&gt;Fieldvalidate:&amp;ldquo;len=0&amp;rdquo;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;eq&lt;/td&gt;
+          &lt;td&gt;等于&lt;/td&gt;
+          &lt;td&gt;Fieldvalidate:&amp;ldquo;eq=0&amp;rdquo;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;gt&lt;/td&gt;
+          &lt;td&gt;大于&lt;/td&gt;
+          &lt;td&gt;Fieldvalidate:&amp;ldquo;gt=0&amp;rdquo;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;gte&lt;/td&gt;
+          &lt;td&gt;大于等于&lt;/td&gt;
+          &lt;td&gt;Fieldvalidate:&amp;ldquo;gte=0&amp;rdquo;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;lt&lt;/td&gt;
+          &lt;td&gt;小于&lt;/td&gt;
+          &lt;td&gt;Fieldvalidate:&amp;ldquo;lt=0&amp;rdquo;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;lte&lt;/td&gt;
+          &lt;td&gt;小于等于&lt;/td&gt;
+          &lt;td&gt;Fieldvalidate:&amp;ldquo;lte=0&amp;rdquo;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;eqfield&lt;/td&gt;
+          &lt;td&gt;同一结构体字段相等&lt;/td&gt;
+          &lt;td&gt;Fieldvalidate:&amp;ldquo;eqfield=Field2&amp;rdquo;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;nefield&lt;/td&gt;
+          &lt;td&gt;同一结构体字段不相等&lt;/td&gt;
+          &lt;td&gt;Fieldvalidate:&amp;ldquo;nefield=Field2&amp;rdquo;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;gtfield&lt;/td&gt;
+          &lt;td&gt;大于同一结构体字段&lt;/td&gt;
+          &lt;td&gt;Fieldvalidate:&amp;ldquo;gtfield=Field2&amp;rdquo;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;gtefield&lt;/td&gt;
+          &lt;td&gt;大于等于同一结构体字段&lt;/td&gt;
+          &lt;td&gt;Fieldvalidate:&amp;ldquo;gtefield=Field2&amp;rdquo;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;ltfield&lt;/td&gt;
+          &lt;td&gt;小于同一结构体字段&lt;/td&gt;
+          &lt;td&gt;Fieldvalidate:&amp;ldquo;ltfield=Field2&amp;rdquo;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;ltefield&lt;/td&gt;
+          &lt;td&gt;小于等于同一结构体字段&lt;/td&gt;
+          &lt;td&gt;Fieldvalidate:&amp;ldquo;ltefield=Field2&amp;rdquo;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;eqcsfield&lt;/td&gt;
+          &lt;td&gt;跨不同结构体字段相等&lt;/td&gt;
+          &lt;td&gt;Struct1.Fieldvalidate:&amp;ldquo;eqcsfield=Struct2.Field2&amp;rdquo;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;necsfield&lt;/td&gt;
+          &lt;td&gt;跨不同结构体字段不相等&lt;/td&gt;
+          &lt;td&gt;Struct1.Fieldvalidate:&amp;ldquo;necsfield=Struct2.Field2&amp;rdquo;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;gtcsfield&lt;/td&gt;
+          &lt;td&gt;大于跨不同结构体字段&lt;/td&gt;
+          &lt;td&gt;Struct1.Fieldvalidate:&amp;ldquo;gtcsfield=Struct2.Field2&amp;rdquo;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;gtecsfield&lt;/td&gt;
+          &lt;td&gt;大于等于跨不同结构体字段&lt;/td&gt;
+          &lt;td&gt;Struct1.Fieldvalidate:&amp;ldquo;gtecsfield=Struct2.Field2&amp;rdquo;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;ltcsfield&lt;/td&gt;
+          &lt;td&gt;小于跨不同结构体字段&lt;/td&gt;
+          &lt;td&gt;Struct1.Fieldvalidate:&amp;ldquo;ltcsfield=Struct2.Field2&amp;rdquo;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;ltecsfield&lt;/td&gt;
+          &lt;td&gt;小于等于跨不同结构体字段&lt;/td&gt;
+          &lt;td&gt;Struct1.Fieldvalidate:&amp;ldquo;ltecsfield=Struct2.Field2&amp;rdquo;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;min&lt;/td&gt;
+          &lt;td&gt;最大值&lt;/td&gt;
+          &lt;td&gt;Fieldvalidate:&amp;ldquo;min=1&amp;rdquo;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;max&lt;/td&gt;
+          &lt;td&gt;最小值&lt;/td&gt;
+          &lt;td&gt;Fieldvalidate:&amp;ldquo;max=2&amp;rdquo;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;structonly&lt;/td&gt;
+          &lt;td&gt;仅验证结构体，不验证任何结构体字段&lt;/td&gt;
+          &lt;td&gt;Structvalidate:&amp;ldquo;structonly&amp;rdquo;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;nostructlevel&lt;/td&gt;
+          &lt;td&gt;不运行任何结构级别的验证&lt;/td&gt;
+          &lt;td&gt;Structvalidate:&amp;ldquo;nostructlevel&amp;rdquo;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;dive&lt;/td&gt;
+          &lt;td&gt;向下延伸验证，多层向下需要多个dive标记&lt;/td&gt;
+          &lt;td&gt;[][]stringvalidate:&amp;ldquo;gt=0,dive,len=1,dive,required&amp;rdquo;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;diveKeys&amp;amp;EndKeys&lt;/td&gt;
+          &lt;td&gt;与dive同时使用，用于对map对象的键的和值的验证，keys为键，endkeys为值&lt;/td&gt;
+          &lt;td&gt;map[string]stringvalidate:&amp;ldquo;gt=0,dive,keys,eq=1|eq=2,endkeys,required&amp;rdquo;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;required_with&lt;/td&gt;
+          &lt;td&gt;其他字段其中一个不为空且当前字段不为空&lt;/td&gt;
+          &lt;td&gt;Fieldvalidate:&amp;ldquo;required_with=Field1Field2&amp;rdquo;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;required_with_all&lt;/td&gt;
+          &lt;td&gt;其他所有字段不为空且当前字段不为空&lt;/td&gt;
+          &lt;td&gt;Fieldvalidate:&amp;ldquo;required_with_all=Field1Field2&amp;rdquo;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;required_without&lt;/td&gt;
+          &lt;td&gt;其他字段其中一个为空且当前字段不为空&lt;/td&gt;
+          &lt;td&gt;Field`validate:&amp;ldquo;required_without=Field1Field2&amp;rdquo;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;required_without_all&lt;/td&gt;
+          &lt;td&gt;其他所有字段为空且当前字段不为空&lt;/td&gt;
+          &lt;td&gt;Fieldvalidate:&amp;ldquo;required_without_all=Field1Field2&amp;rdquo;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;isdefault&lt;/td&gt;
+          &lt;td&gt;是默认值&lt;/td&gt;
+          &lt;td&gt;Fieldvalidate:&amp;ldquo;isdefault=0&amp;rdquo;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;oneof&lt;/td&gt;
+          &lt;td&gt;其中之一&lt;/td&gt;
+          &lt;td&gt;Fieldvalidate:&amp;ldquo;oneof=579&amp;rdquo;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;containsfield&lt;/td&gt;
+          &lt;td&gt;字段包含另一个字段&lt;/td&gt;
+          &lt;td&gt;Fieldvalidate:&amp;ldquo;containsfield=Field2&amp;rdquo;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;excludesfield&lt;/td&gt;
+          &lt;td&gt;字段不包含另一个字段&lt;/td&gt;
+          &lt;td&gt;Fieldvalidate:&amp;ldquo;excludesfield=Field2&amp;rdquo;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;unique&lt;/td&gt;
+          &lt;td&gt;是否唯一，通常用于切片或结构体&lt;/td&gt;
+          &lt;td&gt;Fieldvalidate:&amp;ldquo;unique&amp;rdquo;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;alphanum&lt;/td&gt;
+          &lt;td&gt;字符串值是否只包含ASCII字母数字字符&lt;/td&gt;
+          &lt;td&gt;Fieldvalidate:&amp;ldquo;alphanum&amp;rdquo;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;alphaunicode&lt;/td&gt;
+          &lt;td&gt;字符串值是否只包含unicode字符&lt;/td&gt;
+          &lt;td&gt;Fieldvalidate:&amp;ldquo;alphaunicode&amp;rdquo;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;alphanumunicode&lt;/td&gt;
+          &lt;td&gt;字符串值是否只包含unicode字母数字字符&lt;/td&gt;
+          &lt;td&gt;Fieldvalidate:&amp;ldquo;alphanumunicode&amp;rdquo;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;numeric&lt;/td&gt;
+          &lt;td&gt;字符串值是否包含基本的数值&lt;/td&gt;
+          &lt;td&gt;Fieldvalidate:&amp;ldquo;numeric&amp;rdquo;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;hexadecimal&lt;/td&gt;
+          &lt;td&gt;字符串值是否包含有效的十六进制&lt;/td&gt;
+          &lt;td&gt;Fieldvalidate:&amp;ldquo;hexadecimal&amp;rdquo;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;hexcolor&lt;/td&gt;
+          &lt;td&gt;字符串值是否包含有效的十六进制颜色&lt;/td&gt;
+          &lt;td&gt;Fieldvalidate:&amp;ldquo;hexcolor&amp;rdquo;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;lowercase&lt;/td&gt;
+          &lt;td&gt;符串值是否只包含小写字符&lt;/td&gt;
+          &lt;td&gt;Fieldvalidate:&amp;ldquo;lowercase&amp;rdquo;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;uppercase&lt;/td&gt;
+          &lt;td&gt;符串值是否只包含大写字符&lt;/td&gt;
+          &lt;td&gt;Fieldvalidate:&amp;ldquo;uppercase&amp;rdquo;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;email&lt;/td&gt;
+          &lt;td&gt;字符串值包含一个有效的电子邮件&lt;/td&gt;
+          &lt;td&gt;Fieldvalidate:&amp;ldquo;email&amp;rdquo;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;json&lt;/td&gt;
+          &lt;td&gt;字符串值是否为有效的JSON&lt;/td&gt;
+          &lt;td&gt;Fieldvalidate:&amp;ldquo;json&amp;rdquo;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;file&lt;/td&gt;
+          &lt;td&gt;符串值是否包含有效的文件路径，以及该文件是否存在于计算机上&lt;/td&gt;
+          &lt;td&gt;Fieldvalidate:&amp;ldquo;file&amp;rdquo;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;url&lt;/td&gt;
+          &lt;td&gt;符串值是否包含有效的url&lt;/td&gt;
+          &lt;td&gt;Fieldvalidate:&amp;ldquo;url&amp;rdquo;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;uri&lt;/td&gt;
+          &lt;td&gt;符串值是否包含有效的uri&lt;/td&gt;
+          &lt;td&gt;Fieldvalidate:&amp;ldquo;uri&amp;rdquo;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;base64&lt;/td&gt;
+          &lt;td&gt;字符串值是否包含有效的base64值&lt;/td&gt;
+          &lt;td&gt;Fieldvalidate:&amp;ldquo;base64&amp;rdquo;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;contains&lt;/td&gt;
+          &lt;td&gt;字符串值包含子字符串值&lt;/td&gt;
+          &lt;td&gt;Fieldvalidate:&amp;ldquo;contains=@&amp;rdquo;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;containsany&lt;/td&gt;
+          &lt;td&gt;字符串值包含子字符串值中的任何字符&lt;/td&gt;
+          &lt;td&gt;Fieldvalidate:&amp;ldquo;containsany=abc&amp;rdquo;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;containsrune&lt;/td&gt;
+          &lt;td&gt;字符串值包含提供的特殊符号值&lt;/td&gt;
+          &lt;td&gt;Fieldvalidate:&amp;ldquo;containsrune=☢&amp;rdquo;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;excludes&lt;/td&gt;
+          &lt;td&gt;字符串值不包含子字符串值&lt;/td&gt;
+          &lt;td&gt;Fieldvalidate:&amp;ldquo;excludes=@&amp;rdquo;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;excludesall&lt;/td&gt;
+          &lt;td&gt;字符串值不包含任何子字符串值&lt;/td&gt;
+          &lt;td&gt;Fieldvalidate:&amp;ldquo;excludesall=abc&amp;rdquo;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;excludesrune&lt;/td&gt;
+          &lt;td&gt;字符串值不包含提供的特殊符号值&lt;/td&gt;
+          &lt;td&gt;Fieldvalidate:&amp;ldquo;containsrune=☢&amp;rdquo;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;startswith&lt;/td&gt;
+          &lt;td&gt;字符串以提供的字符串值开始&lt;/td&gt;
+          &lt;td&gt;Fieldvalidate:&amp;ldquo;startswith=abc&amp;rdquo;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;endswith&lt;/td&gt;
+          &lt;td&gt;字符串以提供的字符串值结束&lt;/td&gt;
+          &lt;td&gt;Fieldvalidate:&amp;ldquo;endswith=abc&amp;rdquo;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;ip&lt;/td&gt;
+          &lt;td&gt;字符串值是否包含有效的IP地址&lt;/td&gt;
+          &lt;td&gt;Fieldvalidate:&amp;ldquo;ip&amp;rdquo;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;ipv4&lt;/td&gt;
+          &lt;td&gt;字符串值是否包含有效的ipv4地址&lt;/td&gt;
+          &lt;td&gt;Fieldvalidate:&amp;ldquo;ipv4&amp;rdquo;&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;datetime&lt;/td&gt;
+          &lt;td&gt;字符串值是否包含有效的日期&lt;/td&gt;
+          &lt;td&gt;Fieldvalidate:&amp;ldquo;datetime&amp;rdquo;&lt;/td&gt;
+      &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+&lt;h1 id=&#34;使用示例&#34;&gt;使用示例 &lt;a href=&#34;#%e4%bd%bf%e7%94%a8%e7%a4%ba%e4%be%8b&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;h2 id=&#34;使用注意&#34;&gt;使用注意 &lt;a href=&#34;#%e4%bd%bf%e7%94%a8%e6%b3%a8%e6%84%8f&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;ol&gt;
+&lt;li&gt;当搜索条件与特殊标记冲突时,如：逗号（,），或操作（|），中横线（-）等则需要使用 UTF-8十六进制表示形式&lt;/li&gt;
+&lt;/ol&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type Test struct {
+   Field1 string  `validate:&amp;#34;excludesall=|&amp;#34;`    // 错误
+   Field2 string `validate:&amp;#34;excludesall=0x7C&amp;#34;` // 正确.
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;ol start=&#34;2&#34;&gt;
+&lt;li&gt;可通过validationErrors := errs.(validator.ValidationErrors)获取错误对象自定义返回响应错误&lt;/li&gt;
+&lt;li&gt;自定义校验结果翻译&lt;/li&gt;
+&lt;/ol&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;// 初始化翻译器
+func validateInit() {
+	zh_ch := zh.New()
+	uni := ut.New(zh_ch)               // 万能翻译器，保存所有的语言环境和翻译数据
+	Trans, _ = uni.GetTranslator(&amp;#34;zh&amp;#34;) // 翻译器
+	Validate = validator.New()
+	_ = zh_translations.RegisterDefaultTranslations(Validate, Trans)
+	// 添加额外翻译
+	_ = Validate.RegisterTranslation(&amp;#34;required_without&amp;#34;, Trans, func(ut ut.Translator) error {
+		return ut.Add(&amp;#34;required_without&amp;#34;, &amp;#34;{0} 为必填字段!&amp;#34;, true)
+	}, func(ut ut.Translator, fe validator.FieldError) string {
+		t, _ := ut.T(&amp;#34;required_without&amp;#34;, fe.Field())
+		return t
+	})
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;使用示例-1&#34;&gt;使用示例 &lt;a href=&#34;#%e4%bd%bf%e7%94%a8%e7%a4%ba%e4%be%8b-1&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+import (
+   &amp;#34;fmt&amp;#34;
+   &amp;#34;github.com/go-playground/validator/v10&amp;#34;
+)
+// 实例化验证对象
+var validate = validator.New()
+func main() {
+   // 结构体验证
+   type Inner struct {
+      String string `validate:&amp;#34;contains=111&amp;#34;`
+   }
+   inner := &amp;amp;Inner{String: &amp;#34;11@&amp;#34;}
+   errs := validate.Struct(inner)
+   if errs != nil {
+      fmt.Println(errs.Error())
+   }
+   // 变量验证
+   m := map[string]string{&amp;#34;&amp;#34;: &amp;#34;&amp;#34;, &amp;#34;val3&amp;#34;: &amp;#34;val3&amp;#34;}
+   errs = validate.Var(m, &amp;#34;required,dive,keys,required,endkeys,required&amp;#34;)
+   if errs != nil {
+      fmt.Println(errs.Error())
+   }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;gin框架中使用验证器&#34;&gt;gin框架中使用验证器 &lt;a href=&#34;#gin%e6%a1%86%e6%9e%b6%e4%b8%ad%e4%bd%bf%e7%94%a8%e9%aa%8c%e8%af%81%e5%99%a8&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;h2 id=&#34;定义错误翻译器&#34;&gt;定义错误翻译器 &lt;a href=&#34;#%e5%ae%9a%e4%b9%89%e9%94%99%e8%af%af%e7%bf%bb%e8%af%91%e5%99%a8&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package xcore
+
+import (
+	&amp;#34;fmt&amp;#34;
+	&amp;#34;github.com/gin-gonic/gin/binding&amp;#34;
+	&amp;#34;reflect&amp;#34;
+	&amp;#34;strings&amp;#34;
+	//gin表单验证
+	&amp;#34;github.com/go-playground/locales/en&amp;#34;
+	&amp;#34;github.com/go-playground/locales/zh&amp;#34;
+	&amp;#34;github.com/go-playground/universal-translator&amp;#34;
+	&amp;#34;github.com/go-playground/validator/v10&amp;#34;
+	enTranslations &amp;#34;github.com/go-playground/validator/v10/translations/en&amp;#34;
+	zhTranslations &amp;#34;github.com/go-playground/validator/v10/translations/zh&amp;#34;
+)
+
+// 定义一个全局翻译器
+var trans ut.Translator
+
+// InitTrans 初始化翻译器
+func InitTrans(locale string) (err error) {
+	//修改gin框架中的Validator属性，实现自定制
+	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
+		// 注册一个获取json tag的自定义方法
+		v.RegisterTagNameFunc(func(fld reflect.StructField) string {
+			name := strings.SplitN(fld.Tag.Get(&amp;#34;json&amp;#34;), &amp;#34;,&amp;#34;, 2)[0]
+			if name == &amp;#34;-&amp;#34; {
+				return &amp;#34;&amp;#34;
+			}
+			return name
+		})
+
+		zhT := zh.New() //中文翻译器
+		enT := en.New() //英文翻译器
+
+		// 第一个参数是备用（fallback）的语言环境
+		// 后面的参数是应该支持的语言环境（支持多个）
+		// uni := ut.New(zhT, zhT) 也是可以的
+		uni := ut.New(enT, zhT, enT)
+
+		// locale 通常取决于 http 请求头的 &amp;#39;Accept-Language&amp;#39;
+		var ok bool
+		// 也可以使用 uni.FindTranslator(...) 传入多个locale进行查找
+		trans, ok = uni.GetTranslator(locale)
+		if !ok {
+			return fmt.Errorf(&amp;#34;uni.GetTranslator(%s) failed&amp;#34;, locale)
+		}
+
+		// 添加额外翻译
+		_ = v.RegisterTranslation(&amp;#34;required_with&amp;#34;, trans, func(ut ut.Translator) error {
+			return ut.Add(&amp;#34;required_with&amp;#34;, &amp;#34;{0} 为必填字段!&amp;#34;, true)
+		}, func(ut ut.Translator, fe validator.FieldError) string {
+			t, _ := ut.T(&amp;#34;required_with&amp;#34;, fe.Field())
+			return t
+		})
+		_ = v.RegisterTranslation(&amp;#34;required_without&amp;#34;, trans, func(ut ut.Translator) error {
+			return ut.Add(&amp;#34;required_without&amp;#34;, &amp;#34;{0} 为必填字段!&amp;#34;, true)
+		}, func(ut ut.Translator, fe validator.FieldError) string {
+			t, _ := ut.T(&amp;#34;required_without&amp;#34;, fe.Field())
+			return t
+		})
+		_ = v.RegisterTranslation(&amp;#34;required_without_all&amp;#34;, trans, func(ut ut.Translator) error {
+			return ut.Add(&amp;#34;required_without_all&amp;#34;, &amp;#34;{0} 为必填字段!&amp;#34;, true)
+		}, func(ut ut.Translator, fe validator.FieldError) string {
+			t, _ := ut.T(&amp;#34;required_without_all&amp;#34;, fe.Field())
+			return t
+		})
+
+		// 注册翻译器
+		switch locale {
+		case &amp;#34;en&amp;#34;:
+			err = enTranslations.RegisterDefaultTranslations(v, trans)
+		case &amp;#34;zh&amp;#34;:
+			err = zhTranslations.RegisterDefaultTranslations(v, trans)
+		default:
+			err = enTranslations.RegisterDefaultTranslations(v, trans)
+		}
+		return
+	}
+	return
+}
+
+func addValueToMap(fields map[string]string) map[string]interface{} {
+	res := make(map[string]interface{})
+	for field, err := range fields {
+		fieldArr := strings.SplitN(field, &amp;#34;.&amp;#34;, 2)
+		if len(fieldArr) &amp;gt; 1 {
+			NewFields := map[string]string{fieldArr[1]: err}
+			returnMap := addValueToMap(NewFields)
+			if res[fieldArr[0]] != nil {
+				for k, v := range returnMap {
+					res[fieldArr[0]].(map[string]interface{})[k] = v
+				}
+			} else {
+				res[fieldArr[0]] = returnMap
+			}
+			continue
+		} else {
+			res[field] = err
+			continue
+		}
+	}
+	return res
+}
+
+// 去掉结构体名称前缀
+func removeTopStruct(fields map[string]string) map[string]interface{} {
+	lowerMap := map[string]string{}
+	for field, err := range fields {
+		fieldArr := strings.SplitN(field, &amp;#34;.&amp;#34;, 2)
+		lowerMap[fieldArr[1]] = err
+	}
+	res := addValueToMap(lowerMap)
+	return res
+}
+
+//handler中调用的错误翻译方法
+func ValidatorError(err error) map[string]interface{} {
+	errs, ok := err.(validator.ValidationErrors)
+	if ok {
+		return removeTopStruct(errs.Translate(trans))
+	}
+	return nil
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;使用&#34;&gt;使用 &lt;a href=&#34;#%e4%bd%bf%e7%94%a8&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func (c *IndexController) Validator(ctx *gin.Context) {
+	req := requests.AdminReq{}
+	if err := ctx.ShouldBindJSON(&amp;amp;req); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{&amp;#34;error&amp;#34;: xcore.ValidatorError(err)})
+		return
+	}
+	ctx.JSON(http.StatusNotFound, &amp;#34;ok&amp;#34;)
+}
+&lt;/code&gt;&lt;/pre&gt;</description>
+    </item>
+    
+    <item>
+      <title>Go-GMP模型</title>
+      <link>https://abnerxc.github.io/go/gmp%E6%A8%A1%E5%9E%8B/</link>
+      <pubDate>Sun, 13 Jun 2021 18:35:11 +0800</pubDate>
+      
+      <guid>https://abnerxc.github.io/go/gmp%E6%A8%A1%E5%9E%8B/</guid>
+      <description>&lt;blockquote&gt;
+&lt;p&gt;&lt;a href=&#34;https://learnku.com/articles/41728&#34;&gt;https://learnku.com/articles/41728&lt;/a&gt;&lt;/p&gt;&lt;/blockquote&gt;
+&lt;h1 id=&#34;gmp-模型&#34;&gt;GMP 模型 &lt;a href=&#34;#gmp-%e6%a8%a1%e5%9e%8b&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;&lt;img src=&#34;https://abnerxc.github.io/img/go-gmp-a.jpeg&#34; alt=&#34;1.jpeg&#34;&gt;&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;G= Goroutine 协程，P=Processor 处理器， M=Thread 线程&lt;/strong&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;全局队列（Global Queue）：存放等待运行的 G。&lt;/li&gt;
+&lt;li&gt;P 的本地队列：同全局队列类似，存放的也是等待运行的 G，存的数量有限，不超过 256 个。新建 G’时，G’优先加入到 P 的本地队列，如果队列满了，则会把本地队列中一半的 G 移动到全局队列。&lt;/li&gt;
+&lt;li&gt;P 列表：所有的 P 都在程序启动时创建，并保存在数组中，最多有 GOMAXPROCS(可配置) 个。&lt;/li&gt;
+&lt;li&gt;M：线程想运行任务就得获取 P，从 P 的本地队列获取 G，P 队列为空时，M 也会尝试从全局队列拿一批 G 放到 P 的本地队列，或从其他 P 的本地队列偷一半放到自己 P 的本地队列。M 运行 G，G 执行之后，M 会从 P 获取下一个 G，不断重复下去。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;strong&gt;Goroutine 调度器和 OS 调度器是通过 M 结合起来的，每个 M 都代表了 1 个内核线程，OS 调度器负责把内核线程分配到 CPU 的核上执行。&lt;/strong&gt;&lt;/p&gt;
+&lt;h1 id=&#34;有关-p-和-m-的个数问题&#34;&gt;有关 P 和 M 的个数问题 &lt;a href=&#34;#%e6%9c%89%e5%85%b3-p-%e5%92%8c-m-%e7%9a%84%e4%b8%aa%e6%95%b0%e9%97%ae%e9%a2%98&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;ol&gt;
+&lt;li&gt;P的数量： 由启动时环境变量 $GOMAXPROCS 或者是由 runtime 的方法 GOMAXPROCS() 决定。这意味着在程序执行的任意时刻都只有 $GOMAXPROCS 个 goroutine 在同时运行。&lt;/li&gt;
+&lt;li&gt;M的数量：
+&lt;ul&gt;
+&lt;li&gt;go 语言本身的限制：go 程序启动时，会设置 M 的最大数量，默认 10000. 但是内核很难支持这么多的线程数，所以这个限制可以忽略。&lt;/li&gt;
+&lt;li&gt;runtime/debug 中的 SetMaxThreads 函数，设置 M 的最大数量&lt;/li&gt;
+&lt;li&gt;一个 M 阻塞了，会创建新的 M。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;&lt;strong&gt;M 与 P 的数量没有绝对关系，一个 M 阻塞，P 就会去创建或者切换另一个 M，所以，即使 P 的默认数量是 1，也有可能会创建很多个 M 出来。&lt;/strong&gt;&lt;/p&gt;
+&lt;h1 id=&#34;p-和-m-何时会被创建&#34;&gt;P 和 M 何时会被创建 &lt;a href=&#34;#p-%e5%92%8c-m-%e4%bd%95%e6%97%b6%e4%bc%9a%e8%a2%ab%e5%88%9b%e5%bb%ba&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;ul&gt;
+&lt;li&gt;P 何时创建：在确定了 P 的最大数量 n 后，运行时系统会根据这个数量创建 n 个 P。&lt;/li&gt;
+&lt;li&gt;M 何时创建：没有足够的 M 来关联 P 并运行其中的可运行的 G。比如所有的 M 此时都阻塞住了，而 P 中还有很多就绪任务，就会去寻找空闲的 M，而没有空闲的，就会去创建新的 M。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h1 id=&#34;调度器的设计策略&#34;&gt;调度器的设计策略 &lt;a href=&#34;#%e8%b0%83%e5%ba%a6%e5%99%a8%e7%9a%84%e8%ae%be%e8%ae%a1%e7%ad%96%e7%95%a5&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;复用线程：避免频繁的创建、销毁线程，而是对线程的复用。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;work stealing 机制：当本线程无可运行的 G 时，尝试从其他线程绑定的 P 偷取 G，而不是销毁线程。&lt;/li&gt;
+&lt;li&gt;hand off 机制：​ 当本线程因为 G 进行系统调用阻塞时，线程释放绑定的 P，把 P 转移给其他空闲的线程执行。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;利用并行：&lt;code&gt;GOMAXPROCS&lt;/code&gt; 设置 P 的数量，最多有 &lt;code&gt;GOMAXPROCS&lt;/code&gt; 个线程分布在多个 CPU 上同时运行。&lt;code&gt;GOMAXPROCS&lt;/code&gt; 也限制了并发的程度，比如 &lt;code&gt;GOMAXPROCS= 核数/2&lt;/code&gt;，则最多利用了一半的 CPU 核进行并行。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;抢占：在 coroutine 中要等待一个协程主动让出 CPU 才执行下一个协程，
+&lt;code&gt;在 Go 中，一个 goroutine 最多占用 CPU 10ms， 防止其他 goroutine 被饿死，这就是 goroutine 不同于 coroutine 的一个地方&lt;/code&gt;。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;全局 G 队列：在新的调度器中依然有全局 G 队列，但功能已经被弱化了，当 M 执行 work stealing 从其他 P 偷不到 G 时，它可以从全局 G 队列获取 G。&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h1 id=&#34;go-func--调度流程&#34;&gt;go func () 调度流程 &lt;a href=&#34;#go-func--%e8%b0%83%e5%ba%a6%e6%b5%81%e7%a8%8b&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;&lt;img src=&#34;https://abnerxc.github.io/img/go-gmp-b.jpeg&#34; alt=&#34;2.jpg&#34;&gt;&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;我们通过 go func () 来创建一个 goroutine；&lt;/li&gt;
+&lt;li&gt;有两个存储 G 的队列，一个是局部调度器 P 的本地队列、一个是全局 G 队列。新创建的 G 会先保存在 P 的本地队列中，如果 P 的本地队列已经满了就会保存在全局的队列中；
+​3. G 只能运行在 M 中，一个 M 必须持有一个 P，M 与 P 是 1：1 的关系。M 会从 P 的本地队列弹出一个可执行状态的 G 来执行，如果 P 的本地队列为空，就会想其他的 MP 组合偷取一个可执行的 G 来执行；
+​4. 一个 M 调度 G 执行的过程是一个循环机制；&lt;/li&gt;
+&lt;li&gt;当 M 执行某一个 G 时候如果发生了 syscall 或则其余阻塞操作，M 会阻塞，如果当前有一些 G 在执行，runtime 会把这个线程 M 从 P 中摘除 (detach)，然后再创建一个新的操作系统的线程 (如果有空闲的线程可用就复用空闲线程) 来服务于这个 P；&lt;/li&gt;
+&lt;li&gt;当 M 系统调用结束时候，这个 G 会尝试获取一个空闲的 P 执行，并放入到这个 P 的本地队列。如果获取不到 P，那么这个线程 M 变成休眠状态， 加入到空闲线程中，然后这个 G 会被放入全局队列中。&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h1 id=&#34;调度器的生命周期&#34;&gt;调度器的生命周期 &lt;a href=&#34;#%e8%b0%83%e5%ba%a6%e5%99%a8%e7%9a%84%e7%94%9f%e5%91%bd%e5%91%a8%e6%9c%9f&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;&lt;img src=&#34;https://abnerxc.github.io/img/go-gmp-c.jpeg&#34; alt=&#34;2.jpg&#34;&gt;&lt;/p&gt;
+&lt;h1 id=&#34;特殊的-m0-和-g0&#34;&gt;特殊的 M0 和 G0 &lt;a href=&#34;#%e7%89%b9%e6%ae%8a%e7%9a%84-m0-%e5%92%8c-g0&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;ul&gt;
+&lt;li&gt;M0 是启动程序后的编号为 0 的主线程，这个 M 对应的实例会在全局变量 runtime.m0 中，不需要在 heap 上分配，M0 负责执行初始化操作和启动第一个 G， 在之后 M0 就和其他的 M 一样了。&lt;/li&gt;
+&lt;li&gt;GO 是每次启动一个 M 都会第一个创建的 gourtine，G0 仅用于负责调度的 G，G0 不指向任何可执行的函数，每个 M 都会有一个自己的 G0。在调度或系统调用时会使用 G0 的栈空间，全局变量的 G0 是 M0 的 G0。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h1 id=&#34;可视化-gmp-编程&#34;&gt;可视化 GMP 编程 &lt;a href=&#34;#%e5%8f%af%e8%a7%86%e5%8c%96-gmp-%e7%bc%96%e7%a8%8b&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;ol&gt;
+&lt;li&gt;方式 1：go tool trace&lt;/li&gt;
+&lt;li&gt;方式 2：Debug trace&lt;/li&gt;
+&lt;/ol&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Go-深入解析slice底层实现</title>
+      <link>https://abnerxc.github.io/go/%E6%B7%B1%E5%85%A5%E8%A7%A3%E6%9E%90slice%E5%BA%95%E5%B1%82%E5%AE%9E%E7%8E%B0/</link>
+      <pubDate>Sat, 15 May 2021 18:35:11 +0800</pubDate>
+      
+      <guid>https://abnerxc.github.io/go/%E6%B7%B1%E5%85%A5%E8%A7%A3%E6%9E%90slice%E5%BA%95%E5%B1%82%E5%AE%9E%E7%8E%B0/</guid>
+      <description>&lt;p&gt;原文地址：https://halfrost.com/go_slice/&lt;/p&gt;
+&lt;p&gt;切片是 Go 中的一种基本的数据结构，使用这种结构可以用来管理数据集合。切片的设计想法是由动态数组概念而来，为了开发者可以更加方便的使一个数据结构可以自动增加和减少。但是切片本身并不是动态数据或者数组指针。切片常见的操作有 reslice、append、copy。与此同时，切片还具有可索引，可迭代的优秀特性。&lt;/p&gt;
+&lt;h1 id=&#34;切片和数组&#34;&gt;切片和数组 &lt;a href=&#34;#%e5%88%87%e7%89%87%e5%92%8c%e6%95%b0%e7%bb%84&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;在 Go 中，与 C 数组变量隐式作为指针使用不同，Go 数组是值类型，赋值和函数传参操作都会复制整个数组数据。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func main() {
+	arrayA := [2]int{100, 200}
+	var arrayB [2]int
+
+	arrayB = arrayA
+
+	fmt.Printf(&amp;#34;arrayA : %p , %v\n&amp;#34;, &amp;amp;arrayA, arrayA)
+	fmt.Printf(&amp;#34;arrayB : %p , %v\n&amp;#34;, &amp;amp;arrayB, arrayB)
+
+	testArray(arrayA)
+}
+
+func testArray(x [2]int) {
+	fmt.Printf(&amp;#34;func Array : %p , %v\n&amp;#34;, &amp;amp;x, x)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;打印结果：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;arrayA : 0xc4200bebf0 , [100 200]
+arrayB : 0xc4200bec00 , [100 200]
+func Array : 0xc4200bec30 , [100 200]
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;可以看到，三个内存地址都不同，这也就验证了 Go 中数组赋值和函数传参都是值复制的。那这会导致什么问题呢？&lt;/p&gt;
+&lt;p&gt;假想每次传参都用数组，那么每次数组都要被复制一遍。如果数组大小有 100万，在64位机器上就需要花费大约 800W 字节，即 8MB 内存。这样会消耗掉大量的内存。于是乎有人想到，函数传参用数组的指针。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func main() {
+	arrayA := []int{100, 200}
+	testArrayPoint(&amp;amp;arrayA)   // 1.传数组指针
+	arrayB := arrayA[:]
+	testArrayPoint(&amp;amp;arrayB)   // 2.传切片
+	fmt.Printf(&amp;#34;arrayA : %p , %v\n&amp;#34;, &amp;amp;arrayA, arrayA)
+}
+
+func testArrayPoint(x *[]int) {
+	fmt.Printf(&amp;#34;func Array : %p , %v\n&amp;#34;, x, *x)
+	(*x)[1] += 100
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;打印结果:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func Array : 0xc4200b0140 , [100 200]
+func Array : 0xc4200b0180 , [100 300]
+arrayA : 0xc4200b0140 , [100 400]
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;这也就证明了数组指针确实到达了我们想要的效果。现在就算是传入10亿的数组，也只需要再栈上分配一个8个字节的内存给指针就可以了。这样更加高效的利用内存，性能也比之前的好。&lt;/p&gt;
+&lt;p&gt;不过传指针会有一个弊端，从打印结果可以看到，第一行和第三行指针地址都是同一个，万一原数组的指针指向更改了，那么函数里面的指针指向都会跟着更改。&lt;/p&gt;
+&lt;p&gt;切片的优势也就表现出来了。用切片传数组参数，既可以达到节约内存的目的，也可以达到合理处理好共享内存的问题。打印结果第二行就是切片，切片的指针和原来数组的指针是不同的。&lt;/p&gt;
+&lt;p&gt;由此我们可以得出结论：&lt;/p&gt;
+&lt;p&gt;把第一个大数组传递给函数会消耗很多内存，采用切片的方式传参可以避免上述问题。切片是引用传递，所以它们不需要使用额外的内存并且比使用数组更有效率。&lt;/p&gt;
+&lt;p&gt;但是，依旧有反例。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import &amp;#34;testing&amp;#34;
+
+func array() [1024]int {
+	var x [1024]int
+	for i := 0; i &amp;lt; len(x); i++ {
+		x[i] = i
+	}
+	return x
+}
+
+func slice() []int {
+	x := make([]int, 1024)
+	for i := 0; i &amp;lt; len(x); i++ {
+		x[i] = i
+	}
+	return x
+}
+
+func BenchmarkArray(b *testing.B) {
+	for i := 0; i &amp;lt; b.N; i++ {
+		array()
+	}
+}
+
+func BenchmarkSlice(b *testing.B) {
+	for i := 0; i &amp;lt; b.N; i++ {
+		slice()
+	}
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;我们做一次性能测试，并且禁用内联和优化，来观察切片的堆上内存分配的情况。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;  go test -bench . -benchmem -gcflags &amp;#34;-N -l&amp;#34;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;输出结果比较“令人意外”：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;BenchmarkArray-4          500000              3637 ns/op               0 B/op          0 alloc s/op
+BenchmarkSlice-4          300000              4055 ns/op            8192 B/op          1 alloc s/op
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;解释一下上述结果，在测试 Array 的时候，用的是4核，循环次数是500000，平均每次执行时间是3637 ns，每次执行堆上分配内存总量是0，分配次数也是0 。&lt;/p&gt;
+&lt;p&gt;而切片的结果就“差”一点，同样也是用的是4核，循环次数是300000，平均每次执行时间是4055 ns，但是每次执行一次，堆上分配内存总量是8192，分配次数也是1 。&lt;/p&gt;
+&lt;p&gt;这样对比看来，并非所有时候都适合用切片代替数组，因为切片底层数组可能会在堆上分配内存，而且小数组在栈上拷贝的消耗也未必比 make 消耗大。&lt;/p&gt;
+&lt;h1 id=&#34;切片上的数据结构&#34;&gt;切片上的数据结构 &lt;a href=&#34;#%e5%88%87%e7%89%87%e4%b8%8a%e7%9a%84%e6%95%b0%e6%8d%ae%e7%bb%93%e6%9e%84&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;切片本身并不是动态数组或者数组指针。它内部实现的数据结构通过指针引用底层数组，设定相关属性将数据读写操作限定在指定的区域内。&lt;strong&gt;切片本身是一个只读对象，其工作机制类似数组指针的一种封装。&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;切片（slice）是对数组一个连续片段的引用，所以切片是一个引用类型（因此更类似于 C/C++ 中的数组类型，或者 Python 中的 list 类型）。这个片段可以是整个数组，或者是由起始和终止索引标识的一些项的子集。需要注意的是，终止索引标识的项不包括在切片内。切片提供了一个与指向数组的动态窗口。&lt;/p&gt;
+&lt;p&gt;给定项的切片索引可能比相关数组的相同元素的索引小。和数组不同的是，切片的长度可以在运行时修改，最小为 0 最大为相关数组的长度：切片是一个长度可变的数组。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type slice struct {
+	array unsafe.Pointer
+	len   int
+	cap   int
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;img src=&#34;https://abnerxc.github.io/img/go-s1.jpeg&#34; alt=&#34;slice_内存模型&#34;&gt;&lt;/p&gt;
+&lt;p&gt;切片的结构体由3部分构成，Pointer 是指向一个数组的指针，len 代表当前切片的长度，cap 是当前切片的容量。cap 总是大于等于 len 的。&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://abnerxc.github.io/img/go-s2.jpeg&#34; alt=&#34;57_3.png&#34;&gt;&lt;/p&gt;
+&lt;p&gt;如果想从 slice 中得到一块内存地址，可以这样做：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;s := make([]byte, 200)
+ptr := unsafe.Pointer(&amp;amp;s[0])
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;如果反过来呢？从 Go 的内存地址中构造一个 slice。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var ptr unsafe.Pointer
+var s1 = struct {
+    addr uintptr
+    len int
+    cap int
+}{ptr, length, length}
+s := *(*[]byte)(unsafe.Pointer(&amp;amp;s1))
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;构造一个虚拟的结构体，把 slice 的数据结构拼出来。&lt;/p&gt;
+&lt;p&gt;当然还有更加直接的方法，在 Go 的反射中就存在一个与之对应的数据结构 SliceHeader，我们可以用它来构造一个 slice&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var o []byte
+sliceHeader := (*reflect.SliceHeader)((unsafe.Pointer(&amp;amp;o)))
+sliceHeader.Cap = length
+sliceHeader.Len = length
+sliceHeader.Data = uintptr(ptr)
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;创建切片&#34;&gt;创建切片 &lt;a href=&#34;#%e5%88%9b%e5%bb%ba%e5%88%87%e7%89%87&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;make 函数允许在运行期动态指定数组长度，绕开了数组类型必须使用编译期常量的限制。&lt;/p&gt;
+&lt;p&gt;创建切片有两种形式，make 创建切片，空切片。&lt;/p&gt;
+&lt;h2 id=&#34;make-和切片字面量&#34;&gt;make 和切片字面量 &lt;a href=&#34;#make-%e5%92%8c%e5%88%87%e7%89%87%e5%ad%97%e9%9d%a2%e9%87%8f&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func makeslice(et *_type, len, cap int) slice {
+	// 根据切片的数据类型，获取切片的最大容量
+	maxElements := maxSliceCap(et.size)
+    // 比较切片的长度，长度值域应该在[0,maxElements]之间
+	if len &amp;lt; 0 || uintptr(len) &amp;gt; maxElements {
+		panic(errorString(&amp;#34;makeslice: len out of range&amp;#34;))
+	}
+    // 比较切片的容量，容量值域应该在[len,maxElements]之间
+	if cap &amp;lt; len || uintptr(cap) &amp;gt; maxElements {
+		panic(errorString(&amp;#34;makeslice: cap out of range&amp;#34;))
+	}
+    // 根据切片的容量申请内存
+	p := mallocgc(et.size*uintptr(cap), et, true)
+    // 返回申请好内存的切片的首地址
+	return slice{p, len, cap}
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;img src=&#34;https://abnerxc.github.io/img/go-s3.jpeg&#34; alt=&#34;&#34;&gt;&lt;/p&gt;
+&lt;p&gt;上图是用 make 函数创建的一个 len = 4， cap = 6 的切片。内存空间申请了6个 int 类型的内存大小。由于 len = 4，所以后面2个暂时访问不到，但是容量还是在的。这时候数组里面每个变量都是0 。&lt;/p&gt;
+&lt;p&gt;除了 make 函数可以创建切片以外，字面量也可以创建切片。&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://abnerxc.github.io/img/go-s4.jpeg&#34; alt=&#34;&#34;&gt;&lt;/p&gt;
+&lt;p&gt;这里是用字面量创建的一个 len = 6，cap = 6 的切片，这时候数组里面每个元素的值都初始化完成了。&lt;strong&gt;需要注意的是 [ ] 里面不要写数组的容量，因为如果写了个数以后就是数组了，而不是切片了。&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://abnerxc.github.io/img/go-s5.jpeg&#34; alt=&#34;&#34;&gt;&lt;/p&gt;
+&lt;p&gt;还有一种简单的字面量创建切片的方法。如上图。上图就 Slice A 创建出了一个 len = 3，cap = 3 的切片。从原数组的第二位元素(0是第一位)开始切，一直切到第四位为止(不包括第五位)。同理，Slice B 创建出了一个 len = 2，cap = 4 的切片。&lt;/p&gt;
+&lt;h2 id=&#34;nil-和空切片&#34;&gt;nil 和空切片 &lt;a href=&#34;#nil-%e5%92%8c%e7%a9%ba%e5%88%87%e7%89%87&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;nil 切片和空切片也是常用的。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var slice []int
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;img src=&#34;https://abnerxc.github.io/img/go-s6.jpeg&#34; alt=&#34;&#34;&gt;&lt;/p&gt;
+&lt;p&gt;nil 切片被用在很多标准库和内置函数中，描述一个不存在的切片的时候，就需要用到 nil 切片。比如函数在发生异常的时候，返回的切片就是 nil 切片。nil 切片的指针指向 nil。&lt;/p&gt;
+&lt;p&gt;空切片一般会用来表示一个空的集合。比如数据库查询，一条结果也没有查到，那么就可以返回一个空切片。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;silce := make( []int , 0 )
+slice := []int{ }
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;img src=&#34;https://abnerxc.github.io/img/go-s7.jpeg&#34; alt=&#34;&#34;&gt;&lt;/p&gt;
+&lt;p&gt;空切片和 nil 切片的区别在于，空切片指向的地址不是nil，指向的是一个内存地址，但是它没有分配任何内存空间，即底层元素包含0个元素。&lt;/p&gt;
+&lt;p&gt;最后需要说明的一点是。不管是使用 nil 切片还是空切片，对其调用内置函数 append，len 和 cap 的效果都是一样的。&lt;/p&gt;
+&lt;h1 id=&#34;切片扩容&#34;&gt;切片扩容 &lt;a href=&#34;#%e5%88%87%e7%89%87%e6%89%a9%e5%ae%b9&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;首先看看源码&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func growslice(et *_type, old slice, cap int) slice {
+	if raceenabled {
+		callerpc := getcallerpc(unsafe.Pointer(&amp;amp;et))
+		racereadrangepc(old.array, uintptr(old.len*int(et.size)), callerpc, funcPC(growslice))
+	}
+	if msanenabled {
+		msanread(old.array, uintptr(old.len*int(et.size)))
+	}
+
+	if et.size == 0 {
+		// 如果新要扩容的容量比原来的容量还要小，这代表要缩容了，那么可以直接报panic了。
+		if cap &amp;lt; old.cap {
+			panic(errorString(&amp;#34;growslice: cap out of range&amp;#34;))
+		}
+
+		// 如果当前切片的大小为0，还调用了扩容方法，那么就新生成一个新的容量的切片返回。
+		return slice{unsafe.Pointer(&amp;amp;zerobase), old.len, cap}
+	}
+
+    // 这里就是扩容的策略
+	newcap := old.cap
+	doublecap := newcap + newcap
+	if cap &amp;gt; doublecap {
+		newcap = cap
+	} else {
+		if old.len &amp;lt; 1024 {
+			newcap = doublecap
+		} else {
+			// Check 0 &amp;lt; newcap to detect overflow
+			// and prevent an infinite loop.
+			for 0 &amp;lt; newcap &amp;amp;&amp;amp; newcap &amp;lt; cap {
+				newcap += newcap / 4
+			}
+			// Set newcap to the requested cap when
+			// the newcap calculation overflowed.
+			if newcap &amp;lt;= 0 {
+				newcap = cap
+			}
+		}
+	}
+
+	// 计算新的切片的容量，长度。
+	var lenmem, newlenmem, capmem uintptr
+	const ptrSize = unsafe.Sizeof((*byte)(nil))
+	switch et.size {
+	case 1:
+		lenmem = uintptr(old.len)
+		newlenmem = uintptr(cap)
+		capmem = roundupsize(uintptr(newcap))
+		newcap = int(capmem)
+	case ptrSize:
+		lenmem = uintptr(old.len) * ptrSize
+		newlenmem = uintptr(cap) * ptrSize
+		capmem = roundupsize(uintptr(newcap) * ptrSize)
+		newcap = int(capmem / ptrSize)
+	default:
+		lenmem = uintptr(old.len) * et.size
+		newlenmem = uintptr(cap) * et.size
+		capmem = roundupsize(uintptr(newcap) * et.size)
+		newcap = int(capmem / et.size)
+	}
+
+	// 判断非法的值，保证容量是在增加，并且容量不超过最大容量
+	if cap &amp;lt; old.cap || uintptr(newcap) &amp;gt; maxSliceCap(et.size) {
+		panic(errorString(&amp;#34;growslice: cap out of range&amp;#34;))
+	}
+
+	var p unsafe.Pointer
+	if et.kind&amp;amp;kindNoPointers != 0 {
+		// 在老的切片后面继续扩充容量
+		p = mallocgc(capmem, nil, false)
+		// 将 lenmem 这个多个 bytes 从 old.array地址 拷贝到 p 的地址处
+		memmove(p, old.array, lenmem)
+		// 先将 P 地址加上新的容量得到新切片容量的地址，然后将新切片容量地址后面的 capmem-newlenmem 个 bytes 这块内存初始化。为之后继续 append() 操作腾出空间。
+		memclrNoHeapPointers(add(p, newlenmem), capmem-newlenmem)
+	} else {
+		// 重新申请新的数组给新切片
+		// 重新申请 capmen 这个大的内存地址，并且初始化为0值
+		p = mallocgc(capmem, et, true)
+		if !writeBarrier.enabled {
+			// 如果还不能打开写锁，那么只能把 lenmem 大小的 bytes 字节从 old.array 拷贝到 p 的地址处
+			memmove(p, old.array, lenmem)
+		} else {
+			// 循环拷贝老的切片的值
+			for i := uintptr(0); i &amp;lt; lenmem; i += et.size {
+				typedmemmove(et, add(p, i), add(old.array, i))
+			}
+		}
+	}
+	// 返回最终新切片，容量更新为最新扩容之后的容量
+	return slice{p, old.len, newcap}
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;扩容策略&#34;&gt;扩容策略 &lt;a href=&#34;#%e6%89%a9%e5%ae%b9%e7%ad%96%e7%95%a5&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func main() {
+	slice := []int{10, 20, 30, 40}
+	newSlice := append(slice, 50)
+	fmt.Printf(&amp;#34;Before slice = %v, Pointer = %p, len = %d, cap = %d\n&amp;#34;, slice, &amp;amp;slice, len(slice), cap(slice))
+	fmt.Printf(&amp;#34;Before newSlice = %v, Pointer = %p, len = %d, cap = %d\n&amp;#34;, newSlice, &amp;amp;newSlice, len(newSlice), cap(newSlice))
+	newSlice[1] += 10
+	fmt.Printf(&amp;#34;After slice = %v, Pointer = %p, len = %d, cap = %d\n&amp;#34;, slice, &amp;amp;slice, len(slice), cap(slice))
+	fmt.Printf(&amp;#34;After newSlice = %v, Pointer = %p, len = %d, cap = %d\n&amp;#34;, newSlice, &amp;amp;newSlice, len(newSlice), cap(newSlice))
+}
+//输出结果
+Before slice = [10 20 30 40], Pointer = 0xc4200b0140, len = 4, cap = 4
+Before newSlice = [10 20 30 40 50], Pointer = 0xc4200b0180, len = 5, cap = 8
+After slice = [10 20 30 40], Pointer = 0xc4200b0140, len = 4, cap = 4
+After newSlice = [10 30 30 40 50], Pointer = 0xc4200b0180, len = 5, cap = 8
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;用图表示&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://abnerxc.github.io/img/go-s8.jpeg&#34; alt=&#34;&#34;&gt;&lt;/p&gt;
+&lt;p&gt;从图上我们可以很容易的看出，新的切片和之前的切片已经不同了，因为新的切片更改了一个值，并没有影响到原来的数组，新切片指向的数组是一个全新的数组。并且 cap 容量也发生了变化。这之间究竟发生了什么呢？&lt;/p&gt;
+&lt;p&gt;Go 中切片扩容的策略是这样的：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;首先判断，如果新申请容量（cap）大于2倍的旧容量（old.cap），最终容量（newcap）就是新申请的容量（cap）&lt;/li&gt;
+&lt;li&gt;否则判断，如果旧切片的长度小于1024，则最终容量(newcap)就是旧容量(old.cap)的两倍，即（newcap=doublecap）&lt;/li&gt;
+&lt;li&gt;否则判断，如果旧切片长度大于等于1024，则最终容量（newcap）从旧容量（old.cap）开始循环增加原来的 1/4，即（newcap=old.cap,for {newcap += newcap/4}）直到最终容量（newcap）大于等于新申请的容量(cap)，即（newcap &amp;gt;= cap）&lt;/li&gt;
+&lt;li&gt;如果最终容量（cap）计算值溢出，则最终容量（cap）就是新申请容量（cap）&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;strong&gt;注意：扩容扩大的容量都是针对原来的容量而言的，而不是针对原来数组的长度而言的。&lt;/strong&gt;&lt;/p&gt;
+&lt;h2 id=&#34;新数组-or-老数组-&#34;&gt;新数组 or 老数组 ？ &lt;a href=&#34;#%e6%96%b0%e6%95%b0%e7%bb%84-or-%e8%80%81%e6%95%b0%e7%bb%84-&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;再谈谈扩容之后的数组一定是新的么？这个不一定，分两种情况。&lt;/p&gt;
+&lt;p&gt;情况一：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func main() {
+	array := [4]int{10, 20, 30, 40}
+	slice := array[0:2]
+	newSlice := append(slice, 50)
+	fmt.Printf(&amp;#34;Before slice = %v, Pointer = %p, len = %d, cap = %d\n&amp;#34;, slice, &amp;amp;slice, len(slice), cap(slice))
+	fmt.Printf(&amp;#34;Before newSlice = %v, Pointer = %p, len = %d, cap = %d\n&amp;#34;, newSlice, &amp;amp;newSlice, len(newSlice), cap(newSlice))
+	newSlice[1] += 10
+	fmt.Printf(&amp;#34;After slice = %v, Pointer = %p, len = %d, cap = %d\n&amp;#34;, slice, &amp;amp;slice, len(slice), cap(slice))
+	fmt.Printf(&amp;#34;After newSlice = %v, Pointer = %p, len = %d, cap = %d\n&amp;#34;, newSlice, &amp;amp;newSlice, len(newSlice), cap(newSlice))
+	fmt.Printf(&amp;#34;After array = %v\n&amp;#34;, array)
+}
+
+//输出
+Before slice = [10 20], Pointer = 0xc4200c0040, len = 2, cap = 4
+Before newSlice = [10 20 50], Pointer = 0xc4200c0060, len = 3, cap = 4
+After slice = [10 30], Pointer = 0xc4200c0040, len = 2, cap = 4
+After newSlice = [10 30 50], Pointer = 0xc4200c0060, len = 3, cap = 4
+After array = [10 30 50 40]
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;把上述过程用图表示出来，如下图。
+&lt;img src=&#34;https://abnerxc.github.io/img/go-s9.jpeg&#34; alt=&#34;&#34;&gt;&lt;/p&gt;
+&lt;p&gt;通过打印的结果，我们可以看到，在这种情况下，扩容以后并没有新建一个新的数组，扩容前后的数组都是同一个，这也就导致了新的切片修改了一个值，也影响到了老的切片了。并且 append() 操作也改变了原来数组里面的值。一个 append() 操作影响了这么多地方，如果原数组上有多个切片，那么这些切片都会被影响！无意间就产生了莫名的 bug！&lt;/p&gt;
+&lt;p&gt;这种情况，由于原数组还有容量可以扩容，所以执行 append() 操作以后，会在原数组上直接操作，所以这种情况下，扩容以后的数组还是指向原来的数组。&lt;/p&gt;
+&lt;p&gt;这种情况也极容易出现在字面量创建切片时候，第三个参数 cap 传值的时候，如果用字面量创建切片，cap 并不等于指向数组的总容量，那么这种情况就会发生。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;slice := array[1:2:3]
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;strong&gt;上面这种情况非常危险，极度容易产生 bug 。&lt;/strong&gt;
+建议用字面量创建切片的时候，cap 的值一定要保持清醒，避免共享原数组导致的 bug。&lt;/p&gt;
+&lt;p&gt;情况二：&lt;/p&gt;
+&lt;p&gt;情况二其实就是在扩容策略里面举的例子，在那个例子中之所以生成了新的切片，是因为原来数组的容量已经达到了最大值，再想扩容， Go 默认会先开一片内存区域，把原来的值拷贝过来，然后再执行 append() 操作。这种情况丝毫不影响原数组。&lt;/p&gt;
+&lt;p&gt;所以建议尽量避免情况一，尽量使用情况二，避免 bug 产生。
+举例：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func main() {
+
+    s1 := []int{1, 2, 3}
+    s2 := s1[1:]
+    s2[1] = 4
+    fmt.Println(s1)
+    s2 = append(s2, 5, 6, 7)
+    fmt.Println(s1)
+}
+//output 
+[1 2 4]
+[1 2 4]
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;切片拷贝&#34;&gt;切片拷贝 &lt;a href=&#34;#%e5%88%87%e7%89%87%e6%8b%b7%e8%b4%9d&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;Slice 中拷贝方法有2个。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func slicecopy(to, fm slice, width uintptr) int {
+	// 如果源切片或者目标切片有一个长度为0，那么就不需要拷贝，直接 return 
+	if fm.len == 0 || to.len == 0 {
+		return 0
+	}
+	// n 记录下源切片或者目标切片较短的那一个的长度
+	n := fm.len
+	if to.len &amp;lt; n {
+		n = to.len
+	}
+	// 如果入参 width = 0，也不需要拷贝了，返回较短的切片的长度
+	if width == 0 {
+		return n
+	}
+	// 如果开启了竞争检测
+	if raceenabled {
+		callerpc := getcallerpc(unsafe.Pointer(&amp;amp;to))
+		pc := funcPC(slicecopy)
+		racewriterangepc(to.array, uintptr(n*int(width)), callerpc, pc)
+		racereadrangepc(fm.array, uintptr(n*int(width)), callerpc, pc)
+	}
+	// 如果开启了 The memory sanitizer (msan)
+	if msanenabled {
+		msanwrite(to.array, uintptr(n*int(width)))
+		msanread(fm.array, uintptr(n*int(width)))
+	}
+
+	size := uintptr(n) * width
+	if size == 1 { 
+		// TODO: is this still worth it with new memmove impl?
+		// 如果只有一个元素，那么指针直接转换即可
+		*(*byte)(to.array) = *(*byte)(fm.array) // known to be a byte pointer
+	} else {
+		// 如果不止一个元素，那么就把 size 个 bytes 从 fm.array 地址开始，拷贝到 to.array 地址之后
+		memmove(to.array, fm.array, size)
+	}
+	return n
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;在这个方法中，slicecopy 方法会把源切片值(即 fm Slice )中的元素复制到目标切片(即 to Slice )中，并返回被复制的元素个数，copy 的两个类型必须一致。slicecopy 方法最终的复制结果取决于较短的那个切片，当较短的切片复制完成，整个复制过程就全部完成了。
+&lt;img src=&#34;https://abnerxc.github.io/img/go-s10.jpeg&#34; alt=&#34;&#34;&gt;&lt;/p&gt;
+&lt;p&gt;说到拷贝，切片中有一个需要注意的问题。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func main() {
+	slice := []int{10, 20, 30, 40}
+	for index, value := range slice {
+		fmt.Printf(&amp;#34;value = %d , value-addr = %x , slice-addr = %x\n&amp;#34;, value, &amp;amp;value, &amp;amp;slice[index])
+	}
+}
+//输出
+value = 10 , value-addr = c4200aedf8 , slice-addr = c4200b0320
+value = 20 , value-addr = c4200aedf8 , slice-addr = c4200b0328
+value = 30 , value-addr = c4200aedf8 , slice-addr = c4200b0330
+value = 40 , value-addr = c4200aedf8 , slice-addr = c4200b0338
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;img src=&#34;https://abnerxc.github.io/img/go-s11.jpeg&#34; alt=&#34;&#34;&gt;&lt;/p&gt;
+&lt;p&gt;由于 Value 是值拷贝的，并非引用传递，所以直接改 Value 是达不到更改原切片值的目的的，需要通过 &amp;amp;slice[index] 获取真实的地址。&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Go 中 defer 与 return 之间的迷之执行顺序</title>
+      <link>https://abnerxc.github.io/go/defer%E4%B8%8Ereturn%E4%B9%8B%E9%97%B4%E7%9A%84%E8%BF%B7%E4%B9%8B%E6%89%A7%E8%A1%8C%E9%A1%BA%E5%BA%8F/</link>
+      <pubDate>Mon, 15 Mar 2021 18:35:11 +0800</pubDate>
+      
+      <guid>https://abnerxc.github.io/go/defer%E4%B8%8Ereturn%E4%B9%8B%E9%97%B4%E7%9A%84%E8%BF%B7%E4%B9%8B%E6%89%A7%E8%A1%8C%E9%A1%BA%E5%BA%8F/</guid>
+      <description>&lt;h1 id=&#34;执行顺序&#34;&gt;执行顺序 &lt;a href=&#34;#%e6%89%a7%e8%a1%8c%e9%a1%ba%e5%ba%8f&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;偶然间发现了一个有意思的地方：在使用&lt;code&gt;defer&lt;/code&gt;时，匿名返回值的函数和命名返回值的函数的返回结果是不一样的。具体见如下代码:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func f1() (r int) {
+	defer func() {
+		r++
+	}()
+	return r
+}
+
+func f2() (r int) {
+	t := 5
+	defer func() {
+		t = t + 5
+	}()
+	return t
+}
+
+func f3() (r int) {
+	defer func(r int) {
+		r = r + 5
+	}(r)
+	return r
+}
+
+func f4(a int) int {
+	defer func(r int) {
+		a = a + 5
+	}(a)
+	return a
+}
+func main() {
+ 	fmt.Println(f1())
+ 	fmt.Println(f2())
+ 	fmt.Println(f3())
+ 	fmt.Println(f4(1))
+}
+//output 
+1
+5
+0
+1
+&lt;/code&gt;&lt;/pre&gt;&lt;ul&gt;
+&lt;li&gt;f1()拆解&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func f1() (r int) {
+
+    // 1.赋值
+    r = 0
+
+    // 2.闭包引用，返回值被修改
+    defer func() {
+        r++
+    }()
+
+    // 3.空的 return
+    return
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;defer 是闭包引用，返回值被修改，所以 f() 返回 1。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;f2()拆解&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func f2() (r int) {
+    t := 5
+    // 1.赋值
+    r = t
+
+    // 2.闭包引用，但是没有修改返回值 r
+    defer func() {
+        t = t + 5
+    }()
+
+    // 3.空的 return
+    return
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;第二步没涉及返回值 r 的操作，所以返回 5。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;f3()拆解（f4同理）&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func f3() (r int) {
+
+    // 1.赋值
+    r = 1
+
+    // 2.r 作为函数参数，不会修改要返回的那个 r 值
+    defer func(r int) {
+        r = r + 5
+    }(r)
+
+    // 3.空的 return
+    return
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;第二步，r 是作为函数参数使用，是一份复制，defer 语句里面的 r 和 外面的 r 其实是两个变量，里面变量的改变不会影响外层变量 r，所以不是返回 6 ，而是返回 1。&lt;/p&gt;
+&lt;p&gt;总结一下就是，函数的整个返回过程应该是：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;return对返回变量赋值，如果是匿名返回值就先声明再赋值；&lt;/li&gt;
+&lt;li&gt;执行defer函数；&lt;/li&gt;
+&lt;li&gt;return携带返回值返回。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h1 id=&#34;return-之后的-defer&#34;&gt;return 之后的 defer &lt;a href=&#34;#return-%e4%b9%8b%e5%90%8e%e7%9a%84-defer&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var a bool = true
+func main() {
+    defer func(){
+        fmt.Println(&amp;#34;1&amp;#34;)
+    }()
+    if a == true {
+        fmt.Println(&amp;#34;2&amp;#34;)
+        return
+    }
+    defer func(){
+        fmt.Println(&amp;#34;3&amp;#34;)
+    }()
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;em&gt;defer 关键字后面的函数或者方法想要执行必须先注册，return 之后的 defer 是不能注册的， 也就不能执行后面的函数或方法。&lt;/em&gt;&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Go 中 defer坑</title>
+      <link>https://abnerxc.github.io/go/defer%E7%9A%84%E5%9D%91/</link>
+      <pubDate>Mon, 15 Mar 2021 18:35:11 +0800</pubDate>
+      
+      <guid>https://abnerxc.github.io/go/defer%E7%9A%84%E5%9D%91/</guid>
+      <description>&lt;h1 id=&#34;defer-nil函数&#34;&gt;defer nil函数 &lt;a href=&#34;#defer-nil%e5%87%bd%e6%95%b0&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func() {
+    var run func() = nil
+    defer run()
+    
+    fmt.Println(&amp;#34;runs&amp;#34;)
+}
+//output
+runs
+panic: runtime error: invalid memory address or nil pointer dereference
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;名为 func 的函数一直运行至结束，然后 defer 函数会被执行且会因为值为 nil 而产生 panic 异常。然而值得注意的是，run() 的声明是没有问题，因为在外围函数运行完成后它才会被调用。&lt;/p&gt;
+&lt;p&gt;+++&lt;/p&gt;
+&lt;h1 id=&#34;循环中使用defer&#34;&gt;循环中使用defer &lt;a href=&#34;#%e5%be%aa%e7%8e%af%e4%b8%ad%e4%bd%bf%e7%94%a8defer&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;&lt;code&gt;慎重在循环中使用defer&lt;/code&gt;，因为结果出人意料&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func demo(){
+	for{
+		row,err:=db.Query(&amp;#34;select .....&amp;#34;)
+		if err!=nil{
+			...
+		}
+		defer row.close()
+	}
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;在上面的例子中，defer row.Close() 在循环中的延迟函数会在函数结束过后运行，而不是每次 for 循环结束之后。这些延迟函数会不停地堆积到延迟调用栈中，最终可能会导致一些不可预知的问题。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;解决方案1：不使用defer&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func demo(){
+	for{
+		row,err:=db.Query(&amp;#34;select .....&amp;#34;)
+		if err!=nil{
+			...
+		}
+		row.close()
+	}
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;ul&gt;
+&lt;li&gt;解决方案2：移交给函数
+这样每次匿名函数执行完，会执行defer&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func demo(){
+	for{
+		func(){
+			row,err:=db.Query(&amp;#34;select .....&amp;#34;)
+            if err!=nil{
+                ...
+            }
+            defer row.close()
+		}()
+	}
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;循环z-a倒叙&#34;&gt;循环Z-A(倒叙) &lt;a href=&#34;#%e5%be%aa%e7%8e%afz-a%e5%80%92%e5%8f%99&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func main() {
+    for i := 0; i &amp;lt; 4; i++ {
+        defer fmt.Print(i)
+    }
+}
+//output
+3
+2
+1
+0
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;+++&lt;/p&gt;
+&lt;h1 id=&#34;延迟调用含有闭包的函数&#34;&gt;延迟调用含有闭包的函数 &lt;a href=&#34;#%e5%bb%b6%e8%bf%9f%e8%b0%83%e7%94%a8%e5%90%ab%e6%9c%89%e9%97%ad%e5%8c%85%e7%9a%84%e5%87%bd%e6%95%b0&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type database struct{}
+
+func (db *database) connect() (disconnect func()) {
+    fmt.Println(&amp;#34;connect&amp;#34;)
+    return func() {
+        fmt.Println(&amp;#34;disconnect&amp;#34;)
+    }
+}
+
+//运行 
+db := &amp;amp;database{}
+defer db.connect()
+
+fmt.Println(&amp;#34;query db...&amp;#34;)
+
+//output
+query db...
+connect
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;最终 disconnect 并没有输出，最后只有 connect ，这是一个 bug，最终的情况是 connect() 执行结束后，其执行域得以被保存起来，但内部的闭包并不会被执行。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;解决方案&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;
+func() {
+    db := &amp;amp;database{}  close := db.connect()
+    defer close()
+    fmt.Println(&amp;#34;query db...&amp;#34;)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;+++&lt;/p&gt;
+&lt;h1 id=&#34;在执行块中使用-defer&#34;&gt;在执行块中使用 defer &lt;a href=&#34;#%e5%9c%a8%e6%89%a7%e8%a1%8c%e5%9d%97%e4%b8%ad%e4%bd%bf%e7%94%a8-defer&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;想要在执行块执行结束后执行在块内延迟调用的函数，但事实并非如此，它们只会在块所属的函数执行结束后才被执行，这种情况适用于所有的代码块除了上文的函数块例如，for，switch 等&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func main() {
+    {
+        defer func() {
+            fmt.Println(&amp;#34;block: defer runs&amp;#34;)
+        }()
+            
+        fmt.Println(&amp;#34;block: ends&amp;#34;)
+    }
+    
+    fmt.Println(&amp;#34;main: ends&amp;#34;)
+}
+//output
+block: ends
+main: ends
+block: defer runs
+&lt;/code&gt;&lt;/pre&gt;&lt;ul&gt;
+&lt;li&gt;解决方案&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func main() {
+    func() {
+        defer func() {
+            fmt.Println(&amp;#34;func: defer runs&amp;#34;)
+        }()
+    
+        fmt.Println(&amp;#34;func: ends&amp;#34;)
+    }()
+    
+    fmt.Println(&amp;#34;main: ends&amp;#34;)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;+++&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Go-channel总结</title>
+      <link>https://abnerxc.github.io/go/channel%E6%80%BB%E7%BB%93/</link>
+      <pubDate>Mon, 15 Mar 2021 18:35:11 +0800</pubDate>
+      
+      <guid>https://abnerxc.github.io/go/channel%E6%80%BB%E7%BB%93/</guid>
+      <description>&lt;h1 id=&#34;channel的使用场景&#34;&gt;channel的使用场景 &lt;a href=&#34;#channel%e7%9a%84%e4%bd%bf%e7%94%a8%e5%9c%ba%e6%99%af&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;把channel用在数据流动的地方：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;消息传递、消息过滤&lt;/li&gt;
+&lt;li&gt;信号广播&lt;/li&gt;
+&lt;li&gt;事件订阅与广播&lt;/li&gt;
+&lt;li&gt;请求、响应转发&lt;/li&gt;
+&lt;li&gt;任务分发&lt;/li&gt;
+&lt;li&gt;结果汇总&lt;/li&gt;
+&lt;li&gt;并发控制&lt;/li&gt;
+&lt;li&gt;同步与异步&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h1 id=&#34;channel的基本操作和注意事项&#34;&gt;channel的基本操作和注意事项 &lt;a href=&#34;#channel%e7%9a%84%e5%9f%ba%e6%9c%ac%e6%93%8d%e4%bd%9c%e5%92%8c%e6%b3%a8%e6%84%8f%e4%ba%8b%e9%a1%b9&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;channel 存在3种状态&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;nil,未初始化，刚刚申明或者手动复制为nil&lt;/li&gt;
+&lt;li&gt;active，正常运行中的可读可写&lt;/li&gt;
+&lt;li&gt;closed,关闭时，&lt;strong&gt;千万不要认为关闭以后，channel的值是nil&lt;/strong&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;channel 可进行3种操作&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;读&lt;/li&gt;
+&lt;li&gt;写&lt;/li&gt;
+&lt;li&gt;关闭&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;3种状态存在9种情况&lt;/p&gt;
+&lt;table&gt;
+  &lt;thead&gt;
+      &lt;tr&gt;
+          &lt;th&gt;操作&lt;/th&gt;
+          &lt;th&gt;nil的channel&lt;/th&gt;
+          &lt;th&gt;正常channel&lt;/th&gt;
+          &lt;th&gt;已关闭channel&lt;/th&gt;
+      &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+      &lt;tr&gt;
+          &lt;td&gt;&amp;lt;- ch&lt;/td&gt;
+          &lt;td&gt;阻塞&lt;/td&gt;
+          &lt;td&gt;成功or阻塞&lt;/td&gt;
+          &lt;td&gt;读到零值&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;ch &amp;lt;-&lt;/td&gt;
+          &lt;td&gt;阻塞&lt;/td&gt;
+          &lt;td&gt;成功or阻塞&lt;/td&gt;
+          &lt;td&gt;panic&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;close(ch)&lt;/td&gt;
+          &lt;td&gt;panic&lt;/td&gt;
+          &lt;td&gt;成功&lt;/td&gt;
+          &lt;td&gt;panic&lt;/td&gt;
+      &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;对于nil通道的情况，也并非完全遵循上表，有1个特殊场景：当nil的通道在select的某个case中时，这个case会阻塞，但不会造成死锁&lt;/p&gt;
+&lt;h1 id=&#34;使用for-range读channel&#34;&gt;使用for range读channel &lt;a href=&#34;#%e4%bd%bf%e7%94%a8for-range%e8%af%bbchannel&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;ul&gt;
+&lt;li&gt;场景&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;当需要不断从channel读取数据时。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;原理&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;使用for-range读取channel，这样既安全又便利，当channel关闭时，for循环会自动退出，无需主动监测channel是否关闭，可以防止读取已经关闭的channel，造成读到数据为通道所存储的数据类型的零值。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;用法&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;for x := range ch{
+    fmt.Println(x)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;使用vok---ch--select操作判断channel是否关闭&#34;&gt;使用v,ok := &amp;lt;-ch + select操作判断channel是否关闭 &lt;a href=&#34;#%e4%bd%bf%e7%94%a8vok---ch--select%e6%93%8d%e4%bd%9c%e5%88%a4%e6%96%adchannel%e6%98%af%e5%90%a6%e5%85%b3%e9%97%ad&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;ul&gt;
+&lt;li&gt;场景&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;code&gt;v,ok := &amp;lt;-ch + select&lt;/code&gt;操作判断channel是否关闭&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;原理&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;ok的结果和含义：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;- `true`：读到通道数据，不确定是否关闭，可能channel还有保存的数据，但channel已关闭。
+- `false`：通道关闭，无数据读到。
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;从关闭的channel读值读到是channel所传递数据类型的零值，这个零值有可能是发送者发送的，也可能是channel关闭了。&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;_, ok := &amp;lt;-ch&lt;/code&gt;与select配合使用的，当ok为false时，代表了channel已经close。&lt;/p&gt;
+&lt;p&gt;下面解释原因，&lt;code&gt;_,ok := &amp;lt;-ch&lt;/code&gt;对应的函数是&lt;code&gt;func chanrecv(c *hchan, ep unsafe.Pointer, block bool) (selected, received bool)&lt;/code&gt;，入参block含义是当前goroutine是否可阻塞，当block为false代表的是select操作，不可阻塞当前goroutine的在channel操作，否则是普通操作（即&lt;code&gt;_, ok&lt;/code&gt;不在select中）。返回值selected代表当前操作是否成功，主要为select服务，返回**received代表是否从channel读到有效值。**它有3种返回值情况：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;block为false，即执行select时，如果channel为空，返回(false,false)，代表select操作失败，没接收到值。&lt;/li&gt;
+&lt;li&gt;否则，如果channel已经关闭，并且没有数据，ep即接收数据的变量设置为零值，返回(true,false)，代表select操作成功，但channel已关闭，没读到有效值。&lt;/li&gt;
+&lt;li&gt;否则，其他读到有效数据的情况，返回(true,ture)。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;我们考虑_, ok := &amp;lt;-ch和select结合使用的情况。&lt;/p&gt;
+&lt;p&gt;情况1：当chanrecv返回(false,false)时，本质是select操作失败了，所以相关的case会阻塞，不会执行，比如下面的代码：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;
+func main() {
+	ch := make(chan int)
+	select {
+	case v, ok := &amp;lt;-ch:
+		fmt.Printf(&amp;#34;v: %v, ok: %v\n&amp;#34;, v, ok)
+	default:
+		fmt.Println(&amp;#34;nothing&amp;#34;)
+	}
+}
+
+// 结果：
+// nothing
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;情况2：下面的结果会是零值和false：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func main() {
+	ch := make(chan int)
+
+	// 增加关闭
+	close(ch)
+
+	select {
+	case v, ok := &amp;lt;-ch:
+		fmt.Printf(&amp;#34;v: %v, ok: %v\n&amp;#34;, v, ok)
+	}
+}
+
+// v: 0, ok: false
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;情况3的received为true，即_, ok中的ok为true，不做讨论了，只讨论ok为false的情况。&lt;/p&gt;
+&lt;p&gt;最后ok为false的时候，只有情况2，此时channel必然已经关闭，我们便可以在select中用ok判断channel是否已经关闭。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;用法&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func main() {
+	ch := make(chan int, 1)
+
+	// 发送1个数据关闭channel
+	ch &amp;lt;- 1
+	close(ch)
+	print(&amp;#34;close channel\n&amp;#34;)
+
+	// 不停读数据直到channel没有有效数据
+	for {
+		select {
+		case v, ok := &amp;lt;-ch:
+			print(&amp;#34;v: &amp;#34;, v, &amp;#34;, ok:&amp;#34;, ok, &amp;#34;\n&amp;#34;)
+			if !ok {
+				print(&amp;#34;channel is close\n&amp;#34;)
+				return
+			}	
+		default:
+			print(&amp;#34;nothing\n&amp;#34;)
+		}
+	}
+}
+
+// 结果
+// close channel
+// v: 1, ok:true
+// v: 0, ok:false
+// channel is close
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;使用select处理多个channel&#34;&gt;使用select处理多个channel &lt;a href=&#34;#%e4%bd%bf%e7%94%a8select%e5%a4%84%e7%90%86%e5%a4%9a%e4%b8%aachannel&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;ul&gt;
+&lt;li&gt;场景
+需要对多个通道进行同时处理，但只处理最先发生的channel时&lt;/li&gt;
+&lt;li&gt;原理
+&lt;code&gt;select&lt;/code&gt;可以同时监控多个通道的情况，只处理未阻塞的case。&lt;strong&gt;当通道为nil时，对应的case永远为阻塞，无论读写。特殊关注：普通情况下，对nil的通道写操作是要panic的。&lt;/strong&gt;&lt;/li&gt;
+&lt;li&gt;用法&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;// 分配job时，如果收到关闭的通知则退出，不分配job
+func (h *Handler) handle(job *Job) {
+    select {
+    case h.jobCh&amp;lt;-job:
+        return 
+    case &amp;lt;-h.stopCh:
+        return
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;使用channel的声明控制读写权限&#34;&gt;使用channel的声明控制读写权限 &lt;a href=&#34;#%e4%bd%bf%e7%94%a8channel%e7%9a%84%e5%a3%b0%e6%98%8e%e6%8e%a7%e5%88%b6%e8%af%bb%e5%86%99%e6%9d%83%e9%99%90&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;场景
+协程对某个通道只读或只写时&lt;/p&gt;
+&lt;p&gt;目的：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;使代码更易读、更易维护，&lt;/li&gt;
+&lt;li&gt;防止只读协程对通道进行写数据，但通道已关闭，造成panic。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;用法&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;如果协程对某个channel只有写操作，则这个channel声明为只写。&lt;/li&gt;
+&lt;li&gt;如果协程对某个channel只有读操作，则这个channe声明为只读。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;// 只有generator进行对outCh进行写操作，返回声明
+// &amp;lt;-chan int，可以防止其他协程乱用此通道，造成隐藏bug
+func generator(int n) &amp;lt;-chan int {
+    outCh := make(chan int)
+    go func(){
+        for i:=0;i&amp;lt;n;i++{
+            outCh&amp;lt;-i
+        }
+    }()
+    return outCh
+}
+
+// consumer只读inCh的数据，声明为&amp;lt;-chan int
+// 可以防止它向inCh写数据
+func consumer(inCh &amp;lt;-chan int) {
+    for x := range inCh {
+        fmt.Println(x)
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;使用缓冲channel增强并发&#34;&gt;使用缓冲channel增强并发 &lt;a href=&#34;#%e4%bd%bf%e7%94%a8%e7%bc%93%e5%86%b2channel%e5%a2%9e%e5%bc%ba%e5%b9%b6%e5%8f%91&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;ul&gt;
+&lt;li&gt;场景
+异步&lt;/li&gt;
+&lt;li&gt;原理
+有缓冲通道可供多个协程同时处理，在一定程度可提高并发性。&lt;/li&gt;
+&lt;li&gt;用法&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;// 无缓冲
+ch1 := make(chan int)
+ch2 := make(chan int, 0)
+// 有缓冲
+ch3 := make(chan int, 1)
+&lt;/code&gt;&lt;/pre&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;// 使用5个`do`协程同时处理输入数据
+func test() {
+    inCh := generator(100)
+    outCh := make(chan int, 10)
+
+    for i := 0; i &amp;lt; 5; i++ {
+        go do(inCh, outCh)
+    }
+
+    for r := range outCh {
+        fmt.Println(r)
+    }
+}
+
+func do(inCh &amp;lt;-chan int, outCh chan&amp;lt;- int) {
+    for v := range inCh {
+        outCh &amp;lt;- v * v
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;为操作加上超时&#34;&gt;为操作加上超时 &lt;a href=&#34;#%e4%b8%ba%e6%93%8d%e4%bd%9c%e5%8a%a0%e4%b8%8a%e8%b6%85%e6%97%b6&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;ul&gt;
+&lt;li&gt;场景
+异步&lt;/li&gt;
+&lt;li&gt;原理
+使用&lt;code&gt;select&lt;/code&gt;和&lt;code&gt;time.After&lt;/code&gt;，看操作和定时器哪个先返回，处理先完成的，就达到了超时控制的效果&lt;/li&gt;
+&lt;li&gt;用法&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;
+func doWithTimeOut(timeout time.Duration) (int, error) {
+	select {
+	case ret := &amp;lt;-do():
+		return ret, nil
+	case &amp;lt;-time.After(timeout):
+		return 0, errors.New(&amp;#34;timeout&amp;#34;)
+	}
+}
+
+func do() &amp;lt;-chan int {
+	outCh := make(chan int)
+	go func() {
+		// do work
+	}()
+	return outCh
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;使用closech关闭所有下游协程&#34;&gt;使用&lt;code&gt;close(ch)&lt;/code&gt;关闭所有下游协程 &lt;a href=&#34;#%e4%bd%bf%e7%94%a8closech%e5%85%b3%e9%97%ad%e6%89%80%e6%9c%89%e4%b8%8b%e6%b8%b8%e5%8d%8f%e7%a8%8b&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;ul&gt;
+&lt;li&gt;场景
+退出时，显示通知所有协程退出&lt;/li&gt;
+&lt;li&gt;原理
+所有读ch的协程都会收到close(ch)的信号&lt;/li&gt;
+&lt;li&gt;用法&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;
+func (h *Handler) Stop() {
+    close(h.stopCh)
+
+    // 可以使用WaitGroup等待所有协程退出
+}
+
+// 收到停止后，不再处理请求
+func (h *Handler) loop() error {
+    for {
+        select {
+        case req := &amp;lt;-h.reqCh:
+            go handle(req)
+        case &amp;lt;-h.stopCh:
+            return
+        }
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;使用chan-struct作为信号channel&#34;&gt;使用chan struct{}作为信号channel &lt;a href=&#34;#%e4%bd%bf%e7%94%a8chan-struct%e4%bd%9c%e4%b8%ba%e4%bf%a1%e5%8f%b7channel&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;ul&gt;
+&lt;li&gt;场景
+使用channel传递信号，而不是传递数据时&lt;/li&gt;
+&lt;li&gt;原理
+没数据需要传递时，传递空struct&lt;/li&gt;
+&lt;li&gt;用法&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;// 上例中的Handler.stopCh就是一个例子，stopCh并不需要传递任何数据
+// 只是要给所有协程发送退出的信号
+type Handler struct {
+    stopCh chan struct{}
+    reqCh chan *Request
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;使用channel传递结构体的指针而非结构体&#34;&gt;使用channel传递结构体的指针而非结构体 &lt;a href=&#34;#%e4%bd%bf%e7%94%a8channel%e4%bc%a0%e9%80%92%e7%bb%93%e6%9e%84%e4%bd%93%e7%9a%84%e6%8c%87%e9%92%88%e8%80%8c%e9%9d%9e%e7%bb%93%e6%9e%84%e4%bd%93&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;ul&gt;
+&lt;li&gt;场景
+使用channel传递结构体数据时&lt;/li&gt;
+&lt;li&gt;原理
+channel本质上传递的是数据的拷贝，拷贝的数据越小传输效率越高，传递结构体指针，比传递结构体更高效&lt;/li&gt;
+&lt;li&gt;用法&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;reqCh chan *Request
+
+// 好过
+reqCh chan Request
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;使用channel传递channel&#34;&gt;使用channel传递channel &lt;a href=&#34;#%e4%bd%bf%e7%94%a8channel%e4%bc%a0%e9%80%92channel&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;ul&gt;
+&lt;li&gt;场景
+使用场景有点多，通常是用来获取结果。&lt;/li&gt;
+&lt;li&gt;原理
+channel可以用来传递变量，channel自身也是变量，可以传递自己。&lt;/li&gt;
+&lt;li&gt;用法&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;
+package main
+
+import (
+	&amp;#34;fmt&amp;#34;
+	&amp;#34;math/rand&amp;#34;
+	&amp;#34;sync&amp;#34;
+	&amp;#34;time&amp;#34;
+)
+
+func main() {
+	reqs := []int{1, 2, 3, 4, 5, 6, 7, 8, 9}
+
+	// 存放结果的channel的channel
+	outs := make(chan chan int, len(reqs))
+	var wg sync.WaitGroup
+	wg.Add(len(reqs))
+	for _, x := range reqs {
+		o := handle(&amp;amp;wg, x)
+		outs &amp;lt;- o
+	}
+
+	go func() {
+		wg.Wait()
+		close(outs)
+	}()
+
+	// 读取结果，结果有序
+	for o := range outs {
+		fmt.Println(&amp;lt;-o)
+	}
+}
+
+// handle 处理请求，耗时随机模拟
+func handle(wg *sync.WaitGroup, a int) chan int {
+	out := make(chan int)
+	go func() {
+		time.Sleep(time.Duration(rand.Intn(3)) * time.Second)
+		out &amp;lt;- a
+		wg.Done()
+	}()
+	return out
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;blockquote&gt;
+&lt;p&gt;本文收集来源： &lt;a href=&#34;http://lessisbetter.site/2019/01/20/golang-channel-all-usage/&#34;&gt;http://lessisbetter.site/2019/01/20/golang-channel-all-usage/&lt;/a&gt;&lt;/p&gt;&lt;/blockquote&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Go-context详解</title>
+      <link>https://abnerxc.github.io/go/context%E8%AF%A6%E8%A7%A3/</link>
+      <pubDate>Mon, 15 Mar 2021 18:35:11 +0800</pubDate>
+      
+      <guid>https://abnerxc.github.io/go/context%E8%AF%A6%E8%A7%A3/</guid>
+      <description>&lt;h1 id=&#34;背景&#34;&gt;背景 &lt;a href=&#34;#%e8%83%8c%e6%99%af&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;golang在1.6.2的时候还没有自己的context，在1.7的版本中就把golang.org/x/net/context包被加入到了官方的库中。golang 的 Context包，是专门用来简化对于处理单个请求的多个goroutine之间与请求域的数据、取消信号、截止时间等相关操作，这些操作可能涉及多个 API 调用。&lt;/p&gt;
+&lt;p&gt;比如有一个网络请求Request，每个Request都需要开启一个goroutine做一些事情，这些goroutine又可能会开启其他的goroutine。这样的话， 我们就可以通过Context，来跟踪这些goroutine，并且通过Context来控制他们的目的，这就是Go语言为我们提供的Context，中文可以称之为“上下文”。&lt;/p&gt;
+&lt;p&gt;另外一个实际例子是，在Go服务器程序中，每个请求都会有一个goroutine去处理。然而，处理程序往往还需要创建额外的goroutine去访问后端资源，比如数据库、RPC服务等。由于这些goroutine都是在处理同一个请求，所以它们往往需要访问一些共享的资源，比如用户身份信息、认证token、请求截止时间等。而且如果请求超时或者被取消后，所有的goroutine都应该马上退出并且释放相关的资源。这种情况也需要用Context来为我们取消掉所有goroutine&lt;/p&gt;
+&lt;p&gt;如果要使用可以通过 go get golang.org/x/net/context 命令获取这个包。&lt;/p&gt;
+&lt;h1 id=&#34;context原理&#34;&gt;Context原理 &lt;a href=&#34;#context%e5%8e%9f%e7%90%86&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;Context 的调用应该是链式的，通过&lt;code&gt;WithCancel&lt;/code&gt;，&lt;code&gt;WithDeadline&lt;/code&gt;，&lt;code&gt;WithTimeout&lt;/code&gt;或&lt;code&gt;WithValue&lt;/code&gt;派生出新的 Context.当父 Context 被取消时，其派生的所有 Context 都将取消.&lt;/p&gt;
+&lt;p&gt;通过&lt;code&gt;context.WithXXX&lt;/code&gt;都将返回新的 Context 和 CancelFunc.调用 CancelFunc 将取消子代，移除父代对子代的引用，并且停止所有定时器.未能调用 CancelFunc 将泄漏子代，直到父代被取消或定时器触发.go vet工具检查所有流程控制路径上使用 CancelFuncs.&lt;/p&gt;
+&lt;h1 id=&#34;遵循规则&#34;&gt;遵循规则 &lt;a href=&#34;#%e9%81%b5%e5%be%aa%e8%a7%84%e5%88%99&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;遵循以下规则，以保持包之间的接口一致，并启用静态分析工具以检查上下文传播.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;不要将 Contexts 放入结构体，相反&lt;code&gt;context&lt;/code&gt;应该作为第一个参数传入，命名为&lt;code&gt;ctx. func DoSomething（ctx context.Context，arg Arg）error { // ... use ctx ... }&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;即使函数允许，也不要传入&lt;code&gt;nil&lt;/code&gt;的 Context.如果不知道用哪种 Context，可以使用&lt;code&gt;context.TODO()&lt;/code&gt;.&lt;/li&gt;
+&lt;li&gt;使用context的Value相关方法只应该用于在程序和接口中传递的和请求相关的元数据，不要用它来传递一些可选的参数.&lt;/li&gt;
+&lt;li&gt;相同的 Context 可以传递给在不同的goroutine；Context 是并发安全的.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h1 id=&#34;context包&#34;&gt;Context包 &lt;a href=&#34;#context%e5%8c%85&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;Context结构&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type Context interface {
+    // 在Context超时或取消时（即结束了）返回一个关闭的channel
+    // 即如果当前Context超时或取消时，Done方法会返回一个channel，然后其他地方就可以通过判断Done方法是否有返回（channel），如果有则说明Context已结束
+    // 故其可以作为广播通知其他相关方本Context已结束，请做相关处理.
+    Done() &amp;lt;-chan struct{}
+
+    // 返回Context取消的原因
+    Err() error
+
+    // 返回Context的超时时间（超时返回场景）
+    Deadline() (deadline time.Time, ok bool)
+
+    // 值返回与键关联的值，如果没有则返回nil。
+    Value(key interface{}) interface{}
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;所有方法&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func Background() Context
+func TODO() Context
+
+func WithCancel(parent Context) (ctx Context, cancel CancelFunc)
+func WithDeadline(parent Context, deadline time.Time) (Context, CancelFunc)
+func WithTimeout(parent Context, timeout time.Duration) (Context, CancelFunc)
+func WithValue(parent Context, key, val interface{}) Context
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;上面可以看到Context是一个接口，想要使用就得实现其方法.在context包内部已经为我们实现好了两个空的Context，可以通过调用Background()和TODO()方法获取.一般的将它们作为Context的根，往下派生.&lt;/p&gt;
+&lt;h1 id=&#34;withcancel-例子&#34;&gt;WithCancel 例子 &lt;a href=&#34;#withcancel-%e4%be%8b%e5%ad%90&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;WithCancel 以一个新的 Done channel 返回一个父 Context 的拷贝.&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt; func WithCancel(parent Context) (ctx Context, cancel CancelFunc) {
+         c := newCancelCtx(parent)
+         propagateCancel(parent, &amp;amp;c)
+         return &amp;amp;c, func() { c.cancel(true, Canceled) }
+     }
+     
+     // newCancelCtx returns an initialized cancelCtx.
+     func newCancelCtx(parent Context) cancelCtx {
+         return cancelCtx{
+             Context: parent,
+             done:    make(chan struct{}),
+         }
+     }
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;此示例演示使用一个可取消的上下文，以防止 goroutine 泄漏.示例函数结束时，defer 调用 cancel 方法，gen goroutine 将返回而不泄漏.&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+    &amp;#34;context&amp;#34;
+    &amp;#34;fmt&amp;#34;
+)
+
+func main() {
+    gen := func(ctx context.Context) &amp;lt;-chan int {
+        dst := make(chan int)
+        n := 1
+        go func() {
+            for {
+                select {
+                case &amp;lt;-ctx.Done():
+                    return // returning not to leak the goroutine
+                case dst &amp;lt;- n:
+                    n++
+                }
+            }
+        }()
+        return dst
+    }
+
+    ctx, cancel := context.WithCancel(context.Background())
+    defer cancel() // cancel when we are finished consuming integers
+
+    for n := range gen(ctx) {
+        fmt.Println(n)
+        if n == 5 {
+            break
+        }
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;withdeadline-例子&#34;&gt;WithDeadline 例子 &lt;a href=&#34;#withdeadline-%e4%be%8b%e5%ad%90&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;  func WithDeadline(parent Context, deadline time.Time) (Context, CancelFunc) {
+         if cur, ok := parent.Deadline(); ok &amp;amp;&amp;amp; cur.Before(deadline) {
+             // The current deadline is already sooner than the new one.
+             return WithCancel(parent)
+         }
+         c := &amp;amp;timerCtx{
+             cancelCtx: newCancelCtx(parent),
+             deadline:  deadline,
+         }
+   ......
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;可以清晰的看到，当派生出的子 Context 的deadline在父Context之后，直接返回了一个父Context的拷贝.故语义上等效为父.&lt;/p&gt;
+&lt;p&gt;WithDeadline 的最后期限调整为不晚于 d 返回父上下文的副本.如果父母的截止日期已经早于 d，WithDeadline （父，d） 是在语义上等效为父.返回的上下文完成的通道关闭的最后期限期满后，返回的取消函数调用时，或当父上下文完成的通道关闭，以先发生者为准.&lt;/p&gt;
+&lt;p&gt;看看官方的例子：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+    &amp;#34;context&amp;#34;
+    &amp;#34;fmt&amp;#34;
+    &amp;#34;time&amp;#34;
+)
+
+func main() {
+    d := time.Now().Add(50 * time.Millisecond)
+    ctx, cancel := context.WithDeadline(context.Background(), d)
+
+    //即使ctx将会过期，还是最好将其调用
+    //在任何情况下都具有取消功能。 否则可能会使
+    //上下文及其父对象的生存时间超出了必要。
+    defer cancel()
+
+    select {
+    case &amp;lt;-time.After(1 * time.Second):
+        fmt.Println(&amp;#34;overslept&amp;#34;)
+    case &amp;lt;-ctx.Done():
+        fmt.Println(ctx.Err())
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;withtimeout-例子&#34;&gt;WithTimeout 例子 &lt;a href=&#34;#withtimeout-%e4%be%8b%e5%ad%90&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func WithTimeout(parent Context, timeout time.Duration) (Context, CancelFunc) {
+         return WithDeadline(parent, time.Now().Add(timeout))
+     }
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;官方例子：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+    &amp;#34;context&amp;#34;
+    &amp;#34;fmt&amp;#34;
+    &amp;#34;time&amp;#34;
+)
+
+func main() {
+    // Pass a context with a timeout to tell a blocking function that it
+    // should abandon its work after the timeout elapses.
+    ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
+    defer cancel()
+
+    select {
+    case &amp;lt;-time.After(1 * time.Second):
+        fmt.Println(&amp;#34;overslept&amp;#34;)
+    case &amp;lt;-ctx.Done():
+        fmt.Println(ctx.Err()) // prints &amp;#34;context deadline exceeded&amp;#34;
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;withvalue&#34;&gt;WithValue &lt;a href=&#34;#withvalue&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;  func WithValue(parent Context, key, val interface{}) Context {
+         if key == nil {
+             panic(&amp;#34;nil key&amp;#34;)
+         }
+         if !reflect.TypeOf(key).Comparable() {
+             panic(&amp;#34;key is not comparable&amp;#34;)
+         }
+         return &amp;amp;valueCtx{parent, key, val}
+     }
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;WithValue 返回的父与键关联的值在 val 的副本.&lt;/p&gt;
+&lt;p&gt;使用上下文值仅为过渡进程和 Api 的请求范围的数据，而不是将可选参数传递给函数.&lt;/p&gt;
+&lt;p&gt;提供的键必须是可比性和应该不是字符串类型或任何其他内置的类型以避免包使用的上下文之间的碰撞.WithValue 用户应该定义自己的键的类型.为了避免分配分配给接口 {} 时，上下文键经常有具体类型结构 {}.另外，导出的上下文关键变量静态类型应该是一个指针或接口.&lt;/p&gt;
+&lt;p&gt;看看官方例子：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+    &amp;#34;context&amp;#34;
+    &amp;#34;fmt&amp;#34;
+)
+
+func main() {
+    type favContextKey string
+
+    f := func(ctx context.Context, k favContextKey) {
+        if v := ctx.Value(k); v != nil {
+            fmt.Println(&amp;#34;found value:&amp;#34;, v)
+            return
+        }
+        fmt.Println(&amp;#34;key not found:&amp;#34;, k)
+    }
+
+    k := favContextKey(&amp;#34;language&amp;#34;)
+    ctx := context.WithValue(context.Background(), k, &amp;#34;Go&amp;#34;)
+
+    f(ctx, k)
+    f(ctx, favContextKey(&amp;#34;color&amp;#34;))
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;blockquote&gt;
+&lt;p&gt;文章来源：https://mojotv.cn/2019/06/26/golang-context&lt;/p&gt;&lt;/blockquote&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>go modules 详解</title>
+      <link>https://abnerxc.github.io/go/mod%E8%AF%A6%E8%A7%A3/</link>
+      <pubDate>Tue, 15 Jan 2019 18:35:11 +0800</pubDate>
+      
+      <guid>https://abnerxc.github.io/go/mod%E8%AF%A6%E8%A7%A3/</guid>
+      <description>&lt;h1 id=&#34;go-mod的介绍&#34;&gt;go mod的介绍 &lt;a href=&#34;#go-mod%e7%9a%84%e4%bb%8b%e7%bb%8d&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;我们以前用 go get 获取依赖其实是有潜在危险的，因为我们不确定最新版依赖是否会破坏掉我们项目对依赖包的使用方式，即当前项目可能会出现不兼容最新依赖包的问题。随着 go1.11 的发布，go 给我们带来了 module 新特性，这是 Go 语言新的一套依赖管理系统。&lt;/p&gt;
+&lt;p&gt;在默认情况下，$GOPATH 默认情况下是不支持 go mudules 的，我们需要在项目目录下手动执行以下命令：&lt;code&gt;$ export GO111MODULE=on&lt;/code&gt;,这也表明了 go 要利用 modules 机制消灭 $GOPATH 的决心啊！&lt;/p&gt;
+&lt;p&gt;GO111MODULE可以设置为三个字符串值之一：off，on或auto（默认值）&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;off : go命令从不使用新模块支持。它查找vendor 目录和GOPATH以查找依赖关系;也就是继续使用“GOPATH模式”。&lt;/li&gt;
+&lt;li&gt;on : go命令需要使用模块，go 会忽略 $GOPATH 和 vendor 文件夹，只根据go.mod下载依赖。&lt;/li&gt;
+&lt;li&gt;auto 或未设置: go命令根据当前目录启用或禁用模块支持。仅当当前目录位于$GOPATH/src之外并且其本身包含go.mod文件或位于包含go.mod文件的目录下时，才启用模块支持。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;演示使用教程&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;创建项目,为了配合 go modules 机制，我们 $GOPATH 以外的目录创建一个 testmod 的包：&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;$ mkdir testmod
+$ cd testmod
+
+$ echo &amp;#39;package testmod
+		import &amp;#34;fmt&amp;#34;
+	func Hi(name string) string {
+        return fmt.Sprintf(&amp;#34;Hi, %s&amp;#34;, name)
+}&amp;#39; &amp;gt;&amp;gt; testmod.go
+&lt;/code&gt;&lt;/pre&gt;&lt;ul&gt;
+&lt;li&gt;初始化module&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;$ go mod init github.com/objcoding/testmod
+#这里如果是从git下来的，可以直接进入项目里面执行go init
+go: creating new go.mod: module github.com/objcoding/testmod
+&lt;/code&gt;&lt;/pre&gt;&lt;ul&gt;
+&lt;li&gt;推送到 github 仓库&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;$ git init
+$ git add *
+$ git commit -am &amp;#34;First commit&amp;#34;
+$ git push -u origin master
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;go-mudules-版本规则&#34;&gt;go mudules 版本规则 &lt;a href=&#34;#go-mudules-%e7%89%88%e6%9c%ac%e8%a7%84%e5%88%99&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;go modules 是一个版本化依赖管理系统，版本需要遵循一些规则，比如版本号需要遵循以下格式：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;vX.Y.Z-pre.0.yyyymmddhhmmss-abcdefabcdef
+vX.0.0-yyyymmddhhmmss-abcdefabcdef
+vX.Y.(Z+1)-0.yyyymmddhhmmss-abcdefabcdef
+vX.Y.Z
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;vX.Y.Z 是我们仓库打的标签版本，也就是 go modules 是根据仓库标签来确定版本号的，因此我们发布版本时，需要给我们的仓库打上一个标签版本号。&lt;/p&gt;
+&lt;p&gt;也就是版本号 + 时间戳 +hash，我们自己指定版本时只需要指定版本号即可，没有版本 tag 的则需要找到对应 commit 的时间和 hash 值。&lt;/p&gt;
+&lt;p&gt;还有一个重要的规则是，版本 0 和 1，最好需要有不同的依赖路径，如：v1.0.0 和 v2.0.0 是有不同的依赖路径，下面会详细介绍一下这个版本规则。&lt;/p&gt;
+&lt;h1 id=&#34;发布版本&#34;&gt;发布版本 &lt;a href=&#34;#%e5%8f%91%e5%b8%83%e7%89%88%e6%9c%ac&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;了解了 go modules 的版本规则后，现在我们发布一下该项目的版本：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;$ git tag v1.0.0
+$ git push --tags
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;这时我们最好还需要创建一条 v1 分支，以便我们在其它分支写代码不会影响到 v1.0.0 版本：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;$ git checkout -b v1
+$ git push -u origin v1
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;升级版本&#34;&gt;升级版本 &lt;a href=&#34;#%e5%8d%87%e7%ba%a7%e7%89%88%e6%9c%ac&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;$ git commit -m &amp;#34;update testmod&amp;#34; testmod.go
+$ git tag v1.0.1
+$ git push --tags origin v1
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;现在我们的 项目已经升级到 v1.0.1 版本了，我们可以有多种方式获取这个版本依赖，go1.11 中，go get 拥有了很多新特性，我们可以直接通过以下命令获取 v1.01 版本依赖：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;$ go get github.com/objcoding/testmod@v1.0.1
+或者
+$ go mod edit -require=&amp;#34;github.com/objcoding/testmod@v1.0.1&amp;#34;
+$ go mod tidy
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;go mod edit -require 可以主动修改 go.md 文件中依赖的版本号，然后通过 go mod tidy 对版本进行更新，它会自动清理掉不需要的依赖项，同时可以将依赖项更新到当前版本。&lt;/p&gt;
+&lt;h1 id=&#34;主要版本升级&#34;&gt;主要版本升级 &lt;a href=&#34;#%e4%b8%bb%e8%a6%81%e7%89%88%e6%9c%ac%e5%8d%87%e7%ba%a7&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;上面版本规则说了，版本 0 和 1，即大版本更新，最好需要有不同的依赖路径，如：v1.0.0 和 v2.0.0 是有不同的依赖路径，那么用 go modules 怎么实现呢，我们可以通过修改 go.mod 文件第一行添加新路径：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;$ cd testmod
+$ echo &amp;#39;module github.com/objcoding/testmod/v2&amp;#39; &amp;gt;&amp;gt; go.mod
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;然后我们修改 testmod 函数 Hi()：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;$ cd testmod
+
+$ echo &amp;#39;package testmod
+import (
+	&amp;#34;fmt&amp;#34;
+	&amp;#34;errors&amp;#34;
+)
+func Hi(name, lang string) (string, error) {
+	switch lang {
+	case &amp;#34;en&amp;#34;:
+		return fmt.Sprintf(&amp;#34;Hi, %s!&amp;#34;, name), nil
+	default:
+		return &amp;#34;&amp;#34;, errors.New(&amp;#34;unknown language&amp;#34;)
+	}
+}&amp;#39; &amp;gt;&amp;gt; testmod.go
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;这时，Hi() 方法将不兼容 v1 版本，我们需要新建一个 v2.0.0 版本，还是老样子，我们最好在 v2.0.0 版本新建一条 v2 分分支，将 v2.0.0 版本的代码写到这条分支中（这只是一个规范，实际上你将代码也写到任何分支中都行，go并没有这个规范）：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;$ git add *
+$ git checkout -b v2
+$ git commit testmod.go -m &amp;#34;v2.0.0&amp;#34;
+$ git tag v2.0.0
+$ git push --tags origin v2
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;然后我们修改代码中的版本import,为v2&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+import (
+    &amp;#34;fmt&amp;#34;
+  	&amp;#34;github.com/objcoding/testmod/v2&amp;#34;
+)
+func main() {
+    fmt.Println(testmod.Hi(&amp;#34;zch&amp;#34;, &amp;#34;en&amp;#34;))
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;然后执行&lt;code&gt;go mod tidy&lt;/code&gt;，go mod 会自动更新到v2.0.0版本&lt;/p&gt;
+&lt;h1 id=&#34;go-modules-命令大全&#34;&gt;go modules 命令大全 &lt;a href=&#34;#go-modules-%e5%91%bd%e4%bb%a4%e5%a4%a7%e5%85%a8&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;go help modules
+
+go mod命令
+
+download    download modules to local cache (下载依赖的module到本地cache))
+edit        edit go.mod from tools or scripts (编辑go.mod文件)
+graph       print module requirement graph (打印模块依赖图))
+init        initialize new module in current directory (再当前文件夹下初始化一个新的module, 创建go.mod文件))
+tidy        add missing and remove unused modules (增加丢失的module，去掉未用的module)
+vendor      make vendored copy of dependencies (将依赖复制到vendor下)
+verify      verify dependencies have expected content (校验依赖)
+why         explain why packages or modules are needed (解释为什么需要依赖)
+
+初始化mod
+
+go mod init [module]可以创建一个go.mod，只有一行信息module。
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;go-翻墙&#34;&gt;go 翻墙 &lt;a href=&#34;#go-%e7%bf%bb%e5%a2%99&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;swag安装为例&lt;/p&gt;
+&lt;p&gt;mac/linux swag 安装&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-code&#34; data-lang=&#34;code&#34;&gt;## 127.0.0.1:1087 是 ssr的hhtp代理
+$ git config --global http.proxy &amp;#34;127.0.0.1:1087&amp;#34;
+$ http_proxy=127.0.0.1:1087 go get -u -v github.com/swaggo/swag/cmd/swag
+$ git config --global --unset-all http.proxy
+$ git config --global --unset-all https.proxy
+$ cd $GOPATH/src/github.com/swaggo/swag/cmd/swag
+$ go install
+$ swag -v #验证是否安装成功
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;window goget.bat文件&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;@echo off
+
+set http_proxy=socks5://127.0.0.1:1080
+set https_proxy=socks5://127.0.0.1:1080
+
+go get -u -v %*
+
+echo ...
+
+pause
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;git bash上用goget.bat url就行了~&lt;/p&gt;
+&lt;h1 id=&#34;自建goproxy-server&#34;&gt;自建GOPROXY server &lt;a href=&#34;#%e8%87%aa%e5%bb%bagoproxy-server&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;项目地址 &lt;a href=&#34;https://github.com/gomods/athens&#34;&gt;https://github.com/gomods/athens&lt;/a&gt;
+Athens可以用来在公司内部建立自己的私有go mod服务器，或者在公网建立一个对外公开的GOPROXY server。&lt;/p&gt;
+&lt;h1 id=&#34;可用镜像&#34;&gt;可用镜像 &lt;a href=&#34;#%e5%8f%af%e7%94%a8%e9%95%9c%e5%83%8f&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;ul&gt;
+&lt;li&gt;阿里云:https://mirrors.aliyun.com/goproxy/&lt;/li&gt;
+&lt;li&gt;go代理:https://goproxy.io&lt;/li&gt;
+&lt;li&gt;go代理:https://goproxy.cn&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Go-log日志</title>
+      <link>https://abnerxc.github.io/go/log%E6%97%A5%E5%BF%97/</link>
+      <pubDate>Tue, 15 Jan 2019 18:35:11 +0800</pubDate>
+      
+      <guid>https://abnerxc.github.io/go/log%E6%97%A5%E5%BF%97/</guid>
+      <description>&lt;h1 id=&#34;日志使用&#34;&gt;日志使用 &lt;a href=&#34;#%e6%97%a5%e5%bf%97%e4%bd%bf%e7%94%a8&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;o语言为我们提供了标准的log包，来跟踪日志的记录。下面我们看看日志包log的使用&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func main() {
+	log.Println(&amp;#34;这是百度地址:&amp;#34;,&amp;#34;http://www.baidu.com&amp;#34;)
+	log.Printf(&amp;#34;这是百度地址域名：%s\n&amp;#34;,&amp;#34;baidu.com&amp;#34;)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;2019/08/28 13:18:44 这是百度地址: http://www.baidu.com
+2019/08/28 13:18:44 这是百度地址域名：baidu.com
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;有了时间了，我们还想要更多的信息，必然发生的源代码行号等，对此日志包log 为我们提供了可定制化的配制，让我们可以自己定制日志的抬头信息。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func init(){
+	log.SetFlags(log.Ldate|log.Lshortfile)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;我们使用&lt;code&gt;init&lt;/code&gt;函数，这个函数在&lt;code&gt;main&lt;/code&gt;函数执行之前就可以初始化，可以帮我们做一些配置，这里我们自定义日志的抬头信息为时间+文件名+源代码所在行号。也就是&lt;code&gt;log.Ldate|log.Lshortfile,&lt;/code&gt;中间是一个位运算符&lt;code&gt;|&lt;/code&gt;，然后通过函数&lt;code&gt;log.SetFlags&lt;/code&gt;进行设置。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;2017/04/29 main.go:10: 飞雪无情的博客: http://www.flysnow.org
+2017/04/29 main.go:11: 飞雪无情的微信公众号：flysnow_org
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;看看&lt;code&gt;log&lt;/code&gt;包为我们提供了那些可以定义的选项常量。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;const (
+	Ldate         = 1 &amp;lt;&amp;lt; iota     //日期示例： 2009/01/23
+	Ltime                         //时间示例: 01:23:23
+	Lmicroseconds                 //毫秒示例: 01:23:23.123123.
+	Llongfile                     //绝对路径和行号: /a/b/c/d.go:23
+	Lshortfile                    //文件和行号: d.go:23.
+	LUTC                          //日期时间转为0时区的
+	LstdFlags     = Ldate | Ltime //Go提供的标准抬头信息
+)
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;这是log包定义的一些抬头信息，有日期、时间、毫秒时间、绝对路径和行号、文件名和行号等，在上面都有注释说明，这里需要注意的是：如果设置了&lt;code&gt;Lmicroseconds&lt;/code&gt;，那么&lt;code&gt;Ltime&lt;/code&gt;就不生效了；设置了&lt;code&gt;Lshortfile&lt;/code&gt;， &lt;code&gt;Llongfile&lt;/code&gt;也不会生效，大家自己可以测试一下。&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;LUTC&lt;/code&gt;比较特殊，如果我们配置了时间标签，那么如果设置了LUTC的话，就会把输出的日期时间转为0时区的日期时间显示。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;log.SetFlags(log.Ldate|log.Ltime |log.LUTC)
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;那么对我们东八区的时间来说，就会减去8个小时，我们看输出：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;2017/04/29 05:46:29 飞雪无情的博客: http://www.flysnow.org
+2017/04/29 05:46:29 飞雪无情的微信公众号：flysnow_org
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;最后一个&lt;code&gt;LstdFlags&lt;/code&gt;表示标准的日志抬头信息，也就是默认的，包含日期和具体时间。&lt;/p&gt;
+&lt;p&gt;我们大部分情况下，都有很多业务，每个业务都需要记录日志，那么有没有办法，能区分这些业务呢？这样我们在查找日志的时候，就方便多了。&lt;/p&gt;
+&lt;p&gt;对于这种情况，Go语言也帮我们考虑到了，这就是设置日志的前缀，比如一个用户中心系统的日志，我们可以这么设置。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func init(){
+	log.SetPrefix(&amp;#34;【UserCenter】&amp;#34;)
+	log.SetFlags(log.LstdFlags | log.Lshortfile |log.LUTC)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;通过&lt;code&gt;log.SetPrefix&lt;/code&gt;可以指定输出日志的前缀，这里我们指定为&lt;code&gt;【UserCenter】&lt;/code&gt;，然后就可以看到日志的打印输出已经清晰的标记出我们的这些日志是属于哪些业务的啦。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;【UserCenter】2017/04/29 05:53:26 main.go:11: 飞雪无情的博客: http://www.flysnow.org
+【UserCenter】2017/04/29 05:53:26 main.go:12: 飞雪无情的微信公众号：flysnow_org
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;code&gt;log&lt;/code&gt;包除了有&lt;code&gt;Print&lt;/code&gt;系列的函数，还有&lt;code&gt;Fatal&lt;/code&gt;以及&lt;code&gt;Panic&lt;/code&gt;系列的函数，其中&lt;code&gt;Fatal&lt;/code&gt;表示程序遇到了致命的错误，需要退出，这时候使用&lt;code&gt;Fatal&lt;/code&gt;记录日志后，然后程序退出，也就是说Fatal相当于先调用&lt;code&gt;Print&lt;/code&gt;打印日志，然后再调用&lt;code&gt;os.Exit(1)&lt;/code&gt;退出程序。&lt;/p&gt;
+&lt;p&gt;同理&lt;code&gt;Panic&lt;/code&gt;系列的函数也一样，表示先使用&lt;code&gt;Print&lt;/code&gt;记录日志，然后调用&lt;code&gt;panic()&lt;/code&gt;函数抛出一个恐慌，这时候除非使用&lt;code&gt;recover()&lt;/code&gt;函数，否则程序就会打印错误堆栈信息，然后程序终止。&lt;/p&gt;
+&lt;p&gt;这里贴下这几个系列函数的源代码，更好理解。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func Println(v ...interface{}) {
+	std.Output(2, fmt.Sprintln(v...))
+}
+
+func Fatalln(v ...interface{}) {
+	std.Output(2, fmt.Sprintln(v...))
+	os.Exit(1)
+}
+
+func Panicln(v ...interface{}) {
+	s := fmt.Sprintln(v...)
+	std.Output(2, s)
+	panic(s)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;实现原理&#34;&gt;实现原理 &lt;a href=&#34;#%e5%ae%9e%e7%8e%b0%e5%8e%9f%e7%90%86&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;通过上面的源代码，我们发现，日志包&lt;code&gt;log&lt;/code&gt;的这些函数都是类似的，关键的输出日志就在于&lt;code&gt;std.Output&lt;/code&gt;方法&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func New(out io.Writer, prefix string, flag int) *Logger {
+	return &amp;amp;Logger{out: out, prefix: prefix, flag: flag}
+}
+
+var std = New(os.Stderr, &amp;#34;&amp;#34;, LstdFlags)
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;从以上源代码可以看出，变量&lt;code&gt;std&lt;/code&gt;其实是一个&lt;code&gt;*Logger&lt;/code&gt;，通过&lt;code&gt;log.New&lt;/code&gt;函数创建，默认输出到&lt;code&gt;os.Stderr&lt;/code&gt;设备，前缀为空，日志抬头信息为标准抬头&lt;code&gt;LstdFlags&lt;/code&gt;。&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;os.Stderr&lt;/code&gt;对应的是UNIX里的标准错误警告信息的输出设备，同时被作为默认的日志输出目的地。初次之外，还有标准输出设备&lt;code&gt;os.Stdout&lt;/code&gt;以及标准输入设备&lt;code&gt;os.Stdin&lt;/code&gt;。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var (
+	Stdin  = NewFile(uintptr(syscall.Stdin), &amp;#34;/dev/stdin&amp;#34;)
+	Stdout = NewFile(uintptr(syscall.Stdout), &amp;#34;/dev/stdout&amp;#34;)
+	Stderr = NewFile(uintptr(syscall.Stderr), &amp;#34;/dev/stderr&amp;#34;)
+)
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;以上就是定义的UNIX的标准的三种设备，分别用于输入、输出和警告错误信息。理解了&lt;code&gt;os.Stderr&lt;/code&gt;，现在我们看下&lt;code&gt;Logger&lt;/code&gt;这个结构体，日志的信息和操作，都是通过这个&lt;code&gt;Logger&lt;/code&gt;操作的。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type Logger struct {
+	mu     sync.Mutex // 字段mu是一个互斥锁，主要是是保证这个日志记录器Logger在多goroutine下也是安全的
+	prefix string     // 字段prefix是每一行日志的前缀
+	flag   int        // 字段flag是日志抬头信息
+	out    io.Writer  // 字段out是日志输出的目的地，默认情况下是os.Stderr。
+	buf    []byte     // 字段buf是一次日志输出文本缓冲，最终会被写到out里。
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;了解了结构体&lt;code&gt;Logger&lt;/code&gt;的字段，现在就可以看下它最重要的方法&lt;code&gt;Output&lt;/code&gt;了，这个方法会输出格式化好的日志信息。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func (l *Logger) Output(calldepth int, s string) error {
+	now := time.Now() // get this early.
+	var file string
+	var line int
+	//加锁，保证多goroutine下的安全
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	//如果配置了获取文件和行号的话
+	if l.flag&amp;amp;(Lshortfile|Llongfile) != 0 {
+		//因为runtime.Caller代价比较大，先不加锁
+		l.mu.Unlock()
+		var ok bool
+		_, file, line, ok = runtime.Caller(calldepth)
+		if !ok {
+			file = &amp;#34;???&amp;#34;
+			line = 0
+		}
+		//获取到行号等信息后，再加锁，保证安全
+		l.mu.Lock()
+	}
+	//把我们的日志信息和设置的日志抬头进行拼接
+	l.buf = l.buf[:0]
+	l.formatHeader(&amp;amp;l.buf, now, file, line)
+	l.buf = append(l.buf, s...)
+	if len(s) == 0 || s[len(s)-1] != &amp;#39;\n&amp;#39; {
+		l.buf = append(l.buf, &amp;#39;\n&amp;#39;)
+	}
+	//输出拼接好的缓冲buf里的日志信息到目的地
+	_, err := l.out.Write(l.buf)
+	return err
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;整个代码比较简洁，为了多goroutine安全互斥锁也用上了，但是在获取调用堆栈信息的时候，又要先解锁，因为这个过程比较重。获取到文件、行号等信息后，继续加互斥锁保证安全。&lt;/p&gt;
+&lt;p&gt;后面的就比较简单了，&lt;code&gt;formatHeader&lt;/code&gt;方法主要是格式化日志抬头信息，然后存储在buf这个缓冲中，最后再把我们自己的日志信息拼接到缓冲buf的后面，然后为一次log日志输出追加一个换行符，这样每次日志输出都是一行一行的。&lt;/p&gt;
+&lt;p&gt;有了最终的日志信息&lt;code&gt;buf&lt;/code&gt;，然后把它写到输出的目的地out里就可以了，这是一个实现了&lt;code&gt;io.Writer&lt;/code&gt;接口的类型，只要实现了这个接口，都可以当作输出目的地。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func (l *Logger) SetOutput(w io.Writer) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	l.out = w
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;code&gt;log&lt;/code&gt;包的&lt;code&gt;SetOutput&lt;/code&gt;函数，可以设置输出目的地。这里稍微简单介绍下&lt;code&gt;runtime.Caller&lt;/code&gt;，它可以获取运行时方法的调用信息。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func Caller(skip int) (pc uintptr, file string, line int, ok bool)
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;参数&lt;code&gt;skip&lt;/code&gt;表示跳过栈帧数，&lt;code&gt;0&lt;/code&gt;表示不跳过，也就是&lt;code&gt;runtime.Caller&lt;/code&gt;的调用者。&lt;code&gt;1&lt;/code&gt;的话就是再向上一层，表示调用者的调用者。&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;log&lt;/code&gt;日志包里使用的是&lt;code&gt;2&lt;/code&gt;，也就是表示我们在源代码中调用&lt;code&gt;log.Print&lt;/code&gt;、&lt;code&gt;log.Fatal&lt;/code&gt;和&lt;code&gt;log.Panic&lt;/code&gt;这些函数的调用者。&lt;/p&gt;
+&lt;p&gt;以&lt;code&gt;main&lt;/code&gt;函数调用&lt;code&gt;log.Println&lt;/code&gt;为例，是&lt;code&gt;main-&amp;gt;log.Println-&amp;gt;*Logger.Output-&amp;gt;runtime.Caller&lt;/code&gt;这么一个方法调用栈，所以这时候，skip的值分别代表：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;0表示*Logger.Output中调用runtime.Caller的源代码文件和行号&lt;/li&gt;
+&lt;li&gt;1表示log.Println中调用*Logger.Output的源代码文件和行号&lt;/li&gt;
+&lt;li&gt;2表示main中调用log.Println的源代码文件和行号&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;所以这也是&lt;code&gt;log&lt;/code&gt;包里的这个&lt;code&gt;skip&lt;/code&gt;的值为什么一直是2的原因。&lt;/p&gt;
+&lt;h1 id=&#34;定制自己的日志&#34;&gt;定制自己的日志 &lt;a href=&#34;#%e5%ae%9a%e5%88%b6%e8%87%aa%e5%b7%b1%e7%9a%84%e6%97%a5%e5%bf%97&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;通过上面的源码分析，我们知道日志记录的根本就在于一个日志记录器&lt;code&gt;Logger&lt;/code&gt;，所以我们定制自己的日志，其实就是创建不同的&lt;code&gt;Logger&lt;/code&gt;。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var (
+	Info *log.Logger
+	Warning *log.Logger
+	Error * log.Logger
+)
+
+func init(){
+	errFile,err:=os.OpenFile(&amp;#34;errors.log&amp;#34;,os.O_CREATE|os.O_WRONLY|os.O_APPEND,0666)
+	if err!=nil{
+		log.Fatalln(&amp;#34;打开日志文件失败：&amp;#34;,err)
+	}
+
+	Info = log.New(os.Stdout,&amp;#34;Info:&amp;#34;,log.Ldate | log.Ltime | log.Lshortfile)
+	Warning = log.New(os.Stdout,&amp;#34;Warning:&amp;#34;,log.Ldate | log.Ltime | log.Lshortfile)
+	Error = log.New(io.MultiWriter(os.Stderr,errFile),&amp;#34;Error:&amp;#34;,log.Ldate | log.Ltime | log.Lshortfile)
+
+}
+
+func main() {
+	Info.Println(&amp;#34;飞雪无情的博客:&amp;#34;,&amp;#34;http://www.flysnow.org&amp;#34;)
+	Warning.Printf(&amp;#34;飞雪无情的微信公众号：%s\n&amp;#34;,&amp;#34;flysnow_org&amp;#34;)
+	Error.Println(&amp;#34;欢迎关注留言&amp;#34;)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;我们根据日志级别定义了三种不同的&lt;code&gt;Logger&lt;/code&gt;，分别为&lt;code&gt;Info&lt;/code&gt;,&lt;code&gt;Warning&lt;/code&gt;,&lt;code&gt;Error&lt;/code&gt;，用于不同级别日志的输出。这三种日志记录器都是使用&lt;code&gt;log.New&lt;/code&gt;函数进行创建。&lt;/p&gt;
+&lt;p&gt;这里创建&lt;code&gt;Logger&lt;/code&gt;的时候，&lt;code&gt;Info&lt;/code&gt;和&lt;code&gt;Warning&lt;/code&gt;都比较正常，&lt;code&gt;Error&lt;/code&gt;这里采用了多个目的地输出，这里可以同时把错误日志输出到&lt;code&gt;os.Stderr&lt;/code&gt;以及我们创建的&lt;code&gt;errors.log&lt;/code&gt;文件中。&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;io.MultiWriter&lt;/code&gt;函数可以包装多个&lt;code&gt;io.Writer&lt;/code&gt;为一个&lt;code&gt;io.Writer&lt;/code&gt;，这样我们就可以达到同时对多个&lt;code&gt;io.Writer&lt;/code&gt;输出日志的目的。&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;io.MultiWriter&lt;/code&gt;的实现也很简单，定义一个类型实现&lt;code&gt;io.Writer&lt;/code&gt;，然后在实现的&lt;code&gt;Write&lt;/code&gt;方法里循环调用要包装的多个&lt;code&gt;Writer&lt;/code&gt;接口的&lt;code&gt;Write&lt;/code&gt;方法即可。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func (t *multiWriter) Write(p []byte) (n int, err error) {
+	for _, w := range t.writers {
+		n, err = w.Write(p)
+		if err != nil {
+			return
+		}
+		if n != len(p) {
+			err = ErrShortWrite
+			return
+		}
+	}
+	return len(p), nil
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;这里我们通过定义了多个Logger来区分不同的日志级别，使用比较麻烦，针对这种情况，可以使用第三方的log框架，也可以自定包装定义，直接通过不同级别的方法来记录不同级别的日志，还可以设置记录日志的级别等。&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;本文收集来源：https://www.flysnow.org&lt;/p&gt;&lt;/blockquote&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Golang sync 包的相关使用方法</title>
+      <link>https://abnerxc.github.io/go/sync/</link>
+      <pubDate>Tue, 15 Jan 2019 18:35:11 +0800</pubDate>
+      
+      <guid>https://abnerxc.github.io/go/sync/</guid>
+      <description>&lt;h1 id=&#34;为什么需要锁&#34;&gt;为什么需要锁 &lt;a href=&#34;#%e4%b8%ba%e4%bb%80%e4%b9%88%e9%9c%80%e8%a6%81%e9%94%81&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;在并发的情况下，多个线程或协程同时去修改一个变量，可能会出现如下情况：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+    &amp;#34;fmt&amp;#34;
+    &amp;#34;sync&amp;#34;
+    &amp;#34;time&amp;#34;
+)
+
+func main() {
+    var a = 0
+
+    // 启动 100 个协程，需要足够大
+    // var lock sync.Mutex
+    for i := 0; i &amp;lt; 100; i++ {
+        go func(idx int) {
+            // lock.Lock()
+            // defer lock.Unlock()
+            a += 1
+            fmt.Printf(&amp;#34;goroutine %d, a=%d\n&amp;#34;, idx, a)
+        }(i)
+    }
+
+    // 等待 1s 结束主程序
+    // 确保所有协程执行完
+    time.Sleep(time.Second)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;观察打印结果，是否出现 a 的值是相同的情况（未出现则重试或调大协程数），答案：是的。&lt;/p&gt;
+&lt;p&gt;显然这不是我们想要的结果。出现这种情况的原因是，协程依次执行：从寄存器读取 a 的值 -&amp;gt; 然后做加法运算 -&amp;gt; 最后写会寄存器。试想，此时一个协程取出 a 的值 3，正在做加法运算（还未写回寄存器）。同时另一个协程此时去取，取出了同样的 a 的值 3。最终导致的结果是，两个协程产出的结果相同，a 相当于只增加了 1。&lt;/p&gt;
+&lt;p&gt;所以，锁的概念就是，我正在处理 a（锁定），你们谁都别和我抢，等我处理完了（解锁），你们再处理。这样就实现了，同时处理 a 的协程只有一个，就实现了同步。&lt;/p&gt;
+&lt;p&gt;+++&lt;/p&gt;
+&lt;h1 id=&#34;什么是互斥锁-mutex&#34;&gt;什么是互斥锁 Mutex？ &lt;a href=&#34;#%e4%bb%80%e4%b9%88%e6%98%af%e4%ba%92%e6%96%a5%e9%94%81-mutex&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;什么是互斥锁？它是锁的一种具体实现，有两个方法：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func (m *Mutex) Lock()
+func (m *Mutex) Unlock()
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;在首次使用后不要复制该互斥锁。对一个未锁定的互斥锁解锁将会产生运行时错误。&lt;/p&gt;
+&lt;p&gt;一个互斥锁只能同时被一个 goroutine 锁定，其它 goroutine 将阻塞直到互斥锁被解锁（重新争抢对互斥锁的锁定）。如：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+    &amp;#34;fmt&amp;#34;
+    &amp;#34;sync&amp;#34;
+    &amp;#34;time&amp;#34;
+)
+
+func main() {
+    ch := make(chan struct{}, 2)
+
+    var l sync.Mutex
+    go func() {
+        l.Lock()
+        defer l.Unlock()
+        fmt.Println(&amp;#34;goroutine1: 我会锁定大概 2s&amp;#34;)
+        time.Sleep(time.Second * 2)
+        fmt.Println(&amp;#34;goroutine1: 我解锁了，你们去抢吧&amp;#34;)
+        ch &amp;lt;- struct{}{}
+    }()
+
+    go func() {
+        fmt.Println(&amp;#34;groutine2: 等待解锁&amp;#34;)
+        l.Lock()
+        defer l.Unlock()
+        fmt.Println(&amp;#34;goroutine2: 哈哈，我锁定了&amp;#34;)
+        ch &amp;lt;- struct{}{}
+    }()
+
+    // 等待 goroutine 执行结束
+    for i := 0; i &amp;lt; 2; i++ {
+        &amp;lt;-ch
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;blockquote&gt;
+&lt;p&gt;注意，平时所说的锁定，其实就是去锁定互斥锁，而不是说去锁定一段代码。也就是说，当代码执行到有锁的地方时，它获取不到互斥锁的锁定，会阻塞在那里，从而达到控制同步的目的。&lt;/p&gt;&lt;/blockquote&gt;
+&lt;p&gt;+++&lt;/p&gt;
+&lt;h1 id=&#34;什么是读写锁-rwmutex&#34;&gt;什么是读写锁 RWMutex? &lt;a href=&#34;#%e4%bb%80%e4%b9%88%e6%98%af%e8%af%bb%e5%86%99%e9%94%81-rwmutex&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;那么什么是读写锁呢？它是针对读写操作的互斥锁，读写锁与互斥锁最大的不同就是可以分别对 读、写 进行锁定。一般用在大量读操作、少量写操作的情况：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func (rw *RWMutex) Lock()
+func (rw *RWMutex) Unlock()
+
+func (rw *RWMutex) RLock()
+func (rw *RWMutex) RUnlock()
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;由于这里需要区分读写锁定，我们这样定义：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;读锁定（RLock），对读操作进行锁定&lt;/li&gt;
+&lt;li&gt;读解锁（RUnlock），对读锁定进行解锁&lt;/li&gt;
+&lt;li&gt;写锁定（Lock），对写操作进行锁定&lt;/li&gt;
+&lt;li&gt;写解锁（Unlock），对写锁定进行解锁&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;在首次使用之后，不要复制该读写锁。不要混用锁定和解锁，如：Lock 和 RUnlock、RLock 和 Unlock。因为对未读锁定的读写锁进行读解锁或对未写锁定的读写锁进行写解锁将会引起运行时错误。&lt;/p&gt;
+&lt;p&gt;如何理解读写锁呢？&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;同时只能有一个 goroutine 能够获得写锁定。&lt;/li&gt;
+&lt;li&gt;同时可以有任意多个 gorouinte 获得读锁定。&lt;/li&gt;
+&lt;li&gt;同时只能存在写锁定或读锁定（读和写互斥）。&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;也就是说，当有一个 goroutine 获得写锁定，其它无论是读锁定还是写锁定都将阻塞直到写解锁；当有一个 goroutine 获得读锁定，其它读锁定任然可以继续；当有一个或任意多个读锁定，写锁定将等待所有读锁定解锁之后才能够进行写锁定。所以说这里的读锁定（RLock）目的其实是告诉写锁定：有很多人正在读取数据，你给我站一边去，等它们读（读解锁）完你再来写（写锁定）。&lt;/p&gt;
+&lt;p&gt;使用例子：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+    &amp;#34;fmt&amp;#34;
+    &amp;#34;math/rand&amp;#34;
+    &amp;#34;sync&amp;#34;
+)
+
+var count int
+var rw sync.RWMutex
+
+func main() {
+    ch := make(chan struct{}, 10)
+    for i := 0; i &amp;lt; 5; i++ {
+        go read(i, ch)
+    }
+    for i := 0; i &amp;lt; 5; i++ {
+        go write(i, ch)
+    }
+
+    for i := 0; i &amp;lt; 10; i++ {
+        &amp;lt;-ch
+    }
+}
+
+func read(n int, ch chan struct{}) {
+    rw.RLock()
+    fmt.Printf(&amp;#34;goroutine %d 进入读操作...\n&amp;#34;, n)
+    v := count
+    fmt.Printf(&amp;#34;goroutine %d 读取结束，值为：%d\n&amp;#34;, n, v)
+    rw.RUnlock()
+    ch &amp;lt;- struct{}{}
+}
+
+func write(n int, ch chan struct{}) {
+    rw.Lock()
+    fmt.Printf(&amp;#34;goroutine %d 进入写操作...\n&amp;#34;, n)
+    v := rand.Intn(1000)
+    count = v
+    fmt.Printf(&amp;#34;goroutine %d 写入结束，新值为：%d\n&amp;#34;, n, v)
+    rw.Unlock()
+    ch &amp;lt;- struct{}{}
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;+++&lt;/p&gt;
+&lt;h1 id=&#34;waitgroup-例子&#34;&gt;WaitGroup 例子 &lt;a href=&#34;#waitgroup-%e4%be%8b%e5%ad%90&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;WaitGroup 用于等待一组 goroutine 结束，用法很简单。它有三个方法：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func (wg *WaitGroup) Add(delta int)
+func (wg *WaitGroup) Done()
+func (wg *WaitGroup) Wait()
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Add 用来添加 goroutine 的个数。Done 执行一次数量减 1。Wait 用来等待结束：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+    &amp;#34;fmt&amp;#34;
+    &amp;#34;sync&amp;#34;
+    &amp;#34;time&amp;#34;
+)
+
+func main() {
+    var wg sync.WaitGroup
+
+    for i := 0; i &amp;lt; 5; i++ {
+        // 计数加 1
+        wg.Add(1)
+        go func(i int) {
+            // 计数减 1
+            defer wg.Done()
+            time.Sleep(time.Second * time.Duration(i))
+            fmt.Printf(&amp;#34;goroutine%d 结束\n&amp;#34;, i)
+        }(i)
+    }
+
+    // 等待执行结束
+    wg.Wait()
+    fmt.Println(&amp;#34;所有 goroutine 执行结束&amp;#34;)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;em&gt;注意，wg.Add() 方法一定要在 goroutine 开始前执行哦。&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;+++&lt;/p&gt;
+&lt;h1 id=&#34;cond-条件变量&#34;&gt;Cond 条件变量 &lt;a href=&#34;#cond-%e6%9d%a1%e4%bb%b6%e5%8f%98%e9%87%8f&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;Cond 实现一个条件变量，即等待或宣布事件发生的 goroutines 的会合点，它会保存一个通知列表。基本思想是当某中状态达成，goroutine 将会等待（Wait）在那里，当某个时刻状态改变时通过通知的方式（Broadcast，Signal）的方式通知等待的 goroutine。这样，不满足条件的 goroutine 唤醒继续向下执行，满足条件的重新进入等待序列。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type Cond struct {
+    noCopy noCopy
+  
+    // L is held while observing or changing the condition
+    L Locker
+  
+    notify  notifyList // 通知列表
+    checker copyChecker
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func NewCond(l Locker) *Cond
+func (c *Cond) Broadcast()
+func (c *Cond) Signal()
+func (c *Cond) Wait()
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Wait 方法、Signal 方法和 Broadcast 方法。它们分别代表了等待通知、单发通知和广播通知的操作。&lt;/p&gt;
+&lt;p&gt;我们来看一下 Wait 方法：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func (c *Cond) Wait() {
+    c.checker.check()
+    t := runtime_notifyListAdd(&amp;amp;c.notify)
+    c.L.Unlock()
+    runtime_notifyListWait(&amp;amp;c.notify, t)
+    c.L.Lock()
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;它的操作为：加入到通知列表 -&amp;gt; 解锁 L -&amp;gt; 等待通知 -&amp;gt; 锁定 L。其使用方法是：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;c.L.Lock()
+for !condition() {
+    c.Wait()
+}
+... make use of condition ...
+c.L.Unlock()
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;举个例子:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;// Package main provides ...
+package main
+
+import (
+    &amp;#34;fmt&amp;#34;
+    &amp;#34;sync&amp;#34;
+    &amp;#34;time&amp;#34;
+)
+
+var count int = 4
+
+func main() {
+    ch := make(chan struct{}, 5)
+
+    // 新建 cond
+    var l sync.Mutex
+    cond := sync.NewCond(&amp;amp;l)
+
+    for i := 0; i &amp;lt; 5; i++ {
+        go func(i int) {
+            // 争抢互斥锁的锁定
+            cond.L.Lock()
+            defer func() {
+                cond.L.Unlock()
+                ch &amp;lt;- struct{}{}
+            }()
+
+            // 条件是否达成
+            for count &amp;gt; i {
+                cond.Wait()
+                fmt.Printf(&amp;#34;收到一个通知 goroutine%d\n&amp;#34;, i)
+            }
+            
+            fmt.Printf(&amp;#34;goroutine%d 执行结束\n&amp;#34;, i)
+        }(i)
+    }
+
+    // 确保所有 goroutine 启动完成
+    time.Sleep(time.Millisecond * 20)
+    
+    // 锁定一下
+    fmt.Println(&amp;#34;broadcast...&amp;#34;)
+    cond.L.Lock()
+    count -= 1
+    cond.Broadcast()
+    cond.L.Unlock()
+
+    time.Sleep(time.Second)
+    fmt.Println(&amp;#34;signal...&amp;#34;)
+    cond.L.Lock()
+    count -= 2
+    cond.Signal()
+    cond.L.Unlock()
+
+    time.Sleep(time.Second)
+    fmt.Println(&amp;#34;broadcast...&amp;#34;)
+    cond.L.Lock()
+    count -= 1
+    cond.Broadcast()
+    cond.L.Unlock()
+
+    for i := 0; i &amp;lt; 5; i++ {
+        &amp;lt;-ch
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;+++&lt;/p&gt;
+&lt;h1 id=&#34;pool-临时对象池&#34;&gt;Pool 临时对象池 &lt;a href=&#34;#pool-%e4%b8%b4%e6%97%b6%e5%af%b9%e8%b1%a1%e6%b1%a0&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;sync.Pool 可以作为临时对象的保存和复用的集合。其结构为：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type Pool struct {
+    noCopy noCopy
+
+    local     unsafe.Pointer // local fixed-size per-P pool, actual type is [P]poolLocal
+    localSize uintptr        // size of the local array
+
+    // New optionally specifies a function to generate
+    // a value when Get would otherwise return nil.
+    // It may not be changed concurrently with calls to Get.
+    New func() interface{}
+}
+
+func (p *Pool) Get() interface{}
+func (p *Pool) Put(x interface{})
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;新键 Pool 需要提供一个 New 方法，目的是当获取不到临时对象时自动创建一个（不会主动加入到 Pool 中），Get 和 Put 方法都很好理解。&lt;/p&gt;
+&lt;p&gt;深入了解过 Go 的同学应该知道，Go 的重要组成结构为 M、P、G。Pool 实际上会为每一个操作它的 goroutine 相关联的 P 都生成一个本地池。如果从本地池 Get 对象的时候，本地池没有，则会从其它的 P 本地池获取。因此，Pool 的一个特点就是：可以把由其中的对象值产生的存储压力进行分摊。&lt;/p&gt;
+&lt;p&gt;它有着以下特点：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Pool 中的对象在仅有 Pool 有着唯一索引的情况下可能会被自动删除（取决于下一次 GC 执行的时间）。&lt;/li&gt;
+&lt;li&gt;goroutines 协程安全，可以同时被多个协程使用。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;blockquote&gt;
+&lt;p&gt;GC 的执行一般会使 Pool 中的对象全部移除。&lt;/p&gt;&lt;/blockquote&gt;
+&lt;p&gt;那么 Pool 都适用于什么场景呢？从它的特点来说，适用与无状态的对象的复用，而不适用与如连接池之类的。在 fmt 包中有一个很好的使用池的例子，它维护一个动态大小的临时输出缓冲区。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+    &amp;#34;bytes&amp;#34;
+    &amp;#34;io&amp;#34;
+    &amp;#34;os&amp;#34;
+    &amp;#34;sync&amp;#34;
+    &amp;#34;time&amp;#34;
+)
+
+var bufPool = sync.Pool{
+    New: func() interface{} {
+        return new(bytes.Buffer)
+    },
+}
+
+func timeNow() time.Time {
+    return time.Unix(1136214245, 0)
+}
+
+func Log(w io.Writer, key, val string) {
+    // 获取临时对象，没有的话会自动创建
+    b := bufPool.Get().(*bytes.Buffer)
+    b.Reset()
+    b.WriteString(timeNow().UTC().Format(time.RFC3339))
+    b.WriteByte(&amp;#39; &amp;#39;)
+    b.WriteString(key)
+    b.WriteByte(&amp;#39;=&amp;#39;)
+    b.WriteString(val)
+    w.Write(b.Bytes())
+    // 将临时对象放回到 Pool 中
+    bufPool.Put(b)
+}
+
+func main() {
+    Log(os.Stdout, &amp;#34;path&amp;#34;, &amp;#34;/search?q=flowers&amp;#34;)
+}
+
+打印结果：
+2006-01-02T15:04:05Z path=/search?q=flowers
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;+++&lt;/p&gt;
+&lt;h1 id=&#34;once-执行一次&#34;&gt;Once 执行一次 &lt;a href=&#34;#once-%e6%89%a7%e8%a1%8c%e4%b8%80%e6%ac%a1&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;使用 sync.Once 对象可以使得函数多次调用只执行一次。其结构为：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type Once struct {
+    m    Mutex
+    done uint32
+}
+
+func (o *Once) Do(f func())
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;用 done 来记录执行次数，用 m 来保证保证仅被执行一次。只有一个 Do 方法，调用执行。&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>golang的pprof使用技巧</title>
+      <link>https://abnerxc.github.io/go/pprof/</link>
+      <pubDate>Tue, 15 Jan 2019 18:35:11 +0800</pubDate>
+      
+      <guid>https://abnerxc.github.io/go/pprof/</guid>
+      <description>&lt;h1 id=&#34;1安装易用的pprof&#34;&gt;1.安装易用的pprof &lt;a href=&#34;#1%e5%ae%89%e8%a3%85%e6%98%93%e7%94%a8%e7%9a%84pprof&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;golang自带的prof包是runtime/pprof，这个是低级别的，需要你手动做一些设置等等周边工作，不利于我们快速上手，利用pprof帮助我们解决实际的问题。这里推荐davecheney封装的pprof，它可以1行代码，让你用上pprof，专心解决自己的代码问题，下载：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;go get github.com/pkg/profile
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;2安装graphviz&#34;&gt;2.安装graphviz &lt;a href=&#34;#2%e5%ae%89%e8%a3%85graphviz&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;pprof生成的prof文件时二进制的，需要把这个二进制的文件转换为我们人类可读的，graphviz可以帮助我们把二进制的prof文件转换为图像。Mac安装：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;brew install graphviz
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;3修改main函数&#34;&gt;3.修改main函数 &lt;a href=&#34;#3%e4%bf%ae%e6%94%b9main%e5%87%bd%e6%95%b0&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;只需要为hi.go增加这一行，defer profile.Start().Stop()，程序运行时，默认就会记录cpu数据&lt;/p&gt;
+&lt;h1 id=&#34;4编译运行你的函数&#34;&gt;4.编译运行你的函数 &lt;a href=&#34;#4%e7%bc%96%e8%af%91%e8%bf%90%e8%a1%8c%e4%bd%a0%e7%9a%84%e5%87%bd%e6%95%b0&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+	&amp;#34;fmt&amp;#34;
+	&amp;#34;github.com/pkg/profile&amp;#34;
+)
+
+func main() {
+	defer profile.Start().Stop()
+	sl:=makeSlice()
+	fmt.Printf(&amp;#34;sum=%d\n&amp;#34;,sumSlice(sl))
+}
+
+func makeSlice() []int {
+	sl := make([]int, 10000000)
+	for idx := range sl {
+		sl[idx] = idx
+	}
+	return sl
+}
+
+func sumSlice(sl []int) int {
+	sum := 0
+	for _, x := range sl {
+		sum += x
+	}
+	return sum
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;运行代码&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;go build hi.go
+./hi
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;应当看到类似的结果，它输出了生成的cpu.pprof的路径：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;2019/02/26 23:24:22 profile: cpu profiling enabled, /var/folders/zy/d8yskqjj09q21y7jnc0vbsqh0000gn/T/profile152894194/cpu.pprof  
+sum=49999995000000  
+2019/02/26 23:24:22 profile: cpu profiling disabled, /var/folders/zy/d8yskqjj09q21y7jnc0vbsqh0000gn/T/profile152894194/cpu.pprof  
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;5可视化prof&#34;&gt;5.可视化prof &lt;a href=&#34;#5%e5%8f%af%e8%a7%86%e5%8c%96prof&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;可视化有多种方式，可以转换为text、pdf、svg等等。text命令是&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;go tool pprof --text /path/to/yourbinary /var/path/to/cpu.pprof
+&lt;/code&gt;&lt;/pre&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;go tool pprof --text ./hi /var/folders/zy/d8yskqjj09q21y7jnc0vbsqh0000gn/T/profile626723859/cpu.pprof
+File: hi
+Type: cpu
+Time: Feb 26, 2019 at 11:29pm (CST)
+Duration: 203.53ms, Total samples = 100ms (49.13%)
+Showing nodes accounting for 100ms, 100% of 100ms total
+      flat  flat%   sum%        cum   cum%
+      60ms 60.00% 60.00%       60ms 60.00%  runtime.usleep
+      30ms 30.00% 90.00%       30ms 30.00%  main.makeSlice
+      10ms 10.00%   100%       10ms 10.00%  runtime.nanotime
+         0     0%   100%       30ms 30.00%  main.main
+         0     0%   100%       10ms 10.00%  runtime.gcBgMarkWorker
+         0     0%   100%       70ms 70.00%  runtime.gcBgMarkWorker.func2
+         0     0%   100%       70ms 70.00%  runtime.gcDrain
+         0     0%   100%       30ms 30.00%  runtime.main
+         0     0%   100%       70ms 70.00%  runtime.markroot
+         0     0%   100%       70ms 70.00%  runtime.markroot.func1
+         0     0%   100%       60ms 60.00%  runtime.mstart
+         0     0%   100%       60ms 60.00%  runtime.osyield
+         0     0%   100%       70ms 70.00%  runtime.scang
+         0     0%   100%       70ms 70.00%  runtime.systemstack
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;生成pdf图&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt; go tool pprof --pdf ./hi /var/folders/zy/d8yskqjj09q21y7jnc0vbsqh0000gn/T/profile626723859/cpu.pprof &amp;gt; cpu.pdf
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;6获取内存ppfo&#34;&gt;6.获取内存ppfo &lt;a href=&#34;#6%e8%8e%b7%e5%8f%96%e5%86%85%e5%ad%98ppfo&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;如果你掌握了cpu pprof，mem pprof轻而易举就能拿下，只需要改1行代码：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;defer profile.Start(profile.MemProfile).Stop()
+&lt;/code&gt;&lt;/pre&gt;</description>
+    </item>
+    
+    <item>
+      <title>Go基础-iota</title>
+      <link>https://abnerxc.github.io/go/base1.iota/</link>
+      <pubDate>Tue, 15 Jan 2019 18:35:11 +0800</pubDate>
+      
+      <guid>https://abnerxc.github.io/go/base1.iota/</guid>
+      <description>&lt;p&gt;&lt;code&gt;iota-go语言中的常量计数器，只能在常量表达式中使用&lt;/code&gt;&lt;/p&gt;
+&lt;h2 id=&#34;iota只能在常量的表达式中使用&#34;&gt;iota只能在常量的表达式中使用。 &lt;a href=&#34;#iota%e5%8f%aa%e8%83%bd%e5%9c%a8%e5%b8%b8%e9%87%8f%e7%9a%84%e8%a1%a8%e8%be%be%e5%bc%8f%e4%b8%ad%e4%bd%bf%e7%94%a8&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;fmt.Println(iota) 
+编译错误： undefined: iota
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;每次-const-出现时都会让-iota-初始化为0自增长&#34;&gt;每次 const 出现时，都会让 iota 初始化为0.【自增长】 &lt;a href=&#34;#%e6%af%8f%e6%ac%a1-const-%e5%87%ba%e7%8e%b0%e6%97%b6%e9%83%bd%e4%bc%9a%e8%ae%a9-iota-%e5%88%9d%e5%a7%8b%e5%8c%96%e4%b8%ba0%e8%87%aa%e5%a2%9e%e9%95%bf&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;const a = iota // a=0
+const (
+  b = iota          //b=0
+  c                      //c=1
+)
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;枚举类型定义&#34;&gt;枚举类型定义 &lt;a href=&#34;#%e6%9e%9a%e4%b8%be%e7%b1%bb%e5%9e%8b%e5%ae%9a%e4%b9%89&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type Weekday int
+const (
+    Sunday Weekday = iota
+    Monday
+    Tuesday
+    Wednesday
+    Thursday
+    Friday
+    Saturday
+)
+
+//可以类似调用枚举类一样调用
+println(Weekday(Saturday))   
+
+
+func (d Weekday) String() string {
+    return [...]string{&amp;#34;Sunday&amp;#34;, &amp;#34;Monday&amp;#34;, &amp;#34;Tuesday&amp;#34;, &amp;#34;Wednesday&amp;#34;}[d]
+}
+
+
+var d Weekday = Monday
+fmt.Print(d)
+switch d {
+case Sunday:
+    fmt.Println(&amp;#34; goes up.&amp;#34;)
+case Monday:
+    fmt.Println(&amp;#34; goes down.&amp;#34;)
+default:
+    fmt.Println(&amp;#34; stays put.&amp;#34;)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;可跳过的值&#34;&gt;可跳过的值 &lt;a href=&#34;#%e5%8f%af%e8%b7%b3%e8%bf%87%e7%9a%84%e5%80%bc&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type AudioOutput int
+const (
+    OutMute AudioOutput = iota // 0
+    OutMono                       // 1
+    OutStereo                     // 2
+    _
+    _
+    OutSurround                // 5
+)
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;位掩码表达式&#34;&gt;位掩码表达式 &lt;a href=&#34;#%e4%bd%8d%e6%8e%a9%e7%a0%81%e8%a1%a8%e8%be%be%e5%bc%8f&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;&lt;code&gt;iota 可以做更多事情，而不仅仅是 increment。更精确地说，iota 总是用于 increment，但是它可以用于表达式，在常量中的存储结果值。&lt;/code&gt;&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;const (
+    IgEggs Allergen = 1 &amp;lt;&amp;lt; iota // 1 &amp;lt;&amp;lt; 0 which is 00000001
+    IgChocolate                             // 1 &amp;lt;&amp;lt; 1 which is 00000010
+    IgNuts                                       // 1 &amp;lt;&amp;lt; 2 which is 00000100
+    IgStrawberries                        // 1 &amp;lt;&amp;lt; 3 which is 00001000
+    IgShellfish                                // 1 &amp;lt;&amp;lt; 4 which is 00010000
+)
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;定义bit单位&#34;&gt;定义bit单位 &lt;a href=&#34;#%e5%ae%9a%e4%b9%89bit%e5%8d%95%e4%bd%8d&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type ByteSize float64
+const (
+    _           = iota                   // ignore first value by assigning to blank identifier
+    KB ByteSize = 1 &amp;lt;&amp;lt; (10 * iota)       // 1 &amp;lt;&amp;lt; (10*1)
+    MB                                   // 1 &amp;lt;&amp;lt; (10*2)
+    GB                                   // 1 &amp;lt;&amp;lt; (10*3)
+    TB                                   // 1 &amp;lt;&amp;lt; (10*4)
+    PB                                   // 1 &amp;lt;&amp;lt; (10*5)
+    EB                                   // 1 &amp;lt;&amp;lt; (10*6)
+    ZB                                   // 1 &amp;lt;&amp;lt; (10*7)
+    YB                                   // 1 &amp;lt;&amp;lt; (10*8)
+)
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;定义在一行的情况iota-在下一行增长而不是立即取得它的引用&#34;&gt;定义在一行的情况(iota 在下一行增长，而不是立即取得它的引用) &lt;a href=&#34;#%e5%ae%9a%e4%b9%89%e5%9c%a8%e4%b8%80%e8%a1%8c%e7%9a%84%e6%83%85%e5%86%b5iota-%e5%9c%a8%e4%b8%8b%e4%b8%80%e8%a1%8c%e5%a2%9e%e9%95%bf%e8%80%8c%e4%b8%8d%e6%98%af%e7%ab%8b%e5%8d%b3%e5%8f%96%e5%be%97%e5%ae%83%e7%9a%84%e5%bc%95%e7%94%a8&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;&lt;code&gt;注意他们是逗号分隔常量，并不是换行&lt;/code&gt;&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;场景一&lt;/li&gt;
+&lt;/ol&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;const (
+    Apple, Banana = iota , iota 
+    Cherimoya, Durian
+    Elderberry, Fig
+)
+// Apple: 0, Banana: 0,
+// Cherimoya: 1, Durian: 1, 
+// Elderberry: 2, Fig: 2
+&lt;/code&gt;&lt;/pre&gt;&lt;ol start=&#34;2&#34;&gt;
+&lt;li&gt;场景二,每一换行都按照前一行的表达式进行增加&lt;/li&gt;
+&lt;/ol&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;const (
+    Apple, Banana = iota+1 , iota+1 
+    Cherimoya, Durian
+    Elderberry, Fig
+)
+// Apple: 1, Banana: 1,
+// Cherimoya: 2, Durian: 2, 
+// Elderberry: 3, Fig: 3
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;中间插队&#34;&gt;中间插队 &lt;a href=&#34;#%e4%b8%ad%e9%97%b4%e6%8f%92%e9%98%9f&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;const (
+    i = iota
+    j = 3.14
+    k = iota
+    l
+)
+那么打印出来的结果是 i=0,j=3.14,k=2,l=3
+&lt;/code&gt;&lt;/pre&gt;</description>
+    </item>
+    
+    <item>
+      <title>Go基础-信道</title>
+      <link>https://abnerxc.github.io/go/base5.channel/</link>
+      <pubDate>Tue, 15 Jan 2019 18:35:11 +0800</pubDate>
+      
+      <guid>https://abnerxc.github.io/go/base5.channel/</guid>
+      <description>&lt;p&gt;信道是协程之间通信的管道，从一端发送数据，另一端接收数据。&lt;/p&gt;
+&lt;h1 id=&#34;信道声明&#34;&gt;信道声明 &lt;a href=&#34;#%e4%bf%a1%e9%81%93%e5%a3%b0%e6%98%8e&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;var c chan int&lt;/code&gt;,声明了 nil 信道。nil 信道没什么作用，既不能发送数据也不能接受数据&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;c:=make(chan int)&lt;/code&gt;,使用 make 函数创建了可用的信道 c。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;+++&lt;/p&gt;
+&lt;h1 id=&#34;读写数据&#34;&gt;读写数据 &lt;a href=&#34;#%e8%af%bb%e5%86%99%e6%95%b0%e6%8d%ae&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;c := make(chan int)
+// 写数据
+c &amp;lt;- data   
+
+// 读数据
+variable &amp;lt;- c  // 方式一
+&amp;lt;- c              // 方式二
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;+++&lt;/p&gt;
+&lt;h1 id=&#34;解决生产环境使用timesleep&#34;&gt;解决生产环境使用timeSleep &lt;a href=&#34;#%e8%a7%a3%e5%86%b3%e7%94%9f%e4%ba%a7%e7%8e%af%e5%a2%83%e4%bd%bf%e7%94%a8timesleep&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func printHello(c chan bool) {
+    fmt.Println(&amp;#34;hello world goroutine&amp;#34;)
+    &amp;lt;- c    // 读取信道的数据
+}
+ 
+func main() {
+    c := make(chan bool)
+    go printHello(c)
+    c &amp;lt;- true    // main 协程阻塞
+    fmt.Println(&amp;#34;main goroutine&amp;#34;)
+}
+//output
+hello world goroutine
+main goroutine
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;+++&lt;/p&gt;
+&lt;h1 id=&#34;死锁只读不写或者只读不写&#34;&gt;死锁（只读不写或者只读不写） &lt;a href=&#34;#%e6%ad%bb%e9%94%81%e5%8f%aa%e8%af%bb%e4%b8%8d%e5%86%99%e6%88%96%e8%80%85%e5%8f%aa%e8%af%bb%e4%b8%8d%e5%86%99&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func main() {
+    c := make(chan bool)
+    c &amp;lt;- true    // 只写不读
+    fmt.Println(&amp;#34;main goroutine&amp;#34;)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;+++&lt;/p&gt;
+&lt;h1 id=&#34;关闭信道与-for-loop&#34;&gt;关闭信道与 for loop &lt;a href=&#34;#%e5%85%b3%e9%97%ad%e4%bf%a1%e9%81%93%e4%b8%8e-for-loop&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func printNums(ch chan int) {
+    for i := 0; i &amp;lt; 10; i++ {
+        ch &amp;lt;- i
+    }
+    close(ch)
+}
+
+func main() {
+    ch := make(chan int)
+    go printNums(ch)
+    for {
+        v, ok := &amp;lt;-ch
+        if ok == false {     // 通过 ok 判断信道是否关闭
+            fmt.Println(v, ok)
+            break
+        }
+        fmt.Println(v, ok)
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;+++&lt;/p&gt;
+&lt;h1 id=&#34;缓冲信道和普通信道&#34;&gt;缓冲信道和普通信道 &lt;a href=&#34;#%e7%bc%93%e5%86%b2%e4%bf%a1%e9%81%93%e5%92%8c%e6%99%ae%e9%80%9a%e4%bf%a1%e9%81%93&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;&lt;strong&gt;普通信道是&lt;code&gt;无缓冲的，读写信道会立马阻塞当前协程&lt;/code&gt;。对于缓冲信道，写不会阻塞当前信道直到信道满了，同理，读操作也不会阻塞当前信道除非信道没数据&lt;/strong&gt;&lt;/p&gt;
+&lt;h1 id=&#34;总结&#34;&gt;总结 &lt;a href=&#34;#%e6%80%bb%e7%bb%93&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;{% post_link Go/channel总结 [channel总结]%}&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Go基础-切片</title>
+      <link>https://abnerxc.github.io/go/base3.%E5%88%87%E7%89%87/</link>
+      <pubDate>Tue, 15 Jan 2019 18:35:11 +0800</pubDate>
+      
+      <guid>https://abnerxc.github.io/go/base3.%E5%88%87%E7%89%87/</guid>
+      <description>&lt;h1 id=&#34;内部实现&#34;&gt;内部实现 &lt;a href=&#34;#%e5%86%85%e9%83%a8%e5%ae%9e%e7%8e%b0&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;切片是基于数组实现的，它的底层是数组，它自己本身非常小，可以理解为对底层数组的抽象
+切片对象非常小，是因为它是只有3个字段的数据结构：一个是指向底层数组的指针，一个是切片的长度，一个是切片的容量&lt;/p&gt;
+&lt;p&gt;+++&lt;/p&gt;
+&lt;h1 id=&#34;声明和初始化&#34;&gt;声明和初始化 &lt;a href=&#34;#%e5%a3%b0%e6%98%8e%e5%92%8c%e5%88%9d%e5%a7%8b%e5%8c%96&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;slice:=make([]int,5)
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;使用内置的make函数时，需要传入一个参数，指定切片的长度，例子中我们使用的时5，这时候切片的容量也是5。当然我们也可以单独指定切片的容量。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;slice:=make([]int,5,10)
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;创建的切片长度是5，容量是10,需要注意的这个容量10其实对应的是切片底层数组的。&lt;/p&gt;
+&lt;p&gt;因为切片的底层是数组，所以创建切片时，如果不指定字面值的话，默认值就是数组的元素的零值。这里我们所以指定了容量是10，但是我们只能访问5个元素，因为切片的长度是5，剩下的5个元素，需要切片扩充后才可以访问。&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;容量必须&amp;gt;=长度，我们是不能创建长度大于容量的切片的。&lt;/em&gt;&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;slice:=[]int{1,2,3,4,5}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;与创建数组非常像，只不过不用指定&lt;code&gt;[]&lt;/code&gt;中的值，这时候切片的长度和容量是相等的，并且会根据我们指定的字面量推导出来&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;slice:=[]int{4:1}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;这是指定了第5个元素为1，其他元素都是默认值0。这时候切片的长度和容量也是一样的&lt;/p&gt;
+&lt;h1 id=&#34;数组和切片的微小差别&#34;&gt;数组和切片的微小差别 &lt;a href=&#34;#%e6%95%b0%e7%bb%84%e5%92%8c%e5%88%87%e7%89%87%e7%9a%84%e5%be%ae%e5%b0%8f%e5%b7%ae%e5%88%ab&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;//数组
+var arr [5]int
+//切片
+var slice []int
+
+
+//数组
+array:=[5]int{4:1}
+//切片
+slice:=[]int{4:1}
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;nil切片和空切片&#34;&gt;nil切片和空切片 &lt;a href=&#34;#nil%e5%88%87%e7%89%87%e5%92%8c%e7%a9%ba%e5%88%87%e7%89%87&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;//nil切片
+var nilSlice []int
+//空切片
+slice:=[]int{}
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;基于现有切片或者数组创建&#34;&gt;基于现有切片或者数组创建 &lt;a href=&#34;#%e5%9f%ba%e4%ba%8e%e7%8e%b0%e6%9c%89%e5%88%87%e7%89%87%e6%88%96%e8%80%85%e6%95%b0%e7%bb%84%e5%88%9b%e5%bb%ba&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;slice := []int{1, 2, 3, 4, 5}
+slice1 := slice[:]
+slice2 := slice[0:]
+slice3 := slice[:5]
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;使用[i:j]这样的操作符即可，她表示以i索引开始，到j索引结束,截取原数组或者切片，创建而成的新切片，新切片的值包含原切片的i索引，但是不包含j索引。&lt;code&gt;slice[i:j)&lt;/code&gt;包含i,不包含j
+第3个用来限定新切片的容量，其用法为&lt;code&gt;slice[i:j:k]&lt;/code&gt;,k用来限定切片的容量。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;slice := []int{1, 2, 3, 4, 5}
+newSlice := slice[1:2:3]
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;一个长度为2-1=1，容量为3-1=2的新切片,不过第三个索引，不能超过原切片的最大索引值5&lt;/p&gt;
+&lt;h1 id=&#34;在函数间传递切片&#34;&gt;在函数间传递切片 &lt;a href=&#34;#%e5%9c%a8%e5%87%bd%e6%95%b0%e9%97%b4%e4%bc%a0%e9%80%92%e5%88%87%e7%89%87&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func main() {
+	slice := []int{1, 2, 3, 4, 5}
+	fmt.Printf(&amp;#34;%p\n&amp;#34;, &amp;amp;slice)
+	modify(slice)
+	fmt.Println(slice)
+}
+
+func modify(slice []int) {
+	fmt.Printf(&amp;#34;%p\n&amp;#34;, &amp;amp;slice)
+	slice[1] = 10
+}
+
+0xc420082060
+0xc420082080
+[1 10 3 4 5]
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;观察发现，这两个切片的地址不一样，所以可以确认切片在函数间传递是复制的。而我们修改一个索引的值后，发现原切片的值也被修改了，说明它们共用一个底层数组。&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Go基础-基本类型</title>
+      <link>https://abnerxc.github.io/go/base0.%E5%9F%BA%E7%A1%80%E6%A6%82%E5%BF%B5/</link>
+      <pubDate>Tue, 15 Jan 2019 18:35:11 +0800</pubDate>
+      
+      <guid>https://abnerxc.github.io/go/base0.%E5%9F%BA%E7%A1%80%E6%A6%82%E5%BF%B5/</guid>
+      <description>&lt;h1 id=&#34;内建类型种类&#34;&gt;内建类型种类 &lt;a href=&#34;#%e5%86%85%e5%bb%ba%e7%b1%bb%e5%9e%8b%e7%a7%8d%e7%b1%bb&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;bool：布尔类型,可选 true|false,默认初始化零值 false&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;整型
+8bit=1字节，int(8)表示8个bit位&lt;/p&gt;
+&lt;table&gt;
+  &lt;thead&gt;
+      &lt;tr&gt;
+          &lt;th&gt;类型&lt;/th&gt;
+          &lt;th&gt;字节&lt;/th&gt;
+          &lt;th&gt;取值&lt;/th&gt;
+      &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+      &lt;tr&gt;
+          &lt;td&gt;(u)int(8)&lt;/td&gt;
+          &lt;td&gt;2^0=1&lt;/td&gt;
+          &lt;td&gt;2^8=-127~128&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;(u)int(16)&lt;/td&gt;
+          &lt;td&gt;2^1=2&lt;/td&gt;
+          &lt;td&gt;2^16&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;(u)int(32)&lt;/td&gt;
+          &lt;td&gt;2^2=4&lt;/td&gt;
+          &lt;td&gt;2^32&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;(u)int(64)&lt;/td&gt;
+          &lt;td&gt;2^3=8&lt;/td&gt;
+          &lt;td&gt;2^64&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;(u)int&lt;/td&gt;
+          &lt;td&gt;跟随操作系统位数(32or64位)&lt;/td&gt;
+          &lt;td&gt;-&lt;/td&gt;
+      &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;uintptr:一个足够大的无符号整型， 用来表示任意地址;一个uintptr是一个整数，不是一个引用。把一个Pointer转换为uintptr后，实际是剥离了原有的指针的语义，只取了地址的整数值。&lt;code&gt;p = unsafe.Pointer( uintptr ( p ) + offset )&lt;/code&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;byte(uint8) , rune(int32)，string&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;byte :最基础字节类型,是 uint8 类型的别名&lt;/li&gt;
+&lt;li&gt;rune : Go 中的字符类型,是 int32 的别名&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;string
+值用 &amp;quot;&amp;quot; 或者 `` 包括, `` 可包含多行字符串,字符串的内容在初始化后，不能被修改，但可重新完全赋值，字符串的操作与数组相同&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;float32 , float64 , complex64 , complex128
+8bit=1字节，float32表示32个bit位，刚好4个字节&lt;/p&gt;
+&lt;table&gt;
+  &lt;thead&gt;
+      &lt;tr&gt;
+          &lt;th&gt;类型&lt;/th&gt;
+          &lt;th&gt;字节&lt;/th&gt;
+          &lt;th&gt;取值&lt;/th&gt;
+      &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+      &lt;tr&gt;
+          &lt;td&gt;float32&lt;/td&gt;
+          &lt;td&gt;4&lt;/td&gt;
+          &lt;td&gt;-&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;float64&lt;/td&gt;
+          &lt;td&gt;8&lt;/td&gt;
+          &lt;td&gt;-&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;complex64&lt;/td&gt;
+          &lt;td&gt;8&lt;/td&gt;
+          &lt;td&gt;-&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;complex128&lt;/td&gt;
+          &lt;td&gt;16&lt;/td&gt;
+          &lt;td&gt;-&lt;/td&gt;
+      &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;+++&lt;/p&gt;
+&lt;h1 id=&#34;内建类型特点&#34;&gt;内建类型特点 &lt;a href=&#34;#%e5%86%85%e5%bb%ba%e7%b1%bb%e5%9e%8b%e7%89%b9%e7%82%b9&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;ul&gt;
+&lt;li&gt;类型转换只有显示转换,不存在任何形式的隐式类型转换&lt;/li&gt;
+&lt;li&gt;虽然提供指针类型,但指针本身不能进行任何形式的计算&lt;/li&gt;
+&lt;li&gt;变量声明后有默认初始化零值,变量零值视具体类型而定&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h1 id=&#34;init函数特点&#34;&gt;init函数特点 &lt;a href=&#34;#init%e5%87%bd%e6%95%b0%e7%89%b9%e7%82%b9&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;ol&gt;
+&lt;li&gt;主要作用
+&lt;ul&gt;
+&lt;li&gt;初始化不能采用初始化表达式初始化的变量。&lt;/li&gt;
+&lt;li&gt;程序运行前的注册。&lt;/li&gt;
+&lt;li&gt;实现sync.Once功能。&lt;/li&gt;
+&lt;li&gt;其他&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;特点&lt;/li&gt;
+&lt;/ol&gt;
+&lt;ul&gt;
+&lt;li&gt;init() 函数是用于程序执行前做包的初始化的函数，比如初始化包里的变量等;&lt;/li&gt;
+&lt;li&gt;一个包可以出线多个 init() 函数,一个源文件也可以包含多个 init() 函数；&lt;/li&gt;
+&lt;li&gt;同一个包中多个 init() 函数的执行顺序没有明确定义，但是不同包的init函数是根据包导入的依赖关系决定的（看下图）;&lt;/li&gt;
+&lt;li&gt;init() 函数在代码中不能被显示调用、不能被引用（赋值给函数变量），否则出现编译错误;&lt;/li&gt;
+&lt;li&gt;一个包被引用多次，如 A import B,C import B,A import C，B 被引用多次，但 B 包只会初始化一次；&lt;/li&gt;
+&lt;li&gt;引入包，不可出现死循坏。即 A import B,B import A，这种情况编译失败；
+&lt;img src=&#34;https://abnerxc.github.io/img/go-inipack.jpeg&#34; alt=&#34;&#34;&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h1 id=&#34;type的使用&#34;&gt;.(type)的使用 &lt;a href=&#34;#type%e7%9a%84%e4%bd%bf%e7%94%a8&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;类型选择，类型选择的语法形如：i.(type)，其中 i 是接口，type 是固定关键字，需要注意的是，&lt;code&gt;只有接口类型才可以使用类型选择&lt;/code&gt;&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Go基础-字符串高效拼</title>
+      <link>https://abnerxc.github.io/go/base2.%E5%AD%97%E7%AC%A6%E4%B8%B2%E9%AB%98%E6%95%88%E6%8B%BC%E6%8E%A5/</link>
+      <pubDate>Tue, 15 Jan 2019 18:35:11 +0800</pubDate>
+      
+      <guid>https://abnerxc.github.io/go/base2.%E5%AD%97%E7%AC%A6%E4%B8%B2%E9%AB%98%E6%95%88%E6%8B%BC%E6%8E%A5/</guid>
+      <description>&lt;h1 id=&#34;号拼接&#34;&gt;+号拼接 &lt;a href=&#34;#%e5%8f%b7%e6%8b%bc%e6%8e%a5&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;这种拼接最简单，也最容易被我们使用，因为它是不限编程语言的，比如Go语言有，Java也有，它们是+号运算符，在运行时计算的。现在演示下这种拼接的代码，虽然比较简单。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func StringPlus() string{
+	var s string
+	s+=&amp;#34;昵称&amp;#34;+&amp;#34;:&amp;#34;+&amp;#34;飞雪无情&amp;#34;+&amp;#34;\n&amp;#34;
+	s+=&amp;#34;博客&amp;#34;+&amp;#34;:&amp;#34;+&amp;#34;http://www.flysnow.org/&amp;#34;+&amp;#34;\n&amp;#34;
+	s+=&amp;#34;微信公众号&amp;#34;+&amp;#34;:&amp;#34;+&amp;#34;flysnow_org&amp;#34;
+	return s
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;我们可以自己写个用例测试下，可以打印出和我们例子中一样的内容。那么这种最常见的字符串拼接的方式性能怎么样的呢，我们测试下：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func BenchmarkStringPlus(b *testing.B) {
+	for i:=0;i&amp;lt;b.N;i++{
+		StringPlus()
+	}
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;运行&lt;code&gt;go test -bench=. -benchmem&lt;/code&gt; 查看性能输出如下：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;BenchmarkStringPlus-8   20000000    108 ns/op   144 B/op    2 allocs/op
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;每次操作需要108ns,进行2次内存分配，分配114字节的内存。&lt;/p&gt;
+&lt;h1 id=&#34;fmt-拼接&#34;&gt;fmt 拼接 &lt;a href=&#34;#fmt-%e6%8b%bc%e6%8e%a5&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;这种拼接，借助于&lt;code&gt;fmt.Sprint&lt;/code&gt;系列函数进行拼接，然后返回拼接的字符串。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func StringFmt() string{
+	return fmt.Sprint(&amp;#34;昵称&amp;#34;,&amp;#34;:&amp;#34;,&amp;#34;飞雪无情&amp;#34;,&amp;#34;\n&amp;#34;,&amp;#34;博客&amp;#34;,&amp;#34;:&amp;#34;,&amp;#34;http://www.flysnow.org/&amp;#34;,&amp;#34;\n&amp;#34;,&amp;#34;微信公众号&amp;#34;,&amp;#34;:&amp;#34;,&amp;#34;flysnow_org&amp;#34;)
+}
+
+func BenchmarkStringFmt(b *testing.B) {
+	for i:=0;i&amp;lt;b.N;i++{
+		StringFmt()
+	}
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;运行查看测试结果：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;BenchmarkStringFmt-8    5000000     385 ns/op   80 B/op     1 allocs/op
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;font color=red&gt;虽然每次操作内存分配只有1次，分配80字节也不多，但是每次操作耗时太长，性能远没有&lt;code&gt;+&lt;/code&gt;号操作快。&lt;/font&gt;&lt;/p&gt;
+&lt;h1 id=&#34;join-拼接&#34;&gt;Join 拼接 &lt;a href=&#34;#join-%e6%8b%bc%e6%8e%a5&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;这个是利用&lt;code&gt;strings.Join&lt;/code&gt;函数进行拼接，接受一个字符串数组，转换为一个拼接好的字符串。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func StringJoin() string{
+	s:=[]string{&amp;#34;昵称&amp;#34;,&amp;#34;:&amp;#34;,&amp;#34;飞雪无情&amp;#34;,&amp;#34;\n&amp;#34;,&amp;#34;博客&amp;#34;,&amp;#34;:&amp;#34;,&amp;#34;http://www.flysnow.org/&amp;#34;,&amp;#34;\n&amp;#34;,&amp;#34;微信公众号&amp;#34;,&amp;#34;:&amp;#34;,&amp;#34;flysnow_org&amp;#34;}
+	return strings.Join(s,&amp;#34;&amp;#34;)
+}
+
+func BenchmarkStringJoin(b *testing.B) {
+	for i:=0;i&amp;lt;b.N;i++{
+		StringJoin()
+	}
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;为了方便，把性能测试的代码放一起了，现在看看性能测试的效果。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;BenchmarkStringJoin-8   10000000    177 ns/op   160 B/op    2 allocs/op
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;font color=red&gt;整体和&lt;code&gt;+&lt;/code&gt;操作相差不了太多，大概低0.5倍的样子。&lt;/font&gt;&lt;/p&gt;
+&lt;h1 id=&#34;buffer-拼接&#34;&gt;buffer 拼接 &lt;a href=&#34;#buffer-%e6%8b%bc%e6%8e%a5&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;这种被用的也很多，使用的是&lt;code&gt;bytes.Buffer&lt;/code&gt;进行的字符串拼接，它是非常灵活的一个结构体，不止可以拼接字符串，还是可以&lt;code&gt;byte,rune&lt;/code&gt;等，并且实现了&lt;code&gt;io.Writer&lt;/code&gt;接口，写入也非常方便。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func StringBuffer() string {
+	var b bytes.Buffer
+	b.WriteString(&amp;#34;昵称&amp;#34;)
+	b.WriteString(&amp;#34;:&amp;#34;)
+	b.WriteString(&amp;#34;飞雪无情&amp;#34;)
+	b.WriteString(&amp;#34;\n&amp;#34;)
+	b.WriteString(&amp;#34;博客&amp;#34;)
+	b.WriteString(&amp;#34;:&amp;#34;)
+	b.WriteString(&amp;#34;http://www.flysnow.org/&amp;#34;)
+	b.WriteString(&amp;#34;\n&amp;#34;)
+	b.WriteString(&amp;#34;微信公众号&amp;#34;)
+	b.WriteString(&amp;#34;:&amp;#34;)
+	b.WriteString(&amp;#34;flysnow_org&amp;#34;)
+	return b.String()
+}
+
+func BenchmarkStringBuffer(b *testing.B) {
+	for i:=0;i&amp;lt;b.N;i++{
+		StringBuffer()
+	}
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;看看他的性能，运行输出即可：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;BenchmarkStringBuffer-8     5000000     291 ns/op   336 B/op    3 allocs/op
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;好像并不是太好,和最差的fmt拼接差不多，和&lt;code&gt;+&lt;/code&gt;号，Join拼接差好远，内存分配也比较多。每次操作耗时也很长。&lt;/p&gt;
+&lt;h1 id=&#34;builder-拼接&#34;&gt;builder 拼接 &lt;a href=&#34;#builder-%e6%8b%bc%e6%8e%a5&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;为了改进buffer拼接的性能，从go 1.10 版本开始，增加了一个builder类型，用于提升字符串拼接的性能。它的使用和buffer几乎一样。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func StringBuilder() string {
+	var b strings.Builder
+	b.WriteString(&amp;#34;昵称&amp;#34;)
+	b.WriteString(&amp;#34;:&amp;#34;)
+	b.WriteString(&amp;#34;飞雪无情&amp;#34;)
+	b.WriteString(&amp;#34;\n&amp;#34;)
+	b.WriteString(&amp;#34;博客&amp;#34;)
+	b.WriteString(&amp;#34;:&amp;#34;)
+	b.WriteString(&amp;#34;http://www.flysnow.org/&amp;#34;)
+	b.WriteString(&amp;#34;\n&amp;#34;)
+	b.WriteString(&amp;#34;微信公众号&amp;#34;)
+	b.WriteString(&amp;#34;:&amp;#34;)
+	b.WriteString(&amp;#34;flysnow_org&amp;#34;)
+	return b.String()
+}
+
+func BenchmarkStringBuilder(b *testing.B) {
+	for i:=0;i&amp;lt;b.N;i++{
+		StringBuilder()
+	}
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;官方都说比buffer性能好了，我们看看性能测试的结果。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;BenchmarkStringBuilder-8    10000000    170 ns/op   232 B/op    4 allocs/op
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;的确提升了，提升了一倍，虽然每次分配的内存次数有点多，但是每次分配的内存大小比buffer要少。&lt;/p&gt;
+&lt;h1 id=&#34;性能对比&#34;&gt;性能对比 &lt;a href=&#34;#%e6%80%a7%e8%83%bd%e5%af%b9%e6%af%94&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;以上就是常用的字符串拼接的方式，现在我们把这些测试结果，汇总到一起，对比下看看,因为Benchmark的测试，对于性能只显示，我把测试的时间设置为3s（秒），把时间拉长便于对比测试，同时生成了cpu profile文件，用于性能分析。&lt;/p&gt;
+&lt;p&gt;运行&lt;code&gt;go test xx.go -bench=. -benchmem -benchtime=3s -cpuprofile=profile.out&lt;/code&gt;得到如下测试结果：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;StringPlus-8    50000000    112 ns/op   144 B/op    2 allocs/op
+StringFmt-8     20000000    344 ns/op   80 B/op     1 allocs/op
+StringJoin-8    30000000    171 ns/op   160 B/op    2 allocs/op
+StringBuffer-8  20000000    302 ns/op   336 B/op    3 allocs/op
+StringBuilder-8 30000000    171 ns/op   232 B/op    4 allocs/op
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;我们通过&lt;code&gt;go tool pprof profile.out&lt;/code&gt; 看下我们输出的cpu profile信息。这里主要使用top命令。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Showing top 15 nodes out of 89
+      flat  flat%   sum%        cum   cum%
+    11.99s 42.55% 42.55%     11.99s 42.55%  runtime.kevent
+     6.30s 22.36% 64.90%      6.30s 22.36%  runtime.pthread_cond_wait
+     1.65s  5.86% 70.76%      1.65s  5.86%  runtime.pthread_cond_signal
+     1.11s  3.94% 74.70%      1.11s  3.94%  runtime.usleep
+     1.10s  3.90% 78.60%      1.10s  3.90%  runtime.pthread_cond_timedwait_relative_np
+     0.58s  2.06% 80.66%      0.62s  2.20%  runtime.wbBufFlush1
+     0.51s  1.81% 82.47%      0.51s  1.81%  runtime.memmove
+     0.44s  1.56% 84.03%      1.81s  6.42%  fmt.(*pp).printArg
+     0.39s  1.38% 85.42%      2.36s  8.37%  fmt.(*pp).doPrint
+     0.36s  1.28% 86.69%      0.70s  2.48%  fmt.(*buffer).WriteString (inline)
+     0.34s  1.21% 87.90%      0.93s  3.30%  runtime.mallocgc
+     0.20s  0.71% 88.61%      1.20s  4.26%  fmt.(*fmt).fmtS
+     0.18s  0.64% 89.25%      0.18s  0.64%  fmt.(*fmt).truncate
+     0.16s  0.57% 89.82%      0.16s  0.57%  runtime.memclrNoHeapPointers
+     0.15s  0.53% 90.35%      1.35s  4.79%  fmt.(*pp).fmtString
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;前15个，可以看到fmt拼接的方式是最差的，因为fmt里很多方法耗时排在了最前面。buffer的WriteString方法也比较耗时。&lt;/p&gt;
+&lt;p&gt;以上的TOP可能还不是太直观，如果大家看火焰图的话，就会更清晰。性能最好的是&lt;code&gt;+&lt;/code&gt;号拼接、Join拼接，最慢的是fmt拼接，这里的builder和buffer拼接差不多，并没有发挥出其能力。&lt;/p&gt;
+&lt;h1 id=&#34;疑问&#34;&gt;疑问 &lt;a href=&#34;#%e7%96%91%e9%97%ae&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;从整个性能的测试和分析来看，我们期待的builder并没有发挥出来，这是不是意味着builder不实用了呢？还不如+号和Join拼接呢？继续接着分析,猜测可能原因如下：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;拼接的字符串大小&lt;/li&gt;
+&lt;li&gt;拼接的字符串数量&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h1 id=&#34;拼接函数改造&#34;&gt;拼接函数改造 &lt;a href=&#34;#%e6%8b%bc%e6%8e%a5%e5%87%bd%e6%95%b0%e6%94%b9%e9%80%a0&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;前面提到了2种可能的猜测，拼接字符串的数量和拼接字符串的大小，现在我们就开始证明这两种情况，为了演示方便，我们把原来的拼接函数修改一下，可以接受一个[]string类型的参数，这样我们就可以对切片数组进行字符串拼接，这里直接给出所有的拼接方法的改造后实现。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func StringPlus(p []string) string{
+	var s string
+	l:=len(p)
+	for i:=0;i&amp;lt;l;i++{
+		s+=p[i]
+	}
+	return s
+}
+
+func StringFmt(p []interface{}) string{
+	return fmt.Sprint(p...)
+}
+
+func StringJoin(p []string) string{
+	return strings.Join(p,&amp;#34;&amp;#34;)
+}
+
+func StringBuffer(p []string) string {
+	var b bytes.Buffer
+	l:=len(p)
+	for i:=0;i&amp;lt;l;i++{
+		b.WriteString(p[i])
+	}
+	return b.String()
+}
+
+func StringBuilder(p []string) string {
+	var b strings.Builder
+	l:=len(p)
+	for i:=0;i&amp;lt;l;i++{
+		b.WriteString(p[i])
+	}
+	return b.String()
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;测试用例&#34;&gt;测试用例 &lt;a href=&#34;#%e6%b5%8b%e8%af%95%e7%94%a8%e4%be%8b&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;以上的字符串拼接函数修改后，我们就可以构造不同大小的切片进行字符串拼接测试了。为了模拟上次的效果，我们先用10个切片大小的字符串进行拼接测试。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;const BLOG  = &amp;#34;http://www.flysnow.org/&amp;#34;
+
+func initStrings(N int) []string{
+	s:=make([]string,N)
+	for i:=0;i&amp;lt;N;i++{
+		s[i]=BLOG
+	}
+	return s;
+}
+
+func initStringi(N int) []interface{}{
+	s:=make([]interface{},N)
+	for i:=0;i&amp;lt;N;i++{
+		s[i]=BLOG
+	}
+	return s;
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;这是两个构建测试用例切片数组的函数，可以生成N个大小的切片。第二个initStringi函数返回的是[]interface{}，这是专门为StringFmt(p []interface{})拼接函数准备的，减少类型之间的转换。&lt;/p&gt;
+&lt;p&gt;有了这两个生成测试用例的函数，我们就可以构建我们的Go语言性能测试了，我们先测试10个大小的切片。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func BenchmarkStringPlus10(b *testing.B) {
+	p:= initStrings(10)
+	b.ResetTimer()
+	for i:=0;i&amp;lt;b.N;i++{
+		StringPlus(p)
+	}
+}
+
+func BenchmarkStringFmt10(b *testing.B) {
+	p:= initStringi(10)
+	b.ResetTimer()
+	for i:=0;i&amp;lt;b.N;i++{
+		StringFmt(p)
+	}
+}
+
+func BenchmarkStringJoin10(b *testing.B) {
+	p:= initStrings(10)
+	b.ResetTimer()
+	for i:=0;i&amp;lt;b.N;i++{
+		StringJoin(p)
+	}
+}
+
+func BenchmarkStringBuffer10(b *testing.B) {
+	p:= initStrings(10)
+	b.ResetTimer()
+	for i:=0;i&amp;lt;b.N;i++{
+		StringBuffer(p)
+	}
+}
+
+func BenchmarkStringBuilder10(b *testing.B) {
+	p:= initStrings(10)
+	b.ResetTimer()
+	for i:=0;i&amp;lt;b.N;i++{
+		StringBuilder(p)
+	}
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;在每个性能测试函数中，我们都会调用b.ResetTimer()，这是为了避免测试用例准备时间不同，带来的性能测试效果偏差问题
+我们运行&lt;code&gt;go test -bench=. -run=NONE -benchmem&lt;/code&gt; 查看结果。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;BenchmarkStringPlus10-8     3000000     593 ns/op   1312 B/op   9 allocs/op
+BenchmarkStringFmt10-8      5000000     335 ns/op   240 B/op    1 allocs/op
+BenchmarkStringJoin10-8     10000000    200 ns/op   480 B/op    2 allocs/op
+BenchmarkStringBuffer10-8   3000000     452 ns/op   864 B/op    4 allocs/op
+BenchmarkStringBuilder10-8  10000000    231 ns/op   480 B/op    4 allocs/op
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;通过这次我们可以看到，&lt;code&gt;+&lt;/code&gt;号拼接不再具有优势，因为string是不可变的，每次拼接都会生成一个新的&lt;code&gt;string&lt;/code&gt;,也就是会进行一次内存分配，我们现在是10个大小的切片，每次操作要进行9次进行分配，占用内存，所以每次操作时间都比较长，自然性能就低下。&lt;/p&gt;
+&lt;p&gt;文章上面关于&lt;code&gt;+&lt;/code&gt;拼接还有印象，&lt;code&gt;+&lt;/code&gt;加号拼接的性能测试中显示的只有2次内存分配，但是我们用了好多个&lt;code&gt;+&lt;/code&gt;的。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func StringPlus() string{
+	var s string
+	s+=&amp;#34;昵称&amp;#34;+&amp;#34;:&amp;#34;+&amp;#34;飞雪无情&amp;#34;+&amp;#34;\n&amp;#34;
+	s+=&amp;#34;博客&amp;#34;+&amp;#34;:&amp;#34;+&amp;#34;http://www.flysnow.org/&amp;#34;+&amp;#34;\n&amp;#34;
+	s+=&amp;#34;微信公众号&amp;#34;+&amp;#34;:&amp;#34;+&amp;#34;flysnow_org&amp;#34;
+	return s
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;再来回顾下这段代码，的确是有很多+的，但是只有2次内存分配，我们可以大胆猜测,是3次s+=导致的，正常和我们今天测试的10个长度的切片，只有9次内存分配一样。下面我们通过运行如下命令看下Go编译器对这段代码的优化：&lt;code&gt;go build -gcflags=&amp;quot;-m -m&amp;quot; main.go&lt;/code&gt;,输出中有如下内容：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;can inline StringPlus as: func() string { var s string; s = &amp;lt;N&amp;gt;; s += &amp;#34;昵称:飞雪无情\n&amp;#34;; s += &amp;#34;博客:http://www.flysnow.org/\n&amp;#34;; s += &amp;#34;微信公众号:flysnow_org&amp;#34;; return s }
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;现在一目了然了，其实是编译器帮我们把字符串做了优化，只剩下3个&lt;code&gt;s+=&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;这次，采用长度为10个切片进行测试，也很明显测试出了Builder要比Buffer性能好很多，这个问题原因主要还是&lt;code&gt;[]byte&lt;/code&gt;和&lt;code&gt;string&lt;/code&gt;之间的转换，&lt;code&gt;Builder&lt;/code&gt;恰恰解决了这个问题。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func (b *Builder) String() string {
+	return *(*string)(unsafe.Pointer(&amp;amp;b.buf))
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;很高效的解决方案。&lt;/p&gt;
+&lt;h1 id=&#34;100个字符串&#34;&gt;100个字符串 &lt;a href=&#34;#100%e4%b8%aa%e5%ad%97%e7%ac%a6%e4%b8%b2&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;现在我们测试下100个字符串拼接的情况，对于我们上面的代码，要改造非常容易，这里直接给出测试代码。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func BenchmarkStringPlus100(b *testing.B) {
+	p:= initStrings(100)
+	b.ResetTimer()
+	for i:=0;i&amp;lt;b.N;i++{
+		StringPlus(p)
+	}
+}
+
+func BenchmarkStringFmt100(b *testing.B) {
+	p:= initStringi(100)
+	b.ResetTimer()
+	for i:=0;i&amp;lt;b.N;i++{
+		StringFmt(p)
+	}
+}
+
+func BenchmarkStringJoin100(b *testing.B) {
+	p:= initStrings(100)
+	b.ResetTimer()
+	for i:=0;i&amp;lt;b.N;i++{
+		StringJoin(p)
+	}
+}
+
+func BenchmarkStringBuffer100(b *testing.B) {
+	p:= initStrings(100)
+	b.ResetTimer()
+	for i:=0;i&amp;lt;b.N;i++{
+		StringBuffer(p)
+	}
+}
+
+func BenchmarkStringBuilder100(b *testing.B) {
+	p:= initStrings(100)
+	b.ResetTimer()
+	for i:=0;i&amp;lt;b.N;i++{
+		StringBuilder(p)
+	}
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;现在运行性能测试，看看100个字符串连接的性能怎么样，哪个函数最高效。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;BenchmarkStringPlus100-8    100000  19711 ns/op     123168 B/op     99 allocs/op
+BenchmarkStringFmt100-8     500000  2615 ns/op      2304 B/op       1 allocs/op
+BenchmarkStringJoin100-8    1000000 1516 ns/op      4608 B/op       2 allocs/op
+BenchmarkStringBuffer100-8  500000  2333 ns/op      8112 B/op       7 allocs/op
+BenchmarkStringBuilder100-8 1000000 1714 ns/op      6752 B/op       8 allocs/op
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;code&gt;+&lt;/code&gt;号和我们上面分析得一样，这次是99次内存分配，性能体验越来越差，在后面的测试中，会排除掉。&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;fmt&lt;/code&gt;和&lt;code&gt;bufrer&lt;/code&gt;已经的性能也没有提升，继续走低。剩下比较坚挺的是&lt;code&gt;Join&lt;/code&gt;和&lt;code&gt;Builder&lt;/code&gt;。&lt;/p&gt;
+&lt;h1 id=&#34;1000-个字符串&#34;&gt;1000 个字符串。 &lt;a href=&#34;#1000-%e4%b8%aa%e5%ad%97%e7%ac%a6%e4%b8%b2&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;测试用力和上面章节的大同小异，所以我们直接看测试结果。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;BenchmarkStringPlus1000-8       1000    1611985 ns/op   12136228 B/op   999 allocs/op
+BenchmarkStringFmt1000-8        50000   28510 ns/op     24590 B/op      1 allocs/op
+BenchmarkStringJoin1000-8       100000  15050 ns/op     49152 B/op      2 allocs/op
+BenchmarkStringBuffer1000-8     100000  23534 ns/op     122544 B/op     11 allocs/op
+BenchmarkStringBuilder1000-8    100000  17996 ns/op     96224 B/op      16 allocs/op
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;整体和100个字符串的时候差不多，表现好的还是&lt;code&gt;Join&lt;/code&gt;和&lt;code&gt;Builder&lt;/code&gt;。这两个方法的使用侧重点有些不一样， 如果有现成的数组、切片那么可以直接使用&lt;code&gt;Join&lt;/code&gt;,但是如果没有，并且追求灵活性拼接，还是选择&lt;code&gt;Builder&lt;/code&gt;。 &lt;code&gt;Join&lt;/code&gt;还是定位于有现成切片、数组的（毕竟拼接成数组也要时间），并且使用固定方式进行分解的，比如逗号、空格等，局限比较大。&lt;/p&gt;
+&lt;h1 id=&#34;小结&#34;&gt;小结 &lt;a href=&#34;#%e5%b0%8f%e7%bb%93&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;至于10000个字符串拼接我这里就不做测试了，大家可以自己试试，看看是不是大同小异的。&lt;/p&gt;
+&lt;p&gt;从最近的这两篇文章的分析来看，我们大概可以总结出。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;ul&gt;
+&lt;li&gt;连接适用于短小的、常量字符串（明确的，非变量），因为编译器会给我们优化。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;Join是比较统一的拼接，不太灵活&lt;/li&gt;
+&lt;li&gt;fmt和buffer基本上不推荐&lt;/li&gt;
+&lt;li&gt;builder从性能和灵活性上，都是上佳的选择。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h1 id=&#34;builder-慢在哪&#34;&gt;Builder 慢在哪 &lt;a href=&#34;#builder-%e6%85%a2%e5%9c%a8%e5%93%aa&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;在前面可以看出来少量拼接，&lt;code&gt;builder&lt;/code&gt;并不明显，那么到底慢在哪里呢？既然要优化Builder拼接，那么我们起码知道他慢在哪，我们继续使用我们上篇文章的测试用例，运行看下性能。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Builder10-8     5000000     258 ns/op       480 B/op        4 allocs/op
+Builder100-8    1000000     2012 ns/op      6752 B/op       8 allocs/op
+Builder1000-8   100000      21016 ns/op     96224 B/op      16 allocs/op
+Builder10000-8  10000       195098 ns/op    1120226 B/op    25 allocs/op
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;针对既然要优化&lt;code&gt;Builder&lt;/code&gt;拼接,采取了10、100、1000、10000四种不同数量的字符串进行拼接测试。我们发现每次操作都有不同次数的内存分配，内存分配越多，越慢，如果引起GC，就更慢了，首先我们先优化这个，减少内存分配的次数。&lt;/p&gt;
+&lt;h1 id=&#34;内存分配优化&#34;&gt;内存分配优化 &lt;a href=&#34;#%e5%86%85%e5%ad%98%e5%88%86%e9%85%8d%e4%bc%98%e5%8c%96&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;通过cpuprofile，查看生成的火焰图可以得知，&lt;code&gt;runtime.growslice&lt;/code&gt;函数会被频繁的调用，并且时间占比也比较长。我们查看&lt;code&gt;Builder.WriteString&lt;/code&gt;的源代码：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func (b *Builder) WriteString(s string) (int, error) {
+	b.copyCheck()
+	b.buf = append(b.buf, s...)
+	return len(s), nil
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;可以肯定是&lt;code&gt;append&lt;/code&gt;方法触发了&lt;code&gt;runtime.growslice&lt;/code&gt;，因为&lt;code&gt;b.buf&lt;/code&gt;的容量&lt;code&gt;cap&lt;/code&gt;不足，所以需要调用&lt;code&gt;runtime.growslice&lt;/code&gt;扩充&lt;code&gt;b.buf&lt;/code&gt;的容量，然后才可以追加新的元素&lt;code&gt;s...&lt;/code&gt;。扩容容量自然会涉及到内存的分配，而且追加的内容越多，内存分配的次数越多，这和我们上面性能测试的数据是一样的。&lt;/p&gt;
+&lt;p&gt;既然问题的原因找到了，那么我们就可以优化了，核心手段就是减少&lt;code&gt;runtime.growslice&lt;/code&gt;调用，甚至不调用。照着这个思路的话，我们就要提前为&lt;code&gt;b.buf&lt;/code&gt;分配好容量&lt;code&gt;cap&lt;/code&gt;。幸好&lt;code&gt;Builder&lt;/code&gt;为我们提供了扩充容量的方法&lt;code&gt;Grow&lt;/code&gt;，我们在进行&lt;code&gt;WriteString&lt;/code&gt;之前，先通过&lt;code&gt;Grow&lt;/code&gt;方法，扩充好容量即可。&lt;/p&gt;
+&lt;p&gt;现在开始改造我们的StringBuilder函数。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func StringBuilder(p []string,cap int) string {
+	var b strings.Builder
+	l:=len(p)
+	b.Grow(cap)
+	for i:=0;i&amp;lt;l;i++{
+		b.WriteString(p[i])
+	}
+	return b.String()
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;增加一个参数&lt;code&gt;cap&lt;/code&gt;，让使用者告诉我们需要的容量大小。&lt;code&gt;Grow&lt;/code&gt;方法的实现非常简单，就是一个通过&lt;code&gt;make&lt;/code&gt;函数，扩充&lt;code&gt;b.buf&lt;/code&gt;大小，然后再拷贝&lt;code&gt;b.buf&lt;/code&gt;的过程。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func (b *Builder) grow(n int) {
+	buf := make([]byte, len(b.buf), 2*cap(b.buf)+n)
+	copy(buf, b.buf)
+	b.buf = buf
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;那么现在我们的性能测试用例变成如下：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func BenchmarkStringBuilder10(b *testing.B) {
+	p:= initStrings(10)
+	cap:=10*len(BLOG)
+	b.ResetTimer()
+	for i:=0;i&amp;lt;b.N;i++{
+		StringBuilder(p,cap)
+	}
+}
+
+func BenchmarkStringBuilder1000(b *testing.B) {
+	p:= initStrings(1000)
+	cap:=1000*len(BLOG)
+	b.ResetTimer()
+	for i:=0;i&amp;lt;b.N;i++{
+		StringBuilder(p,cap)
+	}
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;为了说明情况和简短代码，这里只有10和1000个元素的用例，其他类似。为了把性能优化到极致，我一次性把需要的容量分配足够。现在我们再运行性能（Benchmark）测试代码。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Builder10-8     10000000    123 ns/op       352 B/op    1 allocs/op
+Builder100-8    2000000     898 ns/op       2688 B/op   1 allocs/op
+Builder1000-8   200000      7729 ns/op      24576 B/op  1 allocs/op
+Builder10000-8  20000       78678 ns/op     237568 B/op 1 allocs/op
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;性能足足翻了1倍多，只有1次内存分配，每次操作占用的内存也减少了一半多，降低了GC。&lt;/p&gt;
+&lt;h1 id=&#34;总结&#34;&gt;总结 &lt;a href=&#34;#%e6%80%bb%e7%bb%93&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;背后的原理也非常清楚，就是预先分配内存，减少append过程中的内存重新分配和数据拷贝，这样我们就可以提升很多的性能。所以对于可以预见的长度的切，都可以提前申请申请好内存。&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;本文收集来源：https://www.flysnow.org&lt;/p&gt;&lt;/blockquote&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Go基础-接口</title>
+      <link>https://abnerxc.github.io/go/base4.%E6%8E%A5%E5%8F%A3/</link>
+      <pubDate>Tue, 15 Jan 2019 18:35:11 +0800</pubDate>
+      
+      <guid>https://abnerxc.github.io/go/base4.%E6%8E%A5%E5%8F%A3/</guid>
+      <description>&lt;h1 id=&#34;什么是接口&#34;&gt;什么是接口 &lt;a href=&#34;#%e4%bb%80%e4%b9%88%e6%98%af%e6%8e%a5%e5%8f%a3&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;在一些面向对象的编程语言中，例如 Java、PHP 等，接口定义了对象的行为，只指定了对象应该做什么。行为的具体实现取决于对象。&lt;/p&gt;
+&lt;p&gt;在 Go 语言中，接口是一组方法的集合，但不包含方法的实现、是抽象的，接口中也不能包含变量。当一个类型 T 提供了接口中所有方法的定义时，就说 T 实现了接口。接口指定类型应该有哪些方法，类型决定如何去实现这些方法。&lt;/p&gt;
+&lt;p&gt;+++&lt;/p&gt;
+&lt;h1 id=&#34;接口声明&#34;&gt;接口声明 &lt;a href=&#34;#%e6%8e%a5%e5%8f%a3%e5%a3%b0%e6%98%8e&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type Shape interface {
+    Area() float32
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;上面的代码定义了接口类型 Shape，接口中包含了一个不带参数、返回值为 float32  的方法 Area()。任何实现了方法 Area() 的类型 T，我们就说它实现了接口 Shape。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func main() {
+    var s Shape
+    fmt.Println(&amp;#34;value of s is&amp;#34;, s)
+    fmt.Printf(&amp;#34;type of s is %T\n&amp;#34;, s)
+}
+
+//output
+value of s is &amp;lt;nil&amp;gt;
+type of s is &amp;lt;nil&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;+++&lt;/p&gt;
+&lt;h1 id=&#34;接口的类型值&#34;&gt;接口的类型值 &lt;a href=&#34;#%e6%8e%a5%e5%8f%a3%e7%9a%84%e7%b1%bb%e5%9e%8b%e5%80%bc&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;h4 id=&#34;静态类型和动态类型&#34;&gt;静态类型和动态类型 &lt;a href=&#34;#%e9%9d%99%e6%80%81%e7%b1%bb%e5%9e%8b%e5%92%8c%e5%8a%a8%e6%80%81%e7%b1%bb%e5%9e%8b&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h4&gt;&lt;ul&gt;
+&lt;li&gt;变量的类型在声明时指定、且不能改变，称为&lt;code&gt;静态类型&lt;/code&gt;。&lt;/li&gt;
+&lt;li&gt;接口类型的静态值就是接口本身。&lt;/li&gt;
+&lt;li&gt;接口没有静态值，它指向的是动态值。&lt;/li&gt;
+&lt;li&gt;接口类型的变量存的是实现接口的类型的值。该值就是接口的动态值，实现接口的类型就是接口的动态类型。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type Iname interface {
+    Mname()
+}
+
+type St1 struct {}
+func (St1) Mname() {}
+type St2 struct {}
+func (St2) Mname() {}
+
+func main() {
+    var i Iname = St1{}
+    fmt.Printf(&amp;#34;type is %T\n&amp;#34;,i)
+    fmt.Printf(&amp;#34;value is %v\n&amp;#34;,i)
+    i = St2{}
+    fmt.Printf(&amp;#34;type is %T\n&amp;#34;,i)
+    fmt.Printf(&amp;#34;value is %v\n&amp;#34;,i)
+}
+//output 
+type is main.St1
+value is {}
+type is main.St2
+value is {}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;变量&lt;code&gt;i&lt;/code&gt;的静态类型是&lt;code&gt;Iname&lt;/code&gt;,是不能改变的。动态类型却是不固定的。第一次分配是 &lt;code&gt;St1&lt;/code&gt; 第二次是&lt;code&gt;St2&lt;/code&gt;,动态值都是&lt;code&gt;空结构体&lt;/code&gt;
+有时候，接口的动态类型又称为&lt;code&gt;具体类型&lt;/code&gt;，当访问的时候，返回的是底层的动态值类型&lt;/p&gt;
+&lt;h4 id=&#34;nil值&#34;&gt;nil值 &lt;a href=&#34;#nil%e5%80%bc&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h4&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type Iname interface {
+    Mname()
+}
+type St struct {}
+func (St) Mname() {}
+func main() {
+    var t *St
+    if t == nil {
+        fmt.Println(&amp;#34;t is nil&amp;#34;)
+    } else {
+        fmt.Println(&amp;#34;t is not nil&amp;#34;)
+    }
+    var i Iname = t
+    fmt.Printf(&amp;#34;%T\n&amp;#34;, i)
+    if i == nil {
+        fmt.Println(&amp;#34;i is nil&amp;#34;)
+    } else {
+        fmt.Println(&amp;#34;i is not nil&amp;#34;)
+    }
+    fmt.Printf(&amp;#34;i is nil pointer:%v&amp;#34;,i == (*St)(nil))
+}
+//output
+t is nil
+*main.St
+i is not nil
+i is nil pointer:true
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;code&gt;当且仅当动态值和动态类型都为 nil 时，接口类型值才为 nil&lt;/code&gt;。上面的代码，给变量 i  赋值之后，i 的动态值是 nil，但是动态类型却是 *St， i 是一个 nil 指针，所以条件不成立。&lt;/p&gt;
+&lt;p&gt;Go语言规范：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt; var x interface{}  // x is nil and has static type interface{}
+ var v *T           // v has value nil, static type *T
+ x = 42             // x has value 42 and dynamic type int
+ x = v              // x has value (*T)(nil) and dynamic type *T
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;+++&lt;/p&gt;
+&lt;h1 id=&#34;实现接口&#34;&gt;实现接口 &lt;a href=&#34;#%e5%ae%9e%e7%8e%b0%e6%8e%a5%e5%8f%a3&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type Shape interface {
+    Area() float32
+}
+
+type Rect struct {
+    width  float32
+    height float32
+}
+//结构体实现了接口
+func (r Rect) Area() float32 {
+    return r.width * r.height
+}
+
+func main() {
+    var s Shape
+    s = Rect{5.0, 4.0}
+    r := Rect{5.0, 4.0}
+    fmt.Printf(&amp;#34;type of s is %T\n&amp;#34;, s)
+    fmt.Printf(&amp;#34;value of s is %v\n&amp;#34;, s)
+    fmt.Println(&amp;#34;area of rectange s&amp;#34;, s.Area())
+    fmt.Println(&amp;#34;s == r is&amp;#34;, s == r)
+}
+//output
+type of s is main.Rect
+value of s is {5 4}
+area of rectange s 20
+s == r is true
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;+++&lt;/p&gt;
+&lt;h1 id=&#34;空接口&#34;&gt;空接口 &lt;a href=&#34;#%e7%a9%ba%e6%8e%a5%e5%8f%a3&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func Println(a ...interface{}) (n int, err error) {}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;例如：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type MyString string
+type Rect struct {
+    width  float32
+    height float32
+}
+func explain(i interface{}) {
+    fmt.Printf(&amp;#34;type of s is %T\n&amp;#34;, i)
+    fmt.Printf(&amp;#34;value of s is %v\n\n&amp;#34;, i)
+}
+func main() {
+    ms := MyString(&amp;#34;Seekload&amp;#34;)
+    r := Rect{5.0, 4.0}
+    explain(ms)
+    explain(r)
+}
+//output
+type of s is main.MyString
+value of s is Seekload
+
+type of s is main.Rect
+value of s is {5 4}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;上面的代码，创建了自定义的字符串类型 MyString 、结构体 Rect 和 explain() 函数。explain() 函数的形参是空接口，所以可以接收任意类型的值。&lt;/p&gt;
+&lt;p&gt;+++&lt;/p&gt;
+&lt;h1 id=&#34;实现多个接口&#34;&gt;实现多个接口 &lt;a href=&#34;#%e5%ae%9e%e7%8e%b0%e5%a4%9a%e4%b8%aa%e6%8e%a5%e5%8f%a3&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type Shape interface {
+	Area() float32
+}
+ 
+type Object interface {
+	Perimeter() float32
+}
+
+type Circle struct {
+	radius float32
+}
+
+func (c Circle) Area() float32 {
+    return math.Pi * (c.radius * c.radius)
+}
+
+func (c Circle) Perimeter() float32 {
+   return 2 * math.Pi * c.radius
+}
+
+func main() {
+    c := Circle{3}
+    var s Shape = c
+    var p Object = c
+    fmt.Println(&amp;#34;area: &amp;#34;, s.Area())
+    fmt.Println(&amp;#34;perimeter: &amp;#34;, p.Perimeter())
+}
+//output
+area:  28.274334
+perimeter:  18.849556
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;如果修改&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;fmt.Println(&amp;#34;area: &amp;#34;, p.Area())
+fmt.Println(&amp;#34;perimeter: &amp;#34;, s.Perimeter())
+//output
+p.Area undefined (type Object has no field or method Area)
+s.Perimeter undefined (type Shape has no field or method Perimeter)
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;因为 s 的静态类型是 Shape，而 p 的静态类型是 Object，此问题可以使用&lt;code&gt;类型断言&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;+++&lt;/p&gt;
+&lt;h1 id=&#34;类型断言&#34;&gt;类型断言 &lt;a href=&#34;#%e7%b1%bb%e5%9e%8b%e6%96%ad%e8%a8%80&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;类型断言可以用来获取接口的底层值，通常的语法：&lt;code&gt;i.(Type)&lt;/code&gt;，其中 i 是接口，Type 是类型或接口。编译时会自动检测 i 的动态类型与 Type 是否一致。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type Shape interface {
+	Area() float32
+}
+ 
+type Object interface {
+	Perimeter() float32
+}
+
+type Circle struct {
+	radius float32
+}
+
+func (c Circle) Area() float32 {
+    return math.Pi * (c.radius * c.radius)
+}
+
+func (c Circle) Perimeter() float32 {
+   return 2 * math.Pi * c.radius
+}
+
+func main() {
+    var s Shape = Circle{3}
+    c := s.(Circle)
+    var p Object = c
+    fmt.Printf(&amp;#34;%T\n&amp;#34;,c)
+    fmt.Printf(&amp;#34;%v\n&amp;#34;,c)
+    fmt.Println(&amp;#34;area: &amp;#34;, c.Area())
+    fmt.Println(&amp;#34;perimeter: &amp;#34;, c.Perimeter())
+}
+//output
+main.Circle
+{3}
+area:  28.274334
+perimeter:  18.849556
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;上面的代码，我们可以通过 c 访问接口 s 的底层值，也可以通过 c 分别调用方法 Area() 和 Perimeter()，这就解决了上面遇到的问题。
+&lt;code&gt;在语法 i.(Type) 中，如果 Type 没有实现 i 所属的接口，编译的时候会报错；或者 i 的动态值不是 Type，则会报 panic 错误&lt;/code&gt;。怎么解决呢？可以使用下面的语法:&lt;code&gt;value, ok := i.(Type)&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;+++&lt;/p&gt;
+&lt;h1 id=&#34;类型选择&#34;&gt;类型选择 &lt;a href=&#34;#%e7%b1%bb%e5%9e%8b%e9%80%89%e6%8b%a9&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;func switchType(i interface{}) {
+     switch i.(type) {
+     case string:
+         fmt.Printf(&amp;#34;string and value is %s\n&amp;#34;, i.(string))
+     case int:
+         fmt.Printf(&amp;#34;int and value is %d\n&amp;#34;, i.(int))
+     default:
+         fmt.Printf(&amp;#34;Unknown type\n&amp;#34;)
+     }
+}
+func main() {
+    switchType(&amp;#34;Seekload&amp;#34;)
+    switchType(27)
+    switchType(true)
+}
+//output
+string and value is Seekload
+int and value is 27
+Unknown type
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;code&gt;注意：只有接口类型才可以进行类型选择&lt;/code&gt;。其他类型，例如 int、string等是不能&lt;/p&gt;
+&lt;p&gt;+++&lt;/p&gt;
+&lt;h1 id=&#34;接口嵌套&#34;&gt;接口嵌套 &lt;a href=&#34;#%e6%8e%a5%e5%8f%a3%e5%b5%8c%e5%a5%97&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;Go 语言中，接口不能去实现别的接口也不能继承，但是可以通过嵌套接口创建新接口&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type Math interface {
+	Shape
+	Object
+}
+type Shape interface {
+	Area() float32
+}
+
+type Object interface {
+	Perimeter() float32
+}
+
+type Circle struct {
+	radius float32
+}
+
+func (c Circle) Area() float32 {
+	return math.Pi * (c.radius * c.radius)
+}
+
+func (c Circle) Perimeter() float32 {
+	return 2 * math.Pi * c.radius
+}
+
+func main() {
+    c := Circle{3}
+    var m Math = c
+    fmt.Printf(&amp;#34;%T\n&amp;#34;, m )
+    fmt.Println(&amp;#34;area: &amp;#34;, m.Area())
+    fmt.Println(&amp;#34;perimeter: &amp;#34;, m.Perimeter())
+}
+//output
+main.Circle
+area:  28.274334
+perimeter:  18.849556
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;上面的代码，通过嵌套接口 Shape 和 Object，创建了新的接口 Math。任何类型如果实现了接口 Shape 和 Object 定义的方法，则说类型也实现了接口 Math，例如我们创建的结构体 Circle。
+主函数里面，定义了接口类型的变量 m，动态类型是结构体 Circle，注意下方法 Area 和  Perimeter 的调用方式，类似与访问嵌套结构体的成员。&lt;/p&gt;
+&lt;p&gt;+++&lt;/p&gt;
+&lt;h1 id=&#34;使用指针接收者和值接收者实现接口&#34;&gt;使用指针接收者和值接收者实现接口 &lt;a href=&#34;#%e4%bd%bf%e7%94%a8%e6%8c%87%e9%92%88%e6%8e%a5%e6%94%b6%e8%80%85%e5%92%8c%e5%80%bc%e6%8e%a5%e6%94%b6%e8%80%85%e5%ae%9e%e7%8e%b0%e6%8e%a5%e5%8f%a3&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;type Shape interface {
+	Area() float32
+}
+type Circle struct {
+	radius float32
+}
+type Square struct {
+	side float32
+}
+func (c Circle) Area() float32 {
+	return math.Pi * (c.radius * c.radius)
+}
+
+func (s *Square) Area() float32 {
+	return s.side*s.side
+}
+func main() {
+    var s Shape
+    c1 := Circle{3}
+    s = c1
+    fmt.Printf(&amp;#34;%v\n&amp;#34;,s.Area())
+
+    c2 := Circle{4}
+    s = &amp;amp;c2
+    fmt.Printf(&amp;#34;%v\n&amp;#34;,s.Area())
+
+    c3 := Square{3}
+    //s = c3
+    s = &amp;amp;c3
+    fmt.Printf(&amp;#34;%v\n&amp;#34;,s.Area())
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;上面的代码，结构体 Circle 通过值接收者实现了接口 Shape。值接收者的方法可以使用值或者指针调用，所以上面的 c1 和 c2 的调用方式是合法的。&lt;/p&gt;
+&lt;p&gt;结构体 Square 通过指针接收者实现了接口 Shape。如果将上方注释部分打开的话，编译就会出错：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;cannot use c3 (type Square) as type Shape in assignment:
+Square does not implement Shape (Area method has pointer receiver)
+&lt;/code&gt;&lt;/pre&gt;</description>
+    </item>
+    
+    <item>
+      <title>go语言编程模式</title>
+      <link>https://abnerxc.github.io/go/go%E8%AF%AD%E8%A8%80%E7%BC%96%E7%A8%8B%E6%A8%A1%E5%BC%8F/</link>
+      <pubDate>Tue, 15 Jan 2019 18:35:11 +0800</pubDate>
+      
+      <guid>https://abnerxc.github.io/go/go%E8%AF%AD%E8%A8%80%E7%BC%96%E7%A8%8B%E6%A8%A1%E5%BC%8F/</guid>
+      <description>&lt;h1 id=&#34;性能提示&#34;&gt;性能提示 &lt;a href=&#34;#%e6%80%a7%e8%83%bd%e6%8f%90%e7%a4%ba&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;ul&gt;
+&lt;li&gt;如果需要把数字转换成字符串，使用 strconv.Itoa() 比 fmt.Sprintf() 要快一倍左右。&lt;/li&gt;
+&lt;li&gt;尽可能避免把String转成[]Byte ，这个转换会导致性能下降。&lt;/li&gt;
+&lt;li&gt;如果在 for-loop 里对某个 Slice 使用 append()，请先把 Slice 的容量扩充到位，这样可以避免内存重新分配以及系统自动按 2 的 N 次方幂进行扩展但又用不到的情况，从而避免浪费内存。&lt;/li&gt;
+&lt;li&gt;使用StringBuffer 或是StringBuild 来拼接字符串，性能会比使用 + 或 +=高三到四个数量级。&lt;/li&gt;
+&lt;li&gt;尽可能使用并发的 goroutine，然后使用 sync.WaitGroup 来同步分片操作。&lt;/li&gt;
+&lt;li&gt;避免在热代码中进行内存分配，这样会导致 gc 很忙。尽可能使用 sync.Pool 来重用对象。&lt;/li&gt;
+&lt;li&gt;使用 lock-free 的操作，避免使用 mutex，尽可能使用 sync/Atomic包&lt;/li&gt;
+&lt;li&gt;使用 I/O 缓冲，I/O 是个非常非常慢的操作，使用 bufio.NewWrite() 和 bufio.NewReader() 可以带来更高的性能。&lt;/li&gt;
+&lt;li&gt;对于在 for-loop 里的固定的正则表达式，一定要使用 regexp.Compile() 编译正则表达式。性能会提升两个数量级。&lt;/li&gt;
+&lt;li&gt;如果你需要更高性能的协议，就要考虑使用 protobuf 或 msgp 而不是 JSON，因为 JSON 的序列化和反序列化里使用了反射。&lt;/li&gt;
+&lt;li&gt;你在使用 Map 的时候，使用整型的 key 会比字符串的要快，因为整型比较比字符串比较要快。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h1 id=&#34;接口编程&#34;&gt;接口编程 &lt;a href=&#34;#%e6%8e%a5%e5%8f%a3%e7%bc%96%e7%a8%8b&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;
+type Country struct {
+    Name string
+}
+
+type City struct {
+    Name string
+}
+
+type Printable interface {
+    PrintStr()
+}
+func (c Country) PrintStr() {
+    fmt.Println(c.Name)
+}
+func (c City) PrintStr() {
+    fmt.Println(c.Name)
+}
+
+c1 := Country {&amp;#34;China&amp;#34;}
+c2 := City {&amp;#34;Beijing&amp;#34;}
+c1.PrintStr()
+c2.PrintStr()
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;可以看到，这段代码中使用了一个 Printable 的接口，而 Country 和 City 都实现了接口方法 PrintStr() 把自己输出。然而，这些代码都是一样的，能不能省掉呢？其实，我们可以使用“结构体嵌入”的方式来完成这个事，如下所示：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;
+type WithName struct {
+    Name string
+}
+
+type Country struct {
+    WithName
+}
+
+type City struct {
+    WithName
+}
+
+type Printable interface {
+    PrintStr()
+}
+
+func (w WithName) PrintStr() {
+    fmt.Println(w.Name)
+}
+
+c1 := Country {WithName{ &amp;#34;China&amp;#34;}}
+c2 := City { WithName{&amp;#34;Beijing&amp;#34;}}
+c1.PrintStr()
+c2.PrintStr()
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;引入一个叫 WithName的结构体，但是这会带来一个问题：在初始化的时候变得有点乱。那么，有没有更好的方法呢？再来看另外一个解。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;
+type Country struct {
+    Name string
+}
+
+type City struct {
+    Name string
+}
+
+type Stringable interface {
+    ToString() string
+}
+func (c Country) ToString() string {
+    return &amp;#34;Country = &amp;#34; + c.Name
+}
+func (c City) ToString() string{
+    return &amp;#34;City = &amp;#34; + c.Name
+}
+
+func PrintStr(p Stringable) {
+    fmt.Println(p.ToString())
+}
+
+d1 := Country {&amp;#34;USA&amp;#34;}
+d2 := City{&amp;#34;Los Angeles&amp;#34;}
+PrintStr(d1)
+PrintStr(d2)
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;在这段代码中，我们可以看到，我们使用了一个叫Stringable 的接口，我们用这个接口把“业务类型” Country 和 City 和“控制逻辑” Print() 给解耦了。于是，只要实现了Stringable 接口，都可以传给 PrintStr() 来使用。&lt;/p&gt;
+&lt;h1 id=&#34;接口完整性检查&#34;&gt;接口完整性检查 &lt;a href=&#34;#%e6%8e%a5%e5%8f%a3%e5%ae%8c%e6%95%b4%e6%80%a7%e6%a3%80%e6%9f%a5&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;
+type Shape interface {
+    Sides() int
+    Area() int
+}
+type Square struct {
+    len int
+}
+func (s* Square) Sides() int {
+    return 4
+}
+func main() {
+    s := Square{len: 5}
+    fmt.Printf(&amp;#34;%d\n&amp;#34;,s.Sides())
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;可以看到，Square 并没有实现 Shape 接口的所有方法，程序虽然可以跑通，但是这样的编程方式并不严谨，如果我们需要强制实现接口的所有方法，那该怎么办呢？&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;var _ Shape = (*Square)(nil)
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;声明一个 _ 变量（没人用）会把一个 nil 的空指针从 Square 转成 Shape，这样，如果没有实现完相关的接口方法，编译器就会报错：&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;cannot use (*Square)(nil) (type *Square) as type Shape in assignment: *Square does not implement Shape (missing Area method)&lt;/p&gt;&lt;/blockquote&gt;
+&lt;h1 id=&#34;functional-options-编程模式&#34;&gt;Functional Options 编程模式 &lt;a href=&#34;#functional-options-%e7%bc%96%e7%a8%8b%e6%a8%a1%e5%bc%8f&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;package main
+
+import (
+	&amp;#34;crypto/tls&amp;#34;
+	&amp;#34;fmt&amp;#34;
+	&amp;#34;time&amp;#34;
+)
+
+type Option func(*Server)
+
+type Server struct {
+	Addr     string
+	Port     int
+	Protocol string
+	Timeout  time.Duration
+	MaxConns int
+	TLS      *tls.Config
+}
+
+func Protocol(p string) Option {
+	return func(s *Server) {
+		s.Protocol = p
+	}
+}
+func Timeout(timeout time.Duration) Option {
+	return func(s *Server) {
+		s.Timeout = timeout
+	}
+}
+func MaxConns(maxconns int) Option {
+	return func(s *Server) {
+		s.MaxConns = maxconns
+	}
+}
+func TLS(tls *tls.Config) Option {
+	return func(s *Server) {
+		s.TLS = tls
+	}
+}
+func NewService(addr string, port int, options ...func(*Server)) (*Server, error) {
+	srv := Server{
+		Addr:     addr,
+		Port:     port,
+		Protocol: &amp;#34;tcp&amp;#34;,
+		Timeout:  30 * time.Second,
+		MaxConns: 1000,
+		TLS:      nil,
+	}
+	for _, option := range options {
+		option(&amp;amp;srv)
+	} //...
+	return &amp;amp;srv, nil
+}
+
+func main() {
+	server, _ := NewService(&amp;#34;localhost&amp;#34;, 80, Protocol(&amp;#34;ftp&amp;#34;),Timeout(5*10))
+	fmt.Println(server)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;mapreducefilter-模式&#34;&gt;Map,Reduce,Filter 模式 &lt;a href=&#34;#mapreducefilter-%e6%a8%a1%e5%bc%8f&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;
+type Employee struct {
+    Name     string
+    Age      int
+    Vacation int
+    Salary   int
+}
+
+var list = []Employee{
+    {&amp;#34;Hao&amp;#34;, 44, 0, 8000},
+    {&amp;#34;Bob&amp;#34;, 34, 10, 5000},
+    {&amp;#34;Alice&amp;#34;, 23, 5, 9000},
+    {&amp;#34;Jack&amp;#34;, 26, 0, 4000},
+    {&amp;#34;Tom&amp;#34;, 48, 9, 7500},
+    {&amp;#34;Marry&amp;#34;, 29, 0, 6000},
+    {&amp;#34;Mike&amp;#34;, 32, 8, 4000},
+}
+
+
+func EmployeeCountIf(list []Employee, fn func(e *Employee) bool) int {
+    count := 0
+    for i, _ := range list {
+        if fn(&amp;amp;list[i]) {
+            count += 1
+        }
+    }
+    return count
+}
+
+func EmployeeFilterIn(list []Employee, fn func(e *Employee) bool) []Employee {
+    var newList []Employee
+    for i, _ := range list {
+        if fn(&amp;amp;list[i]) {
+            newList = append(newList, list[i])
+        }
+    }
+    return newList
+}
+
+func EmployeeSumIf(list []Employee, fn func(e *Employee) int) int {
+    var sum = 0
+    for i, _ := range list {
+        sum += fn(&amp;amp;list[i])
+    }
+    return sum
+}
+
+//统计有多少员工大于 40 岁
+
+old := EmployeeCountIf(list, func(e *Employee) bool {
+    return e.Age &amp;gt; 40
+})
+fmt.Printf(&amp;#34;old people: %d\n&amp;#34;, old)
+//old people: 2
+&lt;/code&gt;&lt;/pre&gt;</description>
+    </item>
+    
+  </channel>
+</rss>
