@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+<meta name="viewport" content="width=device-width,minimum-scale=1">
+
+
+
+
+<title>Transformers-入门篇 | Abner的博客</title>
+<link rel="canonical" href="https://abnerxc.github.io/llm/transformers-%E5%85%A5%E9%97%A8%E7%AF%87/">
+<meta property="og:type" content="article" />
+<meta property="og:title" content="Transformers-入门篇 | Abner的博客" />
+<meta property="og:url" content="https://abnerxc.github.io/llm/transformers-%E5%85%A5%E9%97%A8%E7%AF%87/" />
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/icofont/icofont.min.css" />
+<link rel="stylesheet" href="/css/syntax.css" />
+<link rel="stylesheet" href="/css/style.css" />
+<script src="/js/copy-code-block.js"></script>
+<link rel="shortcut icon" href="/images/favicon.ico" type="image/x-icon" />
+
+    </head>
+
+    <body>
+        <header class="header-wrapper">
+    <div class="header">
+        <a class="site-title" href="https://abnerxc.github.io/">Abner的博客</a>
+
+        <nav class="menu">
+            
+        </nav>
+    </div>
+</header>
+
+        <main class="main-wrapper">
+            <div class="main">
+                
+
+<section class="single">
+    <h1 class="title">Transformers-入门篇</h1>
+
+    <div class="tip">
+        <time datetime="2025-03-18 15:35:58 &#43;0800 CST">2025/03/18</time>
+        <span class="split">·</span>
+        <span> 341 words </span>
+        <span class="split">·</span>
+        <span>
+            2 minutes to read
+        </span>
+    </div>
+
+    <div class="taxonomies">
+        
+        <div>
+            Categories:
+            
+                <a href="/categories/ai">AI</a>
+            
+        </div>
+        
+
+        
+    </div>
+
+    <hr />
+
+    <div class="content">
+        <blockquote>
+<p>代码：https://colab.research.google.com/drive/1VO2FJqN2D2LnByGQsXYbZ0GbzYYe-JCo#scrollTo=z2c4EnOjYc5l</p></blockquote>
+<h1 id="第一章autotokenizer">第一章：AutoTokenizer <a href="#%e7%ac%ac%e4%b8%80%e7%ab%a0autotokenizer" class="anchor">🔗</a></h1><h2 id="第1步模型加载">第1步、模型加载 <a href="#%e7%ac%ac1%e6%ad%a5%e6%a8%a1%e5%9e%8b%e5%8a%a0%e8%bd%bd" class="anchor">🔗</a></h2><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#f92672">from</span> transformers <span style="color:#f92672">import</span> AutoTokenizer
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#从huggingface加载模型，输入模型名称，即可加载对应的分词器</span>
+</span></span><span style="display:flex;"><span>tokenizer<span style="color:#f92672">=</span>AutoTokenizer<span style="color:#f92672">.</span>from_pretrained(<span style="color:#e6db74">&#34;uer/roberta-xlarge-wwm-chinese-cluecorpussmall&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 默认会存在 系统用户的【.cache-&gt;huggingface-&gt;hub-&gt;model-{模型名称}-&gt;snapshots】目录里面</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 指定保存模型到本地目录</span>
+</span></span><span style="display:flex;"><span>tokenizer<span style="color:#f92672">.</span>save_pretrained(<span style="color:#e6db74">&#34;./roberta_tokenizer&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 从本地加载tokenizer</span>
+</span></span><span style="display:flex;"><span>tokenizer<span style="color:#f92672">=</span>AutoTokenizer<span style="color:#f92672">.</span>from_pretrained(<span style="color:#e6db74">&#34;./roberta_tokenizer&#34;</span>)
+</span></span><span style="display:flex;"><span>tokenizer
+</span></span></code></pre></div><h2 id="第2步句子分词">第2步、句子分词 <a href="#%e7%ac%ac2%e6%ad%a5%e5%8f%a5%e5%ad%90%e5%88%86%e8%af%8d" class="anchor">🔗</a></h2><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#75715e"># 分词</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 当前模型会拆分成一个个字，每个模型不一样</span>
+</span></span><span style="display:flex;"><span>sen<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;弱小的我也有大梦想&#34;</span>
+</span></span><span style="display:flex;"><span>tokens<span style="color:#f92672">=</span>tokenizer<span style="color:#f92672">.</span>tokenize(sen)
+</span></span><span style="display:flex;"><span>tokens
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># [&#39;弱&#39;, &#39;小&#39;, &#39;的&#39;, &#39;我&#39;, &#39;也&#39;, &#39;有&#39;, &#39;大&#39;, &#39;梦&#39;, &#39;想&#39;]</span>
+</span></span></code></pre></div><h2 id="第3步查看词典">第3步、查看词典 <a href="#%e7%ac%ac3%e6%ad%a5%e6%9f%a5%e7%9c%8b%e8%af%8d%e5%85%b8" class="anchor">🔗</a></h2><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#75715e"># 中文 &#39;##榭&#39;: 16588,  ##无意义。但是英文会把一个单词拆成词根</span>
+</span></span><span style="display:flex;"><span>tokenizer<span style="color:#f92672">.</span>vocab
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>tokenizer<span style="color:#f92672">.</span>vocab_size
+</span></span></code></pre></div><h2 id="第4步索引转换">第4步、索引转换 <a href="#%e7%ac%ac4%e6%ad%a5%e7%b4%a2%e5%bc%95%e8%bd%ac%e6%8d%a2" class="anchor">🔗</a></h2><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#75715e"># 将词序转换成id序列，进入神经网络</span>
+</span></span><span style="display:flex;"><span>ids<span style="color:#f92672">=</span>tokenizer<span style="color:#f92672">.</span>convert_tokens_to_ids(tokens)
+</span></span><span style="display:flex;"><span>ids
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># [2483, 2207, 4638, 2769, 738, 3300, 1920, 3457, 2682]</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 将词序转成tokens</span>
+</span></span><span style="display:flex;"><span>tokens<span style="color:#f92672">=</span>tokenizer<span style="color:#f92672">.</span>convert_ids_to_tokens(ids)
+</span></span><span style="display:flex;"><span>tokens
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># [&#39;弱&#39;, &#39;小&#39;, &#39;的&#39;, &#39;我&#39;, &#39;也&#39;, &#39;有&#39;, &#39;大&#39;, &#39;梦&#39;, &#39;想&#39;]</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 将token转回成字符串</span>
+</span></span><span style="display:flex;"><span>str_sen <span style="color:#f92672">=</span> tokenizer<span style="color:#f92672">.</span>convert_tokens_to_string(tokens)
+</span></span><span style="display:flex;"><span>str_sen
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># &#39;弱 小 的 我 也 有 大 梦 想&#39;</span>
+</span></span></code></pre></div><h3 id="便捷调用">便捷调用 <a href="#%e4%be%bf%e6%8d%b7%e8%b0%83%e7%94%a8" class="anchor">🔗</a></h3><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#75715e"># 将词序转换成id序列，编码</span>
+</span></span><span style="display:flex;"><span>ids<span style="color:#f92672">=</span>tokenizer<span style="color:#f92672">.</span>encode(sen)
+</span></span><span style="display:flex;"><span>ids
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># [101, 2483, 2207, 4638, 2769, 738, 3300, 1920, 3457, 2682, 102]</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 序列多了 101和102 模型的词开始和结束，如果不需要</span>
+</span></span><span style="display:flex;"><span>ids<span style="color:#f92672">=</span>tokenizer<span style="color:#f92672">.</span>encode(sen,add_special_tokens<span style="color:#f92672">=</span><span style="color:#66d9ef">False</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 将id转换成字符串，解码</span>
+</span></span><span style="display:flex;"><span>str_sen<span style="color:#f92672">=</span>tokenizer<span style="color:#f92672">.</span>decode(ids,skip_special_tokens<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)
+</span></span><span style="display:flex;"><span>str_sen
+</span></span></code></pre></div><h2 id="第5步填充和截断">第5步：填充和截断 <a href="#%e7%ac%ac5%e6%ad%a5%e5%a1%ab%e5%85%85%e5%92%8c%e6%88%aa%e6%96%ad" class="anchor">🔗</a></h2><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#75715e"># 填充</span>
+</span></span><span style="display:flex;"><span>ids<span style="color:#f92672">=</span>tokenizer<span style="color:#f92672">.</span>encode(sen,padding<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;max_length&#34;</span>,max_length<span style="color:#f92672">=</span><span style="color:#ae81ff">15</span>)
+</span></span><span style="display:flex;"><span>ids <span style="color:#75715e"># [101, 2483, 2207, 4638, 2769, 738, 3300, 1920, 3457, 2682, 102, 0, 0, 0, 0]</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 截断</span>
+</span></span><span style="display:flex;"><span>ids<span style="color:#f92672">=</span>tokenizer<span style="color:#f92672">.</span>encode(sen,max_length<span style="color:#f92672">=</span><span style="color:#ae81ff">5</span>,truncation<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)
+</span></span><span style="display:flex;"><span>ids <span style="color:#75715e"># [101, 2483, 2207, 4638, 102]</span>
+</span></span></code></pre></div><h3 id="快捷调用">快捷调用 <a href="#%e5%bf%ab%e6%8d%b7%e8%b0%83%e7%94%a8" class="anchor">🔗</a></h3><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#75715e"># 填充真实有效部分</span>
+</span></span><span style="display:flex;"><span>inputs<span style="color:#f92672">=</span>tokenizer<span style="color:#f92672">.</span>encode_plus(sen,padding<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;max_length&#34;</span>,max_length<span style="color:#f92672">=</span><span style="color:#ae81ff">15</span>)
+</span></span><span style="display:flex;"><span>inputs
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 简洁写法</span>
+</span></span><span style="display:flex;"><span>inputs<span style="color:#f92672">=</span>tokenizer(sen,padding<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;max_length&#34;</span>,max_length<span style="color:#f92672">=</span><span style="color:#ae81ff">15</span>)
+</span></span><span style="display:flex;"><span>inputs
+</span></span></code></pre></div><h2 id="第6步处理批数据">第6步：处理批数据 <a href="#%e7%ac%ac6%e6%ad%a5%e5%a4%84%e7%90%86%e6%89%b9%e6%95%b0%e6%8d%ae" class="anchor">🔗</a></h2><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>sens<span style="color:#f92672">=</span>[
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;弱小的我也有大梦想&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;有梦想谁都了不起&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;迎着风追逐梦想&#34;</span>
+</span></span><span style="display:flex;"><span>]
+</span></span><span style="display:flex;"><span>inputs<span style="color:#f92672">=</span>tokenizer(sens)
+</span></span><span style="display:flex;"><span>inputs <span style="color:#75715e"># {&#39;input_ids&#39;: [[101, 2483, 2207, 4638, 2769, 738, 3300, 1920, 3457, 2682, 102], [101, 3300, 3457, 2682, 6443, 6963, 749, 679, 6629, 102], [101, 6816, 4708, 7599, 6841, 6852, 3457, 2682, 102]], &#39;token_type_ids&#39;: [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0]], &#39;attention_mask&#39;: [[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1, 1, 1, 1]]}</span>
+</span></span></code></pre></div><h2 id="fast-slow-tokenizer">Fast/ Slow Tokenizer <a href="#fast-slow-tokenizer" class="anchor">🔗</a></h2><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>sen<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;我有一个梦想Dreaming!&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Fast基于Rust实现，slow基于Python实现</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>fast_tokenizer <span style="color:#f92672">=</span> AutoTokenizer<span style="color:#f92672">.</span>from_pretrained(<span style="color:#e6db74">&#34;uer/roberta-xlarge-wwm-chinese-cluecorpussmall&#34;</span>)
+</span></span><span style="display:flex;"><span>fast_tokenizer
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># slow_tokenizer = AutoTokenizer.from_pretrained(&#34;uer/roberta-xlarge-wwm-chinese-cluecorpussmall&#34;, use_fast=False)</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># slow_tokenizer</span>
+</span></span></code></pre></div><h2 id="特殊的加载">特殊的加载 <a href="#%e7%89%b9%e6%ae%8a%e7%9a%84%e5%8a%a0%e8%bd%bd" class="anchor">🔗</a></h2><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#75715e"># 远程仓库里面有自有实现的分词器代码 trust_remote_code调用</span>
+</span></span><span style="display:flex;"><span>tokenizer <span style="color:#f92672">=</span> AutoTokenizer<span style="color:#f92672">.</span>from_pretrained(<span style="color:#e6db74">&#34;THUDM/chatglm-6b&#34;</span>,trust_remote_code<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)
+</span></span><span style="display:flex;"><span>tokenizer
+</span></span></code></pre></div><h1 id="第二章model基本使用">第二章：Model基本使用 <a href="#%e7%ac%ac%e4%ba%8c%e7%ab%a0model%e5%9f%ba%e6%9c%ac%e4%bd%bf%e7%94%a8" class="anchor">🔗</a></h1><h2 id="模型加载与保存">模型加载与保存 <a href="#%e6%a8%a1%e5%9e%8b%e5%8a%a0%e8%bd%bd%e4%b8%8e%e4%bf%9d%e5%ad%98" class="anchor">🔗</a></h2><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#f92672">from</span> transformers <span style="color:#f92672">import</span> AutoModel
+</span></span></code></pre></div><h2 id="模型下载">模型下载 <a href="#%e6%a8%a1%e5%9e%8b%e4%b8%8b%e8%bd%bd" class="anchor">🔗</a></h2><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#75715e"># 强制下载</span>
+</span></span><span style="display:flex;"><span>model<span style="color:#f92672">=</span>AutoModel<span style="color:#f92672">.</span>from_pretrained(<span style="color:#e6db74">&#34;hfl/rbt3&#34;</span>,force_download<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)  
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># git下载：git clone &#34;模型地址&#34;  ，如果只需要模型的部分指定文件，可使用 git lfs clone &#34;模型地址&#34; --include=&#34;*.bin&#34; </span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 离线下载</span>
+</span></span><span style="display:flex;"><span>model<span style="color:#f92672">=</span>AutoModel<span style="color:#f92672">.</span>from_pretrained(<span style="color:#e6db74">&#34;/User/Download/hfl/rbt3&#34;</span>)  
+</span></span></code></pre></div><h2 id="模型参数">模型参数 <a href="#%e6%a8%a1%e5%9e%8b%e5%8f%82%e6%95%b0" class="anchor">🔗</a></h2><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>config<span style="color:#f92672">=</span>AutoConfig<span style="color:#f92672">.</span>from_pretrained(<span style="color:#e6db74">&#34;hfl/rbt3&#34;</span>)
+</span></span></code></pre></div><h2 id="模型调用">模型调用 <a href="#%e6%a8%a1%e5%9e%8b%e8%b0%83%e7%94%a8" class="anchor">🔗</a></h2><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>sen<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;弱小的我也有大梦想&#34;</span>
+</span></span><span style="display:flex;"><span>tokenizer<span style="color:#f92672">=</span>AutoTokenizer<span style="color:#f92672">.</span>from_pretrained(<span style="color:#e6db74">&#34;hfl/rbt3&#34;</span>)
+</span></span><span style="display:flex;"><span>inputs<span style="color:#f92672">=</span>tokenizer(sen,return_tensors<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;pt&#34;</span>)
+</span></span><span style="display:flex;"><span>inputs
+</span></span></code></pre></div><h2 id="不带model-head的模型调用">不带Model Head的模型调用 <a href="#%e4%b8%8d%e5%b8%a6model-head%e7%9a%84%e6%a8%a1%e5%9e%8b%e8%b0%83%e7%94%a8" class="anchor">🔗</a></h2><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>model<span style="color:#f92672">=</span>AutoModel<span style="color:#f92672">.</span>from_pretrained(<span style="color:#e6db74">&#34;hfl/rbt3&#34;</span>)
+</span></span><span style="display:flex;"><span>ouput<span style="color:#f92672">=</span>model(<span style="color:#f92672">**</span>tokenizer(sen,return_tensors<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;pt&#34;</span>))
+</span></span><span style="display:flex;"><span>ouput
+</span></span></code></pre></div><h2 id="带model-head的模型调用">带Model Head的模型调用 <a href="#%e5%b8%a6model-head%e7%9a%84%e6%a8%a1%e5%9e%8b%e8%b0%83%e7%94%a8" class="anchor">🔗</a></h2><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>form transformers <span style="color:#f92672">import</span> AutoModelForSequenceClassification
+</span></span><span style="display:flex;"><span>clz_model<span style="color:#f92672">=</span>AutoModelForSequenceClassification<span style="color:#f92672">.</span>from_pretrained(<span style="color:#e6db74">&#34;hfl/rbt3&#34;</span>)
+</span></span><span style="display:flex;"><span>ouput<span style="color:#f92672">=</span>model(<span style="color:#f92672">**</span>tokenizer(sen,return_tensors<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;pt&#34;</span>))
+</span></span><span style="display:flex;"><span>ouput
+</span></span></code></pre></div><h1 id="第三章datasets基本使用">第三章：Datasets基本使用 <a href="#%e7%ac%ac%e4%b8%89%e7%ab%a0datasets%e5%9f%ba%e6%9c%ac%e4%bd%bf%e7%94%a8" class="anchor">🔗</a></h1><h2 id="加载在线数据集">加载在线数据集 <a href="#%e5%8a%a0%e8%bd%bd%e5%9c%a8%e7%ba%bf%e6%95%b0%e6%8d%ae%e9%9b%86" class="anchor">🔗</a></h2><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#f92672">from</span> datasets <span style="color:#f92672">import</span> <span style="color:#f92672">*</span>
+</span></span><span style="display:flex;"><span>datasets<span style="color:#f92672">=</span>load_dataset(<span style="color:#e6db74">&#34;madao33/new-title-chinese&#34;</span>)
+</span></span><span style="display:flex;"><span>datasets
+</span></span></code></pre></div><h2 id="加载数据集合集中的某一项任务">加载数据集合集中的某一项任务 <a href="#%e5%8a%a0%e8%bd%bd%e6%95%b0%e6%8d%ae%e9%9b%86%e5%90%88%e9%9b%86%e4%b8%ad%e7%9a%84%e6%9f%90%e4%b8%80%e9%a1%b9%e4%bb%bb%e5%8a%a1" class="anchor">🔗</a></h2><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>datasets<span style="color:#f92672">=</span>load_dataset(<span style="color:#e6db74">&#34;super_glue&#34;</span>,<span style="color:#e6db74">&#34;boolq&#34;</span>)
+</span></span><span style="display:flex;"><span>datasets
+</span></span></code></pre></div><h2 id="按照数据集划分进行加载">按照数据集划分进行加载 <a href="#%e6%8c%89%e7%85%a7%e6%95%b0%e6%8d%ae%e9%9b%86%e5%88%92%e5%88%86%e8%bf%9b%e8%a1%8c%e5%8a%a0%e8%bd%bd" class="anchor">🔗</a></h2><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>datasets<span style="color:#f92672">=</span>load_dataset(<span style="color:#e6db74">&#34;madao33/new-title-chinese&#34;</span>,split<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;train&#34;</span>)
+</span></span><span style="display:flex;"><span>datasets
+</span></span></code></pre></div>
+    </div>
+
+    
+</section>
+
+
+            </div>
+            <div class="side">
+                <div class="side-categories">
+    <h2>Categories</h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/categories/ai">ai(3)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/go">go(21)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E4%BB%A3%E7%A0%81">代码(2)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E5%B7%A5%E5%85%B7">工具(7)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E9%80%86%E5%90%91">逆向(2)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E9%9D%A2%E8%AF%95">面试(4)</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/llm/">Recent Llm</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/llm/transformers-%E5%85%A5%E9%97%A8%E7%AF%87/">Transformers-入门篇</a>
+            </li>
+        
+            <li>
+                <a href="/llm/%E6%A8%A1%E5%9E%8Bvllm%E9%83%A8%E7%BD%B2/">AI模型VLLM部署</a>
+            </li>
+        
+            <li>
+                <a href="/llm/%E6%A8%A1%E5%9E%8B%E5%BE%AE%E8%B0%83/">AI模型微调</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/go/">Recent Go</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/go/%E9%A1%B9%E7%9B%AE%E6%89%93%E5%8C%85%E5%8F%91%E5%B8%83/">基于Scratch创建最小且安全的golang docker镜像</a>
+            </li>
+        
+            <li>
+                <a href="/go/%E9%94%99%E8%AF%AF%E5%A4%84%E7%90%86%E6%96%B9%E6%A1%88/">Go-错误(error)处理方案</a>
+            </li>
+        
+            <li>
+                <a href="/go/%E7%9B%B8%E5%AF%B9%E8%B7%AF%E5%BE%84%E9%97%AE%E9%A2%98/">Go相对路径问题</a>
+            </li>
+        
+            <li>
+                <a href="/go/gmp%E6%A8%A1%E5%9E%8B/">Go-GMP模型</a>
+            </li>
+        
+            <li>
+                <a href="/go/gin_validator/">gin_validator</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/tool/">Recent Tool</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/tool/vscode%E6%8A%98%E8%85%BE/">vscode折腾</a>
+            </li>
+        
+            <li>
+                <a href="/tool/linux-ubuntu%E4%BC%98%E5%8C%96/">Ubuntu开机优化</a>
+            </li>
+        
+            <li>
+                <a href="/tool/shell-ssh_script/">ssh常用脚本</a>
+            </li>
+        
+            <li>
+                <a href="/tool/mac-%E4%BC%98%E5%8C%96/">Mac优化</a>
+            </li>
+        
+            <li>
+                <a href="/tool/git-%E5%91%BD%E4%BB%A4%E5%A4%A7%E5%85%A8/">git命令大全</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/android/">Recent Android</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/android/%E5%85%A5%E9%97%A8/">逆向环境-杂</a>
+            </li>
+        
+            <li>
+                <a href="/android/frida%E6%95%99%E7%A8%8B/">frida教程</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/note/">Recent Note</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/note/rdis-%E7%BC%93%E5%AD%98%E7%A9%BF%E9%80%8F%E9%9B%AA%E5%B4%A9%E5%87%BB%E7%A9%BF%E7%9A%84%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95/">缓存穿透、雪崩、击穿的解决方法</a>
+            </li>
+        
+            <li>
+                <a href="/note/redis-%E5%8D%95%E7%BA%BF%E7%A8%8B%E7%9A%84redis%E4%B8%BA%E4%BB%80%E4%B9%88%E5%BF%AB/">单线程的redis为什么快</a>
+            </li>
+        
+            <li>
+                <a href="/note/redis-%E6%80%BB%E7%BB%93/">redis总结</a>
+            </li>
+        
+            <li>
+                <a href="/note/mysql-%E6%80%BB%E7%BB%93/">mysql总结</a>
+            </li>
+        
+            <li>
+                <a href="/note/java-%E4%BB%A3%E7%A0%81%E7%94%9F%E6%88%90/">JAVA代码生成</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+            </div>
+        </main>
+        <footer class="footer">
+    <div class="footer-row">
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/llm/index.xml">
+                    Feed of Llm
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/go/index.xml">
+                    Feed of Go
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/tool/index.xml">
+                    Feed of Tool
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/android/index.xml">
+                    Feed of Android
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/note/index.xml">
+                    Feed of Note
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+
+        
+            
+            
+        
+    </div>
+
+    
+</footer>
+
+    </body>
+</html>
