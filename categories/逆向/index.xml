@@ -1,0 +1,255 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>逆向 on Abner的博客</title>
+    <link>https://abnerxc.github.io/categories/%E9%80%86%E5%90%91/</link>
+    <description>Recent content in 逆向 on Abner的博客</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-CN</language>
+    <lastBuildDate>Fri, 25 Jul 2025 20:07:58 +0800</lastBuildDate><atom:link href="https://abnerxc.github.io/categories/%E9%80%86%E5%90%91/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Redroid安卓容器</title>
+      <link>https://abnerxc.github.io/android/redroid%E4%BD%BF%E7%94%A8/</link>
+      <pubDate>Fri, 25 Jul 2025 20:07:58 +0800</pubDate>
+      
+      <guid>https://abnerxc.github.io/android/redroid%E4%BD%BF%E7%94%A8/</guid>
+      <description>&lt;blockquote&gt;
+&lt;p&gt;文档地址：https://github.com/remote-android/redroid-doc/tree/master&lt;/p&gt;&lt;/blockquote&gt;
+&lt;h1 id=&#34;ubuntu-2204安装&#34;&gt;Ubuntu 22.04安装 &lt;a href=&#34;#ubuntu-2204%e5%ae%89%e8%a3%85&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;sudo apt install linux-modules-extra-&lt;span style=&#34;color:#e6db74&#34;&gt;`&lt;/span&gt;uname -r&lt;span style=&#34;color:#e6db74&#34;&gt;`&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# 用于加载 Linux 内核中的 binder_linux 模块,该模块为 Android 的 Binder 通信机制提供支持&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;sudo modprobe binder_linux devices&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;binder,hwbinder,vndbinder&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;#添加开机启动(可选)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;sudo echo &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;binder_linux&amp;#34;&lt;/span&gt; | sudo tee -a /etc/modules
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;#  (可选)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;sudo modprobe ashmem_linux
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;docker run -itd --rm --privileged &lt;span style=&#34;color:#ae81ff&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;&lt;/span&gt;    --pull always &lt;span style=&#34;color:#ae81ff&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;&lt;/span&gt;    -v ~/data11:/data &lt;span style=&#34;color:#ae81ff&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;&lt;/span&gt;    -p 5555:5555 &lt;span style=&#34;color:#ae81ff&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;&lt;/span&gt;    --name redroid11 &lt;span style=&#34;color:#ae81ff&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;&lt;/span&gt;    redroid/redroid:12.0.0_64only-latest
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h1 id=&#34;docker运行&#34;&gt;docker运行 &lt;a href=&#34;#docker%e8%bf%90%e8%a1%8c&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;version: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;3.0&amp;#39;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;services:
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  redroid:
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    image: registry.cn-guangzhou.aliyuncs.com/xuchen/proxy:redroid-12.0.0_64only-latest
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    container_name: redroid-12
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    stdin_open: true
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    tty: true
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    privileged: true
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    ports:
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;      - 5555:5555
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    volumes:
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;      - /home/abner/app/redroid:/data
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    command:
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;      - androidboot.redroid_width&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1080&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;      - androidboot.redroid_height&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1920&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;      - androidboot.redroid_dpi&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;480&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;      - androidboot.redroid_fps&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;60&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;      - androidboot.redroid_gpu_mode&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;host
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h1 id=&#34;qtscrcpy&#34;&gt;QtScrcpy &lt;a href=&#34;#qtscrcpy&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;#报错解决&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;sudo apt-get update
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;sudo apt-get install libqt5multimedia5
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;</description>
+    </item>
+    
+    <item>
+      <title>frida教程</title>
+      <link>https://abnerxc.github.io/android/frida%E6%95%99%E7%A8%8B/</link>
+      <pubDate>Mon, 25 Jan 2021 22:07:58 +0800</pubDate>
+      
+      <guid>https://abnerxc.github.io/android/frida%E6%95%99%E7%A8%8B/</guid>
+      <description>&lt;h1 id=&#34;frida教程&#34;&gt;frida教程 &lt;a href=&#34;#frida%e6%95%99%e7%a8%8b&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;h2 id=&#34;frida&#34;&gt;frida &lt;a href=&#34;#frida&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;ul&gt;
+&lt;li&gt;命令：&lt;code&gt;pip install frida&lt;/code&gt;  , 下载地址：https://github.com/frida/frida&lt;/li&gt;
+&lt;li&gt;命令：&lt;code&gt;pip install frida-tools&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;下载：frida-server ，查看CPU架构 &lt;code&gt;adb shell getprop ro.product.cpu.abi&lt;/code&gt;，下载地址：https:github.com/frida/frida/releases&lt;/li&gt;
+&lt;li&gt;升级：&lt;code&gt;pip install -U frida frida-tools&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;卸载  &lt;code&gt;pip uninstall frida frida-tools&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;安装指定版本 &lt;code&gt;pip install frida==14.2.18  &amp;amp;&amp;amp;  pip install frida-tools==9.2.4&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h1 id=&#34;连接设备&#34;&gt;连接设备 &lt;a href=&#34;#%e8%bf%9e%e6%8e%a5%e8%ae%be%e5%a4%87&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;h2 id=&#34;模拟器&#34;&gt;模拟器 &lt;a href=&#34;#%e6%a8%a1%e6%8b%9f%e5%99%a8&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;ul&gt;
+&lt;li&gt;命令：&lt;code&gt;adb kill-server &amp;amp;&amp;amp; adb start-server &amp;amp;&amp;amp;  adb devices&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;模拟器打开&lt;code&gt;USB调试&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;adb connect 127.0.0.1:21503(逍遥模拟器端口)&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;真机&#34;&gt;真机 &lt;a href=&#34;#%e7%9c%9f%e6%9c%ba&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;ul&gt;
+&lt;li&gt;命令：&lt;code&gt;adb kill-server &amp;amp;&amp;amp; adb start-server &amp;amp;&amp;amp;  adb devices&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;打开&lt;code&gt;USB调试&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h1 id=&#34;启动frida-server&#34;&gt;启动frida-server &lt;a href=&#34;#%e5%90%af%e5%8a%a8frida-server&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;ul&gt;
+&lt;li&gt;上传文件：&lt;code&gt;adb push frida-server&lt;/code&gt; 到路径 &lt;code&gt;/data/local/tmp&lt;/code&gt; 并修改权限&lt;code&gt;chmod +x frida-server&lt;/code&gt;，运行即可&lt;/li&gt;
+&lt;li&gt;端口转发：&lt;code&gt;adb forward tcp:27042 tcp:27042&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;验证：&lt;code&gt;frida-ps -R&lt;/code&gt;验证frida是否正常获取远程设备进程&lt;/li&gt;
+&lt;li&gt;脚本注入：&lt;code&gt;frida -U -l hookssl.js -f com.yiban.app --no-pause&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;修改默认端口启动&lt;code&gt;frida-server -l 0.0.0.0:1234&lt;/code&gt; ,转发到本地&lt;code&gt;adb forward tcp:1234 tcp:1234&lt;/code&gt;,执行文件 &lt;code&gt;frida -H 127.0.0.1:1234 packageName（包名） -l script.js&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h1 id=&#34;frida应用&#34;&gt;frida应用 &lt;a href=&#34;#frida%e5%ba%94%e7%94%a8&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;h2 id=&#34;frida-dexdump脱壳&#34;&gt;frida-dexdump脱壳 &lt;a href=&#34;#frida-dexdump%e8%84%b1%e5%a3%b3&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;ul&gt;
+&lt;li&gt;安装：&lt;code&gt;pip install frida-dexdump&lt;/code&gt; ,下载地址：https://github.com/hluwa/frida-dexdump&lt;/li&gt;
+&lt;li&gt;脱壳命令：&lt;code&gt;frida-dexdump -U -d -f 包名 -o 存放dex路径&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h1 id=&#34;objection教程&#34;&gt;Objection教程 &lt;a href=&#34;#objection%e6%95%99%e7%a8%8b&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;h2 id=&#34;安装&#34;&gt;安装 &lt;a href=&#34;#%e5%ae%89%e8%a3%85&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;ul&gt;
+&lt;li&gt;安装：&lt;code&gt;pip install objection==1.11.0&lt;/code&gt;， 选择安装与frida版本相近的版本，pypi官网查看Objection版本,地址：https://pypi.org/project/objection/ ，&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;注入&#34;&gt;注入 &lt;a href=&#34;#%e6%b3%a8%e5%85%a5&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;ul&gt;
+&lt;li&gt;命令：&lt;code&gt;objection -g 包名 explore&lt;/code&gt;，如果指定端口了 &lt;code&gt;objection -N -h 127.0.0.1 -p 1234 -g com.ccb.longjiLife explore&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>逆向环境-杂</title>
+      <link>https://abnerxc.github.io/android/%E5%85%A5%E9%97%A8/</link>
+      <pubDate>Mon, 25 Jan 2021 22:07:58 +0800</pubDate>
+      
+      <guid>https://abnerxc.github.io/android/%E5%85%A5%E9%97%A8/</guid>
+      <description>&lt;h1 id=&#34;usb找不到设备&#34;&gt;USB找不到设备 &lt;a href=&#34;#usb%e6%89%be%e4%b8%8d%e5%88%b0%e8%ae%be%e5%a4%87&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;h2 id=&#34;windows-环境&#34;&gt;windows 环境 &lt;a href=&#34;#windows-%e7%8e%af%e5%a2%83&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;ol&gt;
+&lt;li&gt;找不到设备:右键电脑属性-&amp;gt;设备管理器-&amp;gt;便携设备-&amp;gt;属性-&amp;gt;详细信息-&amp;gt;属性（硬件id）,把硬件id复制到C:\Users\xxxx.android\adb_usb.ini文件中,填入&lt;code&gt;0x12345&lt;/code&gt;,12345替换成设备ID,然后重启adb服务&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h2 id=&#34;macos环境&#34;&gt;macOS环境 &lt;a href=&#34;#macos%e7%8e%af%e5%a2%83&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;ol&gt;
+&lt;li&gt;执行&lt;code&gt;system_profiler SPUSBDataType&lt;/code&gt;里面找到Android的Vendor ID&lt;/li&gt;
+&lt;li&gt;将vendor id的值写入 /User/你对应的用户文件夹/.android/adb_usb.ini文件。若该文件不存在，则新建一个。&lt;/li&gt;
+&lt;li&gt;adb kill-server &amp;amp;&amp;amp; adb start-server &amp;amp;&amp;amp;  adb devices&lt;/li&gt;
+&lt;li&gt;华为手机无法识别：https://www.jianshu.com/p/8c19fb78a680&lt;/li&gt;
+&lt;li&gt;首先关闭mac&lt;code&gt;sip&lt;/code&gt;黑苹果在recovery模式下去关闭也可以,mac夜神abd找不到,找到app包下面的adb命令：&lt;code&gt;/app包路径/adb connect 127.0.0.1:62001&lt;/code&gt; 连接以后，可以发现设备了&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h1 id=&#34;面具root隐藏&#34;&gt;面具root隐藏 &lt;a href=&#34;#%e9%9d%a2%e5%85%b7root%e9%9a%90%e8%97%8f&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;ul&gt;
+&lt;li&gt;首先：移除系统的支付APP检查，例如miui的&lt;code&gt;手机管家-&amp;gt;支付保护中心&lt;/code&gt;关闭APP保护，&lt;/li&gt;
+&lt;li&gt;方案一：面具设置，新版的magisk已增加了zygisk排除列表，我们可以通过这个排除列表去排除需要隐藏的应用，打开magisk，点右上角的设置图标，在设置里找到zygisk打开，然后打开遵循排除列表，在配置排除列表里把需要隐藏的应用打上钩。&lt;/li&gt;
+&lt;li&gt;方案二：(建议使用适用APP更广)如果有些APP还是无法隐藏，面具里面安装&lt;code&gt;Shamiko&lt;/code&gt;插件，&lt;code&gt;https://github.com/LSPosed/LSPosed.github.io/releases&lt;/code&gt; ，在使用Magisk官方版24+开启Zygisk和遵守排除列表隐藏root之后，排除列表内被隐藏root了的app就没法在LSP模块内勾选了，会显示在排除列表内，然后呈灰色状态无法勾选。&lt;code&gt;使用Shamiko的时候必须关闭遵守排除列表这个开关。&lt;/code&gt;,后续在配置排除列表里把需要隐藏的应用打上钩。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h1 id=&#34;面具root后过环境检测&#34;&gt;面具root后过环境检测 &lt;a href=&#34;#%e9%9d%a2%e5%85%b7root%e5%90%8e%e8%bf%87%e7%8e%af%e5%a2%83%e6%a3%80%e6%b5%8b&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;ul&gt;
+&lt;li&gt;关闭magisk的Zygisk开关，刷入&lt;code&gt;Zygisk-Next&lt;/code&gt;模块，代替面具的Zygisk模块，重启手机&lt;/li&gt;
+&lt;li&gt;刷入&lt;code&gt;Shamiko&lt;/code&gt;模块，重启手机&lt;/li&gt;
+&lt;li&gt;刷入&lt;code&gt;LSPosed&lt;/code&gt;框架模块，重启手机&lt;/li&gt;
+&lt;li&gt;刷入&lt;code&gt;PlayIntegrityFix&lt;/code&gt;模块,注意这个模块需要开启翻墙，隐藏bootloader环境检测，重启手机&lt;/li&gt;
+&lt;li&gt;然后在&lt;code&gt;magisk&lt;/code&gt;排除列表去排除需要隐藏的应用,如&lt;code&gt;momo检测&lt;/code&gt;就可以过了&lt;/li&gt;
+&lt;li&gt;【注意：如果TEE受损】：刷入&lt;code&gt;Tricky-Store&lt;/code&gt;和&lt;code&gt;TrickyAddonModule&lt;/code&gt;增强模块，这个模块可以解决某些设备上密钥证明不完整或损坏的问题&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h1 id=&#34;抓包&#34;&gt;抓包 &lt;a href=&#34;#%e6%8a%93%e5%8c%85&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;h2 id=&#34;简单app网页调试&#34;&gt;简单APP网页调试 &lt;a href=&#34;#%e7%ae%80%e5%8d%95app%e7%bd%91%e9%a1%b5%e8%b0%83%e8%af%95&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;ul&gt;
+&lt;li&gt;chrome浏览器输入：&lt;code&gt;chrome://inspect/#devices&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;安卓开启USB调试&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;证书安装&#34;&gt;证书安装 &lt;a href=&#34;#%e8%af%81%e4%b9%a6%e5%ae%89%e8%a3%85&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;ul&gt;
+&lt;li&gt;说明：安卓7.0以上，需要解锁BL和root权限&lt;/li&gt;
+&lt;li&gt;Charles配置 help-&amp;gt;SSL Proxying-&amp;gt;install charels root cer  安装电脑证书，mac证书查看详情 信任证书&lt;/li&gt;
+&lt;li&gt;保存证书配置 help-&amp;gt;SSL Proxying-&amp;gt;save charels root cer  安装电脑证书，mac证书查看详情 信任证书&lt;/li&gt;
+&lt;li&gt;转换证书：openssl x509 -inform DER -in charles-ssl-proxying-certificate.cer -out imac.crt&lt;/li&gt;
+&lt;li&gt;多格式转换命令:openssl x509 -inform PEM -outform DER -in {yourcert.pem} -out {yourcert.crt}&lt;/li&gt;
+&lt;li&gt;charles无法下载证书:证书保存到本地,adb push 文件路径  /sdcard/Download; 设置—更多设置—系统安全—加密与凭据—从存储设备安装证书，先清除所有凭据，后选择SD卡安装&lt;/li&gt;
+&lt;li&gt;安装证书：
+&lt;ul&gt;
+&lt;li&gt;进入以下目录：&lt;code&gt;/data/misc/user/0/cacerts-added&lt;/code&gt; 可以看到刚才安装的证书&lt;code&gt;.0&lt;/code&gt;结尾的&lt;/li&gt;
+&lt;li&gt;将system分区挂在为可读写 &lt;code&gt;mount -o rw,remount /system&lt;/code&gt; , 如果有的版本报错可以替换 &lt;code&gt;mount -o rw,remount /&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;cp /data/misc/user/0/cacerts-added/xx.0  /system/etc/security/cacerts/ ,并将权限改成644,（chmod -R 644 /system/etc/security/cacerts/xx.0）,重启设备&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;完成以上配置，大部分APP可以抓包了，如果出现反抓包，看下面解决办法。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;反抓包解决iptables--redsocks2--charles-透明代理抓包&#34;&gt;(反抓包解决)iptables + redsocks2 + Charles 透明代理抓包 &lt;a href=&#34;#%e5%8f%8d%e6%8a%93%e5%8c%85%e8%a7%a3%e5%86%b3iptables--redsocks2--charles-%e9%80%8f%e6%98%8e%e4%bb%a3%e7%90%86%e6%8a%93%e5%8c%85&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;先打开你的APP，然后&lt;code&gt;ps -ef | grep com.xxx.xxxxx&lt;/code&gt;命令找到有你的应用包名那一行，第一列就是uid
+通常你看到的是u0_a428这样的，那么后面的命令，uid相关的可以写成&lt;code&gt;u0_a428&lt;/code&gt;，也可以写成&lt;code&gt;10428&lt;/code&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;透明代理下载，&lt;code&gt;https://fh0.github.io/assets/android-redsocks2.tgz&lt;/code&gt; , 把redsocks.conf和redsocks2_arm64推送到手机&lt;code&gt;/data/local/tmp&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;redsocks.conf配置如下 ,其中&lt;code&gt;bind&lt;/code&gt;就是透明代理地址，&lt;code&gt;relay&lt;/code&gt;就是Charles的代理地址 ,注意配置文件的每一对&lt;code&gt;{}&lt;/code&gt;后面都应该有一个空行，否则会提示&lt;code&gt;unclosed section&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-config&#34; data-lang=&#34;config&#34;&gt;base {
+    log_debug = off;
+    log_info = on;
+    log = stderr;
+    daemon = off;
+    redirector = iptables;
+} 
+
+redsocks {
+    bind = &amp;#34;127.0.0.1:16677&amp;#34;; #本地透明代理地址
+    relay = &amp;#34;192.168.3.141:7777&amp;#34;;  # Charles Socks-Proxy代理地址
+    type = socks5;
+    autoproxy = 0;
+    timeout = 13;
+} 
+&lt;/code&gt;&lt;/pre&gt;&lt;ul&gt;
+&lt;li&gt;推送&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-config&#34; data-lang=&#34;config&#34;&gt;adb push redsocks2_arm64 /data/local/tmp/
+adb push redsocks.conf /data/local/tmp/
+adb shell 
+su
+chmod +x /data/local/tmp/redsocks2_arm64
+&lt;/code&gt;&lt;/pre&gt;&lt;ul&gt;
+&lt;li&gt;iptables配置：
+&lt;ul&gt;
+&lt;li&gt;保存开机后的iptables方法:&lt;code&gt;iptables-save &amp;gt; /data/local/tmp/iptables.rules&lt;/code&gt;;&lt;/li&gt;
+&lt;li&gt;恢复方法： &lt;code&gt;重启手机&lt;/code&gt;，&lt;/li&gt;
+&lt;li&gt;配置转发
+&lt;ul&gt;
+&lt;li&gt;(全转发)配置全转发&lt;code&gt;iptables -t nat -A OUTPUT -p tcp ! -d 127.0.0.1 -m owner --uid-owner 10172 --dport 0:65535 -j DNAT --to-destination 127.0.0.1:16677&lt;/code&gt;, 作用是：将uid为10428所请求的在0-65535端口上的tcp流量，转发到127.0.0.1:16677，但是排除了来自127.0.0.1的请求&lt;/li&gt;
+&lt;li&gt;(按端口转发)配置端口抓包,如80，443&lt;code&gt;iptables -t nat -A OUTPUT -p tcp ! -d 127.0.0.1 -m owner --uid-owner 10172 -m multiport --dports 80,443 -j DNAT --to-destination 127.0.0.1:16677&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;删除规则&lt;code&gt;iptables -t nat -D OUTPUT -p tcp ! -d 127.0.0.1 -m owner --uid-owner 10172 --dport 0:65535 -j DNAT --to-destination 127.0.0.1:16677&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;启动 &lt;code&gt;cd /data/local/tmp/ &amp;amp;&amp;amp; ./redsocks2_arm64&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;查看代理工具的socks代理流量&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h1 id=&#34;常用工具下载地址&#34;&gt;常用工具下载地址 &lt;a href=&#34;#%e5%b8%b8%e7%94%a8%e5%b7%a5%e5%85%b7%e4%b8%8b%e8%bd%bd%e5%9c%b0%e5%9d%80&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;ul&gt;
+&lt;li&gt;无需root沙箱抓包工具:https://github.com/android-hacker/VirtualXposed&lt;/li&gt;
+&lt;li&gt;JustTrustMe:https://github.com/Fuzion24/JustTrustMe&lt;/li&gt;
+&lt;li&gt;安装搞基助手apk:https://github.com/liuran001/GJZS&lt;/li&gt;
+&lt;li&gt;SSLUnpinning:https://github.com/ac-pm/SSLUnpinning_Xposed\&lt;/li&gt;
+&lt;li&gt;frida: &lt;a href=&#34;https://github.com/frida/frida/releases&#34;&gt;https://github.com/frida/frida/releases&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;反编译工具：https://github.com/iBotPeaches/Apktool/releases&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;mac安装集合工具&#34;&gt;mac安装集合工具 &lt;a href=&#34;#mac%e5%ae%89%e8%a3%85%e9%9b%86%e5%90%88%e5%b7%a5%e5%85%b7&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;ul&gt;
+&lt;li&gt;adb &lt;code&gt;brew cask install android-platform-tools&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;java-sdk安装&lt;/li&gt;
+&lt;li&gt;安卓sdk-tools: &lt;a href=&#34;https://www.androiddevtools.cn/&#34;&gt;https://www.androiddevtools.cn/&lt;/a&gt; 下载build-tools&lt;/li&gt;
+&lt;li&gt;jadx-gui: &lt;code&gt;brew install jadx 启动方法：jadx-gui&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;scrcpy: 远程投屏安卓手机 &lt;a href=&#34;https://github.com/Genymobile/scrcpy&#34;&gt;https://github.com/Genymobile/scrcpy&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h1 id=&#34;特别mac在pd虚拟机安装win10中的模拟器&#34;&gt;特别：mac在PD虚拟机安装win10中的模拟器 &lt;a href=&#34;#%e7%89%b9%e5%88%abmac%e5%9c%a8pd%e8%99%9a%e6%8b%9f%e6%9c%ba%e5%ae%89%e8%a3%85win10%e4%b8%ad%e7%9a%84%e6%a8%a1%e6%8b%9f%e5%99%a8&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;win管理员运行 win10 转发端口&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-config&#34; data-lang=&#34;config&#34;&gt;netsh interface portproxy add v4tov4 5555 127.0.0.1 5555 #模拟器端口转发到外网
+netsh interface portproxy del v4tov4 listenport=5555 #删除端口转发
+
+#firda抓包
+adb.exe forward tcp:27042 tcp:27042
+adb.exe forward tcp:27043 tcp:27043
+netsh interface portproxy add v4tov4 27042 127.0.0.1 27042 #firda抓包转发外网
+netsh interface portproxy add v4tov4 27043 127.0.0.1 27043 #firda抓包转发外网
+
+雷电模拟器
+emulator-5554   device  实际端口：5555
+emulator-5556   device  实际端口：5557  ，雷电是+2的端口递增
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;win查看端口转发
+&lt;code&gt;netsh interface portproxy show all&lt;/code&gt;
+mac 远程连接pd中win10的模拟器
+&lt;code&gt;adb connect 192.168.0.3:62001&lt;/code&gt;&lt;/p&gt;
+&lt;h1 id=&#34;adb导出命令&#34;&gt;adb导出命令 &lt;a href=&#34;#adb%e5%af%bc%e5%87%ba%e5%91%bd%e4%bb%a4&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;ul&gt;
+&lt;li&gt;打印出来所有安装到手机上的APP包名 : &lt;code&gt;adb  pm list package&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;找出安装后的包名应用的apk所在位置 : &lt;code&gt;adb  pm path com.ccb.longjiLife&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;下载：&lt;code&gt;adb pull /data/app/com.ccb.longjiLife-MXDTkEBGW2u_cAwg20D4JQ==/base.apk  /Users/abner/Downloads/apk&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h1 id=&#34;刷入twrp操作&#34;&gt;刷入twrp操作 &lt;a href=&#34;#%e5%88%b7%e5%85%a5twrp%e6%93%8d%e4%bd%9c&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;h2 id=&#34;红米note9-5g版本操作&#34;&gt;红米note9 5G版本操作 &lt;a href=&#34;#%e7%ba%a2%e7%b1%b3note9-5g%e7%89%88%e6%9c%ac%e6%93%8d%e4%bd%9c&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;ol&gt;
+&lt;li&gt;手机进入fastboot&lt;/li&gt;
+&lt;/ol&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-config&#34; data-lang=&#34;config&#34;&gt;adb reboot bootloader
+&lt;/code&gt;&lt;/pre&gt;&lt;ol start=&#34;2&#34;&gt;
+&lt;li&gt;刷入 TWRP&lt;/li&gt;
+&lt;/ol&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-config&#34; data-lang=&#34;config&#34;&gt;fastboot flash recovery /Users/abner/Downloads/RedmiNote95g-twrp.img
+&lt;/code&gt;&lt;/pre&gt;&lt;ol start=&#34;3&#34;&gt;
+&lt;li&gt;为防止重启手机 MIUI 自动替换回官方 Recovery，按住手机&lt;code&gt;音量上键&lt;/code&gt;，命令行同时执行&lt;/li&gt;
+&lt;/ol&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-config&#34; data-lang=&#34;config&#34;&gt;fastboot reboot recovery
+&lt;/code&gt;&lt;/pre&gt;&lt;ol start=&#34;4&#34;&gt;
+&lt;li&gt;在进入 TWRP 后，挂载“系统分区为只读”。这里滑动按钮以允许修改 ，不然不能禁止 MIUI 替换回官方 Recovery。&lt;/li&gt;
+&lt;li&gt;下载&lt;a href=&#34;https://github.com/topjohnwu/Magisk&#34;&gt;Magisk zip包&lt;/a&gt;，下载apk文件修改为zip后缀，并推送到手机，必须在&lt;code&gt;external_sd&lt;/code&gt;路径下不可以修改，因为sdcard目录加密是乱码&lt;/li&gt;
+&lt;/ol&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-config&#34; data-lang=&#34;config&#34;&gt;adb push Magisk-v28.1.zip /external_sd/
+&lt;/code&gt;&lt;/pre&gt;&lt;ol start=&#34;6&#34;&gt;
+&lt;li&gt;乱码解决，双清data的cache，然后安装Magisk-v28.1.zip。由于 MIUI 在启动时会检查 System 分区完整性，上一步 TWRP 修改了 System 分区，需要通过刷入 Magisk 移除启动验证。&lt;/li&gt;
+&lt;/ol&gt;
+</description>
+    </item>
+    
+  </channel>
+</rss>
