@@ -1,0 +1,1098 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+<meta name="viewport" content="width=device-width,minimum-scale=1">
+
+
+
+
+<title>GRPC笔记 | Abner的博客</title>
+<link rel="canonical" href="https://abnerxc.github.io/go/grpc%E6%80%BB%E7%BB%93/">
+<meta property="og:type" content="article" />
+<meta property="og:title" content="GRPC笔记 | Abner的博客" />
+<meta property="og:url" content="https://abnerxc.github.io/go/grpc%E6%80%BB%E7%BB%93/" />
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/icofont/icofont.min.css" />
+<link rel="stylesheet" href="/css/syntax.css" />
+<link rel="stylesheet" href="/css/style.css" />
+<script src="/js/copy-code-block.js"></script>
+<link rel="shortcut icon" href="/images/favicon.ico" type="image/x-icon" />
+
+    </head>
+
+    <body>
+        <header class="header-wrapper">
+    <div class="header">
+        <a class="site-title" href="https://abnerxc.github.io/">Abner的博客</a>
+
+        <nav class="menu">
+            
+        </nav>
+    </div>
+</header>
+
+        <main class="main-wrapper">
+            <div class="main">
+                
+
+<section class="single">
+    <h1 class="title">GRPC笔记</h1>
+
+    <div class="tip">
+        <time datetime="2024-07-22 18:35:11 &#43;0800 CST">2024/07/22</time>
+        <span class="split">·</span>
+        <span> 1724 words </span>
+        <span class="split">·</span>
+        <span>
+            9 minutes to read
+        </span>
+    </div>
+
+    <div class="taxonomies">
+        
+        <div>
+            Categories:
+            
+                <a href="/categories/go">Go</a>
+            
+        </div>
+        
+
+        
+    </div>
+
+    
+    
+    <div class="post-toc">
+        <h3>Table of Contents</h3>
+        <nav id="TableOfContents">
+  <ul>
+    <li><a href="#安装protobuf">安装Protobuf</a></li>
+    <li><a href="#proto文件编写">proto文件编写</a></li>
+    <li><a href="#proto文件介绍">proto文件介绍</a></li>
+    <li><a href="#服务端编写">服务端编写</a></li>
+    <li><a href="#客户端编写">客户端编写</a></li>
+    <li><a href="#认证">认证</a>
+      <ul>
+        <li><a href="#ssltls认证">SSL/TLS认证</a></li>
+        <li><a href="#token认证">Token认证</a></li>
+      </ul>
+    </li>
+    <li><a href="#interceptor-拦截器">Interceptor 拦截器</a></li>
+    <li><a href="#内置trace">内置Trace</a>
+      <ul>
+        <li><a href="#服务端事件查看">服务端事件查看</a></li>
+        <li><a href="#请求日志信息查看">请求日志信息查看</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+    </div>
+    
+
+    <hr />
+
+    <div class="content">
+        <h1 id="安装protobuf">安装Protobuf <a href="#%e5%ae%89%e8%a3%85protobuf" class="anchor">🔗</a></h1><ol>
+<li>下载<a href="https://github.com/protocolbuffers/protobuf/releases">Protocol Buffers</a></li>
+</ol>
+<ul>
+<li>配置环境变量，macos如下:</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>export PATH<span style="color:#f92672">=</span>$PATH:$JAVA_HOME/bin:<span style="color:#66d9ef">$(</span>go env GOPATH<span style="color:#66d9ef">)</span>/bin:/Users/abner/tools/platform-tools:/Users/abner/tools/apache-maven-3.9.11/bin:/Users/abner/tools/protoc-32.0-osx-x86_64/bin
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>执行source ~/.zshrc 
+</span></span></code></pre></div><ul>
+<li>最后终端输入<code>protoc</code> 验证</li>
+</ul>
+<ol start="2">
+<li>安装gRPC核心库</li>
+</ol>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>go get google.golang.org/grpc
+</span></span></code></pre></div><ol start="3">
+<li>上面安装的是protocol编译器,他可以生成不同语言代码。接着安装go语言的代码生成工具<code>protoc-gen-go</code>，其他语言自行研究</li>
+</ol>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+</span></span><span style="display:flex;"><span>go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+</span></span></code></pre></div><h1 id="proto文件编写">proto文件编写 <a href="#proto%e6%96%87%e4%bb%b6%e7%bc%96%e5%86%99" class="anchor">🔗</a></h1><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>//这是在说明使用的是proto3语法
+</span></span><span style="display:flex;"><span>syntax <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;proto3&#34;</span>;
+</span></span><span style="display:flex;"><span>//这事在说明生成的路径,这里的.表示当前目录,service代码生成的go文件包名是service
+</span></span><span style="display:flex;"><span>option go_package <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;.;service&#34;</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>// 定义服务Greeter，这个服务中有一个rpc方法SayHello，请求参数是HelloRequest，返回参数是HelloReply。一个文件可以定义多个service服务，可以把一组相关的
+</span></span><span style="display:flex;"><span>service Greeter <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>  rpc SayHello <span style="color:#f92672">(</span>HelloRequest<span style="color:#f92672">)</span> returns <span style="color:#f92672">(</span>HelloReply<span style="color:#f92672">)</span> <span style="color:#f92672">{}</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>// 请求参数
+</span></span><span style="display:flex;"><span>message HelloRequest <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>  string reqName <span style="color:#f92672">=</span> 1;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>// 响应参数
+</span></span><span style="display:flex;"><span>message HelloReply <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>  string respMsg <span style="color:#f92672">=</span> 1;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">}</span>
+</span></span></code></pre></div><p>编写完上面内容后，在文件目录执行</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>protoc --go_out<span style="color:#f92672">=</span>.  greeter.proto
+</span></span><span style="display:flex;"><span>protoc --go-grpc_out<span style="color:#f92672">=</span>.  greeter.proto
+</span></span></code></pre></div><h1 id="proto文件介绍">proto文件介绍 <a href="#proto%e6%96%87%e4%bb%b6%e4%bb%8b%e7%bb%8d" class="anchor">🔗</a></h1><blockquote>
+<p>message</p></blockquote>
+<p>message: protobuf中定义一个消息类型是通过关键字message字段指定的。类似c++中的class,java中的class,go中的struct，一个proto文件中可以定义多个消息类型</p>
+<blockquote>
+<p>字段规则</p></blockquote>
+<p>required: 表示字段必须赋值,否则编译不过。在proto3中，required字段已弃用
+optional: 表示字段可以不赋值。在proto3中，required、optional字段已都已经默认optional
+repeated: 表示字段可以重复赋值,在go中会被定义为切片</p>
+<blockquote>
+<p>消息号</p></blockquote>
+<p>在消息体的定义中，每个字段都必须要有一个唯一的编号，标识从[1,2^29-1]范围内的一个整数</p>
+<blockquote>
+<p>嵌套消息</p></blockquote>
+<p>可以在其他消息类型中定义使用消息，例如</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>message Father <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>    message Son <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>        string name <span style="color:#f92672">=</span> 1;
+</span></span><span style="display:flex;"><span>        int32 age <span style="color:#f92672">=</span> 2;
+</span></span><span style="display:flex;"><span>        repeated int32 weight <span style="color:#f92672">=</span> 3;
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>    repeated Son sons <span style="color:#f92672">=</span> 1;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">}</span>
+</span></span></code></pre></div><p>如果要在外部使用这个消息类型，需要Father.Son的形式使用。如：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>message Family <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>    Father.Son one <span style="color:#f92672">=</span> 1;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">}</span>
+</span></span></code></pre></div><blockquote>
+<p>服务定义</p></blockquote>
+<p>在proto文件中定义服务，服务中可以定义多个方法，每个方法都对应一个RPC方法。例如：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>service GoodsService <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>    rpc Serarch<span style="color:#f92672">(</span>SearchRequest<span style="color:#f92672">)</span> returns <span style="color:#f92672">(</span>SearchResponse<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">}</span>
+</span></span></code></pre></div><h1 id="服务端编写">服务端编写 <a href="#%e6%9c%8d%e5%8a%a1%e7%ab%af%e7%bc%96%e5%86%99" class="anchor">🔗</a></h1><p>server.go</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>package main
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>import <span style="color:#f92672">(</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;context&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;demo/grpc/pb&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;fmt&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;net&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;runtime&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;time&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;google.golang.org/grpc&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>const port <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;:50051&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>type ServerDemo struct <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>	pb.UnimplementedGreeterServer
+</span></span><span style="display:flex;"><span><span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>func <span style="color:#f92672">(</span>s *ServerDemo<span style="color:#f92672">)</span> SayHello<span style="color:#f92672">(</span>ctx context.Context, req *pb.HelloRequest<span style="color:#f92672">)</span> <span style="color:#f92672">(</span>resp *pb.HelloReply, err error<span style="color:#f92672">)</span> <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	msg :<span style="color:#f92672">=</span> fmt.Sprintf<span style="color:#f92672">(</span><span style="color:#e6db74">&#34;hello,%s[rpc-server,os=%s,nowNanosecond=%d]&#34;</span>,
+</span></span><span style="display:flex;"><span>		req.ReqName, runtime.GOOS, time.Now<span style="color:#f92672">()</span>.Nanosecond<span style="color:#f92672">())</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> &amp;pb.HelloReply<span style="color:#f92672">{</span>RespMsg: msg<span style="color:#f92672">}</span>, nil
+</span></span><span style="display:flex;"><span><span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>func main<span style="color:#f92672">()</span> <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>	listen, err :<span style="color:#f92672">=</span> net.Listen<span style="color:#f92672">(</span><span style="color:#e6db74">&#34;tcp&#34;</span>, port<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> err !<span style="color:#f92672">=</span> nil <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>		panic<span style="color:#f92672">(</span>err<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>	newServer :<span style="color:#f92672">=</span> grpc.NewServer<span style="color:#f92672">()</span>
+</span></span><span style="display:flex;"><span>	pb.RegisterGreeterServer<span style="color:#f92672">(</span>newServer, &amp;ServerDemo<span style="color:#f92672">{})</span>
+</span></span><span style="display:flex;"><span>	err <span style="color:#f92672">=</span> newServer.Serve<span style="color:#f92672">(</span>listen<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>	fmt.Println<span style="color:#f92672">(</span>err<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">}</span>
+</span></span></code></pre></div><h1 id="客户端编写">客户端编写 <a href="#%e5%ae%a2%e6%88%b7%e7%ab%af%e7%bc%96%e5%86%99" class="anchor">🔗</a></h1><p>client.go</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>package main
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>import <span style="color:#f92672">(</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;context&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;demo/grpc/pb&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;fmt&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;log&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;google.golang.org/grpc&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>const <span style="color:#f92672">(</span>
+</span></span><span style="display:flex;"><span>	address     <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;localhost:50051&#34;</span>
+</span></span><span style="display:flex;"><span>	defaultName <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;kaola&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>func main<span style="color:#f92672">()</span> <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>	conn, e :<span style="color:#f92672">=</span> grpc.Dial<span style="color:#f92672">(</span>address, grpc.WithInsecure<span style="color:#f92672">())</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> e !<span style="color:#f92672">=</span> nil <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>		panic<span style="color:#f92672">(</span>e<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>	defer conn.Close<span style="color:#f92672">()</span>
+</span></span><span style="display:flex;"><span>	c :<span style="color:#f92672">=</span> pb.NewGreeterClient<span style="color:#f92672">(</span>conn<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>	reply, e :<span style="color:#f92672">=</span> c.SayHello<span style="color:#f92672">(</span>context.Background<span style="color:#f92672">()</span>, &amp;pb.HelloRequest<span style="color:#f92672">{</span>ReqName: defaultName<span style="color:#f92672">})</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> e !<span style="color:#f92672">=</span> nil <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>		log.Fatal<span style="color:#f92672">(</span>e<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>	fmt.Println<span style="color:#f92672">(</span>reply.RespMsg<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">}</span>
+</span></span></code></pre></div><h1 id="认证">认证 <a href="#%e8%ae%a4%e8%af%81" class="anchor">🔗</a></h1><p>gRPC默认内置了两种认证方式：</p>
+<ul>
+<li>SSL/TLS认证方式</li>
+<li>基于Token的认证方式
+同时，gRPC提供了接口用于扩展自定义认证方式
+项目路面结构</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>|—— hello/
+</span></span><span style="display:flex;"><span>    |—— client/
+</span></span><span style="display:flex;"><span>        |—— main.go   // 客户端
+</span></span><span style="display:flex;"><span>    |—— server/
+</span></span><span style="display:flex;"><span>        |—— main.go   // 服务端
+</span></span><span style="display:flex;"><span>|—— proto/
+</span></span><span style="display:flex;"><span>    |—— hello/
+</span></span><span style="display:flex;"><span>        |—— hello.proto   // proto描述文件
+</span></span><span style="display:flex;"><span>        |—— hello.pb.go   // proto编译后文件
+</span></span></code></pre></div><h2 id="ssltls认证">SSL/TLS认证 <a href="#ssltls%e8%ae%a4%e8%af%81" class="anchor">🔗</a></h2><p>这里直接扩展hello项目，实现TLS认证机制</p>
+<p>首先需要准备证书，在hello目录新建keys目录用于存放证书文件。</p>
+<ol>
+<li>证书制作</li>
+</ol>
+<p>制作私钥 (.key)</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span><span style="color:#75715e"># Key considerations for algorithm &#34;RSA&#34; ≥ 2048-bit</span>
+</span></span><span style="display:flex;"><span>$ openssl genrsa -out server.key <span style="color:#ae81ff">2048</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Key considerations for algorithm &#34;ECDSA&#34; ≥ secp384r1</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># List ECDSA the supported curves (openssl ecparam -list_curves)</span>
+</span></span><span style="display:flex;"><span>$ openssl ecparam -genkey -name secp384r1 -out server.key
+</span></span></code></pre></div><p>自签名公钥(x509) (PEM-encodings .pem|.crt)</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ openssl req -new -x509 -sha256 -key server.key -out server.pem -days <span style="color:#ae81ff">3650</span>
+</span></span></code></pre></div><p>自定义信息</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>-----
+</span></span><span style="display:flex;"><span>Country Name <span style="color:#f92672">(</span><span style="color:#ae81ff">2</span> letter code<span style="color:#f92672">)</span> <span style="color:#f92672">[</span>AU<span style="color:#f92672">]</span>:CN
+</span></span><span style="display:flex;"><span>State or Province Name <span style="color:#f92672">(</span>full name<span style="color:#f92672">)</span> <span style="color:#f92672">[</span>Some-State<span style="color:#f92672">]</span>:XxXx
+</span></span><span style="display:flex;"><span>Locality Name <span style="color:#f92672">(</span>eg, city<span style="color:#f92672">)</span> <span style="color:#f92672">[]</span>:XxXx
+</span></span><span style="display:flex;"><span>Organization Name <span style="color:#f92672">(</span>eg, company<span style="color:#f92672">)</span> <span style="color:#f92672">[</span>Internet Widgits Pty Ltd<span style="color:#f92672">]</span>:XX Co. Ltd
+</span></span><span style="display:flex;"><span>Organizational Unit Name <span style="color:#f92672">(</span>eg, section<span style="color:#f92672">)</span> <span style="color:#f92672">[]</span>:Dev
+</span></span><span style="display:flex;"><span>Common Name <span style="color:#f92672">(</span>e.g. server FQDN or YOUR name<span style="color:#f92672">)</span> <span style="color:#f92672">[]</span>:server name
+</span></span><span style="display:flex;"><span>Email Address <span style="color:#f92672">[]</span>:xxx@xxx.com
+</span></span></code></pre></div><p>目录结构</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>|—— hello-tls/
+</span></span><span style="display:flex;"><span>    |—— client/
+</span></span><span style="display:flex;"><span>        |—— main.go   // 客户端
+</span></span><span style="display:flex;"><span>    |—— server/
+</span></span><span style="display:flex;"><span>        |—— main.go   // 服务端
+</span></span><span style="display:flex;"><span>|—— keys/                 // 证书目录
+</span></span><span style="display:flex;"><span>    |—— server.key
+</span></span><span style="display:flex;"><span>    |—— server.pem
+</span></span><span style="display:flex;"><span>|—— proto/
+</span></span><span style="display:flex;"><span>    |—— hello/
+</span></span><span style="display:flex;"><span>        |—— hello.proto   // proto描述文件
+</span></span><span style="display:flex;"><span>        |—— hello.pb.go   // proto编译后文件
+</span></span></code></pre></div><p>示例代码
+修改服务端代码：server/main.go</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>package main
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>import <span style="color:#f92672">(</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;fmt&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;net&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    pb <span style="color:#e6db74">&#34;github.com/jergoo/go-grpc-example/proto/hello&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;golang.org/x/net/context&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;google.golang.org/grpc&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;google.golang.org/grpc/credentials&#34;</span> // 引入grpc认证包
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;google.golang.org/grpc/grpclog&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>const <span style="color:#f92672">(</span>
+</span></span><span style="display:flex;"><span>    // Address gRPC服务地址
+</span></span><span style="display:flex;"><span>    Address <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;127.0.0.1:50052&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>// 定义helloService并实现约定的接口
+</span></span><span style="display:flex;"><span>type helloService struct<span style="color:#f92672">{}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>// HelloService Hello服务
+</span></span><span style="display:flex;"><span>var HelloService <span style="color:#f92672">=</span> helloService<span style="color:#f92672">{}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>// SayHello 实现Hello服务接口
+</span></span><span style="display:flex;"><span>func <span style="color:#f92672">(</span>h helloService<span style="color:#f92672">)</span> SayHello<span style="color:#f92672">(</span>ctx context.Context, in *pb.HelloRequest<span style="color:#f92672">)</span> <span style="color:#f92672">(</span>*pb.HelloResponse, error<span style="color:#f92672">)</span> <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>    resp :<span style="color:#f92672">=</span> new<span style="color:#f92672">(</span>pb.HelloResponse<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>    resp.Message <span style="color:#f92672">=</span> fmt.Sprintf<span style="color:#f92672">(</span><span style="color:#e6db74">&#34;Hello %s.&#34;</span>, in.Name<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> resp, nil
+</span></span><span style="display:flex;"><span><span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>func main<span style="color:#f92672">()</span> <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>    listen, err :<span style="color:#f92672">=</span> net.Listen<span style="color:#f92672">(</span><span style="color:#e6db74">&#34;tcp&#34;</span>, Address<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> err !<span style="color:#f92672">=</span> nil <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>        grpclog.Fatalf<span style="color:#f92672">(</span><span style="color:#e6db74">&#34;Failed to listen: %v&#34;</span>, err<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    // TLS认证
+</span></span><span style="display:flex;"><span>    creds, err :<span style="color:#f92672">=</span> credentials.NewServerTLSFromFile<span style="color:#f92672">(</span><span style="color:#e6db74">&#34;../../keys/server.pem&#34;</span>, <span style="color:#e6db74">&#34;../../keys/server.key&#34;</span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> err !<span style="color:#f92672">=</span> nil <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>        grpclog.Fatalf<span style="color:#f92672">(</span><span style="color:#e6db74">&#34;Failed to generate credentials %v&#34;</span>, err<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    // 实例化grpc Server, 并开启TLS认证
+</span></span><span style="display:flex;"><span>    s :<span style="color:#f92672">=</span> grpc.NewServer<span style="color:#f92672">(</span>grpc.Creds<span style="color:#f92672">(</span>creds<span style="color:#f92672">))</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    // 注册HelloService
+</span></span><span style="display:flex;"><span>    pb.RegisterHelloServer<span style="color:#f92672">(</span>s, HelloService<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    grpclog.Println<span style="color:#f92672">(</span><span style="color:#e6db74">&#34;Listen on &#34;</span> + Address + <span style="color:#e6db74">&#34; with TLS&#34;</span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    s.Serve<span style="color:#f92672">(</span>listen<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">}</span>
+</span></span></code></pre></div><p>服务端在实例化grpc Server时，可配置多种选项，TLS认证是其中之一</p>
+<p>客户端添加TLS认证：client/main.go</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>package main
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>import <span style="color:#f92672">(</span>
+</span></span><span style="display:flex;"><span>    pb <span style="color:#e6db74">&#34;github.com/jergoo/go-grpc-example/proto/hello&#34;</span> // 引入proto包
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;golang.org/x/net/context&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;google.golang.org/grpc&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;google.golang.org/grpc/credentials&#34;</span> // 引入grpc认证包
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;google.golang.org/grpc/grpclog&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>const <span style="color:#f92672">(</span>
+</span></span><span style="display:flex;"><span>    // Address gRPC服务地址
+</span></span><span style="display:flex;"><span>    Address <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;127.0.0.1:50052&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>func main<span style="color:#f92672">()</span> <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>    // TLS连接
+</span></span><span style="display:flex;"><span>    creds, err :<span style="color:#f92672">=</span> credentials.NewClientTLSFromFile<span style="color:#f92672">(</span><span style="color:#e6db74">&#34;../../keys/server.pem&#34;</span>, <span style="color:#e6db74">&#34;server name&#34;</span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> err !<span style="color:#f92672">=</span> nil <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>        grpclog.Fatalf<span style="color:#f92672">(</span><span style="color:#e6db74">&#34;Failed to create TLS credentials %v&#34;</span>, err<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    conn, err :<span style="color:#f92672">=</span> grpc.Dial<span style="color:#f92672">(</span>Address, grpc.WithTransportCredentials<span style="color:#f92672">(</span>creds<span style="color:#f92672">))</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> err !<span style="color:#f92672">=</span> nil <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>        grpclog.Fatalln<span style="color:#f92672">(</span>err<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>    defer conn.Close<span style="color:#f92672">()</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    // 初始化客户端
+</span></span><span style="display:flex;"><span>    c :<span style="color:#f92672">=</span> pb.NewHelloClient<span style="color:#f92672">(</span>conn<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    // 调用方法
+</span></span><span style="display:flex;"><span>    req :<span style="color:#f92672">=</span> &amp;pb.HelloRequest<span style="color:#f92672">{</span>Name: <span style="color:#e6db74">&#34;gRPC&#34;</span><span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>    res, err :<span style="color:#f92672">=</span> c.SayHello<span style="color:#f92672">(</span>context.Background<span style="color:#f92672">()</span>, req<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> err !<span style="color:#f92672">=</span> nil <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>        grpclog.Fatalln<span style="color:#f92672">(</span>err<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    grpclog.Println<span style="color:#f92672">(</span>res.Message<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">}</span>
+</span></span></code></pre></div><p>客户端添加TLS认证的方式和服务端类似，在创建连接Dial时，同样可以配置多种选项，后面的示例中会看到更多的选项。</p>
+<h2 id="token认证">Token认证 <a href="#token%e8%ae%a4%e8%af%81" class="anchor">🔗</a></h2><p>再进一步，继续扩展hello-tls项目，实现TLS + Token认证机制，也可以不需要TLS，仅使用token。下面的例子使用TLS + Token认证机制
+目录结构</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>|—— hello_token/
+</span></span><span style="display:flex;"><span>    |—— client/
+</span></span><span style="display:flex;"><span>        |—— main.go   // 客户端
+</span></span><span style="display:flex;"><span>    |—— server/
+</span></span><span style="display:flex;"><span>        |—— main.go   // 服务端
+</span></span><span style="display:flex;"><span>|—— keys/             // 证书目录
+</span></span><span style="display:flex;"><span>    |—— server.key
+</span></span><span style="display:flex;"><span>    |—— server.pem
+</span></span><span style="display:flex;"><span>|—— proto/
+</span></span><span style="display:flex;"><span>    |—— hello/
+</span></span><span style="display:flex;"><span>        |—— hello.proto   // proto描述文件
+</span></span><span style="display:flex;"><span>        |—— hello.pb.go   // proto编译后文件
+</span></span></code></pre></div><p>示例代码</p>
+<p>先修改客户端实现：client/main.go</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>package main
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>import <span style="color:#f92672">(</span>
+</span></span><span style="display:flex;"><span>    pb <span style="color:#e6db74">&#34;github.com/jergoo/go-grpc-example/proto/hello&#34;</span> // 引入proto包
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;golang.org/x/net/context&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;google.golang.org/grpc&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;google.golang.org/grpc/credentials&#34;</span> // 引入grpc认证包
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;google.golang.org/grpc/grpclog&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>const <span style="color:#f92672">(</span>
+</span></span><span style="display:flex;"><span>    // Address gRPC服务地址
+</span></span><span style="display:flex;"><span>    Address <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;127.0.0.1:50052&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    // OpenTLS 是否开启TLS认证
+</span></span><span style="display:flex;"><span>    OpenTLS <span style="color:#f92672">=</span> true
+</span></span><span style="display:flex;"><span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>// customCredential 自定义认证
+</span></span><span style="display:flex;"><span>type customCredential struct<span style="color:#f92672">{}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>// GetRequestMetadata 实现自定义认证接口
+</span></span><span style="display:flex;"><span>func <span style="color:#f92672">(</span>c customCredential<span style="color:#f92672">)</span> GetRequestMetadata<span style="color:#f92672">(</span>ctx context.Context, uri ...string<span style="color:#f92672">)</span> <span style="color:#f92672">(</span>map<span style="color:#f92672">[</span>string<span style="color:#f92672">]</span>string, error<span style="color:#f92672">)</span> <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> map<span style="color:#f92672">[</span>string<span style="color:#f92672">]</span>string<span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;appid&#34;</span>:  <span style="color:#e6db74">&#34;101010&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;appkey&#34;</span>: <span style="color:#e6db74">&#34;i am key&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">}</span>, nil
+</span></span><span style="display:flex;"><span><span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>// RequireTransportSecurity 自定义认证是否开启TLS
+</span></span><span style="display:flex;"><span>func <span style="color:#f92672">(</span>c customCredential<span style="color:#f92672">)</span> RequireTransportSecurity<span style="color:#f92672">()</span> bool <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> OpenTLS
+</span></span><span style="display:flex;"><span><span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>func main<span style="color:#f92672">()</span> <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>    var err error
+</span></span><span style="display:flex;"><span>    var opts <span style="color:#f92672">[]</span>grpc.DialOption
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> OpenTLS <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>        // TLS连接
+</span></span><span style="display:flex;"><span>        creds, err :<span style="color:#f92672">=</span> credentials.NewClientTLSFromFile<span style="color:#f92672">(</span><span style="color:#e6db74">&#34;../../keys/server.pem&#34;</span>, <span style="color:#e6db74">&#34;server name&#34;</span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> err !<span style="color:#f92672">=</span> nil <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>            grpclog.Fatalf<span style="color:#f92672">(</span><span style="color:#e6db74">&#34;Failed to create TLS credentials %v&#34;</span>, err<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>        opts <span style="color:#f92672">=</span> append<span style="color:#f92672">(</span>opts, grpc.WithTransportCredentials<span style="color:#f92672">(</span>creds<span style="color:#f92672">))</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">}</span> <span style="color:#66d9ef">else</span> <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>        opts <span style="color:#f92672">=</span> append<span style="color:#f92672">(</span>opts, grpc.WithInsecure<span style="color:#f92672">())</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    // 使用自定义认证
+</span></span><span style="display:flex;"><span>    opts <span style="color:#f92672">=</span> append<span style="color:#f92672">(</span>opts, grpc.WithPerRPCCredentials<span style="color:#f92672">(</span>new<span style="color:#f92672">(</span>customCredential<span style="color:#f92672">)))</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    conn, err :<span style="color:#f92672">=</span> grpc.Dial<span style="color:#f92672">(</span>Address, opts...<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> err !<span style="color:#f92672">=</span> nil <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>        grpclog.Fatalln<span style="color:#f92672">(</span>err<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    defer conn.Close<span style="color:#f92672">()</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    // 初始化客户端
+</span></span><span style="display:flex;"><span>    c :<span style="color:#f92672">=</span> pb.NewHelloClient<span style="color:#f92672">(</span>conn<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    // 调用方法
+</span></span><span style="display:flex;"><span>    req :<span style="color:#f92672">=</span> &amp;pb.HelloRequest<span style="color:#f92672">{</span>Name: <span style="color:#e6db74">&#34;gRPC&#34;</span><span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>    res, err :<span style="color:#f92672">=</span> c.SayHello<span style="color:#f92672">(</span>context.Background<span style="color:#f92672">()</span>, req<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> err !<span style="color:#f92672">=</span> nil <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>        grpclog.Fatalln<span style="color:#f92672">(</span>err<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    grpclog.Println<span style="color:#f92672">(</span>res.Message<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">}</span>
+</span></span></code></pre></div><p>这里我们定义了一个<code>customCredential</code>结构，并实现了两个方法<code>GetRequestMetadata</code>和<code>RequireTransportSecurity</code>。这是gRPC提供的自定义认证方式，每次RPC调用都会传输认证信息。<code>customCredential</code>其实是实现了<code>grpc/credential</code>包内的<code>PerRPCCredentials</code>接口。每次调用，token信息会通过请求的metadata传输到服务端。下面具体看一下服务端如何获取metadata中的信息。</p>
+<p>修改server/main.go中的SayHello方法：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>package main
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>import <span style="color:#f92672">(</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;fmt&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;net&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    pb <span style="color:#e6db74">&#34;github.com/jergoo/go-grpc-example/proto/hello&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;golang.org/x/net/context&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;google.golang.org/grpc&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;google.golang.org/grpc/codes&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;google.golang.org/grpc/credentials&#34;</span> // 引入grpc认证包
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;google.golang.org/grpc/grpclog&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;google.golang.org/grpc/metadata&#34;</span> // 引入grpc meta包
+</span></span><span style="display:flex;"><span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>const <span style="color:#f92672">(</span>
+</span></span><span style="display:flex;"><span>    // Address gRPC服务地址
+</span></span><span style="display:flex;"><span>    Address <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;127.0.0.1:50052&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>// 定义helloService并实现约定的接口
+</span></span><span style="display:flex;"><span>type helloService struct<span style="color:#f92672">{}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>// HelloService ...
+</span></span><span style="display:flex;"><span>var HelloService <span style="color:#f92672">=</span> helloService<span style="color:#f92672">{}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>// SayHello 实现Hello服务接口
+</span></span><span style="display:flex;"><span>func <span style="color:#f92672">(</span>h helloService<span style="color:#f92672">)</span> SayHello<span style="color:#f92672">(</span>ctx context.Context, in *pb.HelloRequest<span style="color:#f92672">)</span> <span style="color:#f92672">(</span>*pb.HelloResponse, error<span style="color:#f92672">)</span> <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>    // 解析metada中的信息并验证
+</span></span><span style="display:flex;"><span>    md, ok :<span style="color:#f92672">=</span> metadata.FromContext<span style="color:#f92672">(</span>ctx<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> !ok <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> nil, grpc.Errorf<span style="color:#f92672">(</span>codes.Unauthenticated, <span style="color:#e6db74">&#34;无Token认证信息&#34;</span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    var <span style="color:#f92672">(</span>
+</span></span><span style="display:flex;"><span>        appid  string
+</span></span><span style="display:flex;"><span>        appkey string
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> val, ok :<span style="color:#f92672">=</span> md<span style="color:#f92672">[</span><span style="color:#e6db74">&#34;appid&#34;</span><span style="color:#f92672">]</span>; ok <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>        appid <span style="color:#f92672">=</span> val<span style="color:#f92672">[</span>0<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> val, ok :<span style="color:#f92672">=</span> md<span style="color:#f92672">[</span><span style="color:#e6db74">&#34;appkey&#34;</span><span style="color:#f92672">]</span>; ok <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>        appkey <span style="color:#f92672">=</span> val<span style="color:#f92672">[</span>0<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> appid !<span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;101010&#34;</span> <span style="color:#f92672">||</span> appkey !<span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;i am key&#34;</span> <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> nil, grpc.Errorf<span style="color:#f92672">(</span>codes.Unauthenticated, <span style="color:#e6db74">&#34;Token认证信息无效: appid=%s, appkey=%s&#34;</span>, appid, appkey<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    resp :<span style="color:#f92672">=</span> new<span style="color:#f92672">(</span>pb.HelloResponse<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>    resp.Message <span style="color:#f92672">=</span> fmt.Sprintf<span style="color:#f92672">(</span><span style="color:#e6db74">&#34;Hello %s.\nToken info: appid=%s,appkey=%s&#34;</span>, in.Name, appid, appkey<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> resp, nil
+</span></span><span style="display:flex;"><span><span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>func main<span style="color:#f92672">()</span> <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>    listen, err :<span style="color:#f92672">=</span> net.Listen<span style="color:#f92672">(</span><span style="color:#e6db74">&#34;tcp&#34;</span>, Address<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> err !<span style="color:#f92672">=</span> nil <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>        grpclog.Fatalf<span style="color:#f92672">(</span><span style="color:#e6db74">&#34;failed to listen: %v&#34;</span>, err<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    // TLS认证
+</span></span><span style="display:flex;"><span>    creds, err :<span style="color:#f92672">=</span> credentials.NewServerTLSFromFile<span style="color:#f92672">(</span><span style="color:#e6db74">&#34;../../keys/server.pem&#34;</span>, <span style="color:#e6db74">&#34;../../keys/server.key&#34;</span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> err !<span style="color:#f92672">=</span> nil <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>        grpclog.Fatalf<span style="color:#f92672">(</span><span style="color:#e6db74">&#34;Failed to generate credentials %v&#34;</span>, err<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    // 实例化grpc Server, 并开启TLS认证
+</span></span><span style="display:flex;"><span>    s :<span style="color:#f92672">=</span> grpc.NewServer<span style="color:#f92672">(</span>grpc.Creds<span style="color:#f92672">(</span>creds<span style="color:#f92672">))</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    // 注册HelloService
+</span></span><span style="display:flex;"><span>    pb.RegisterHelloServer<span style="color:#f92672">(</span>s, HelloService<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    grpclog.Println<span style="color:#f92672">(</span><span style="color:#e6db74">&#34;Listen on &#34;</span> + Address + <span style="color:#e6db74">&#34; with TLS + Token&#34;</span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    s.Serve<span style="color:#f92672">(</span>listen<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">}</span>
+</span></span></code></pre></div><p>服务端可以从context中获取每次请求的metadata，从中读取客户端发送的token信息并验证有效性。
+<code>google.golang.org/grpc/credentials/oauth</code>包已实现了用于Google API的oauth和jwt验证的方法，使用方法可以参考官方文档。在实际应用中，我们可以根据自己的业务需求实现合适的验证方式。</p>
+<h1 id="interceptor-拦截器">Interceptor 拦截器 <a href="#interceptor-%e6%8b%a6%e6%88%aa%e5%99%a8" class="anchor">🔗</a></h1><p>grpc服务端和客户端都提供了interceptor功能，功能类似middleware，很适合在这里处理验证、日志等流程。</p>
+<p>在自定义Token认证的示例中，认证信息是由每个服务中的方法处理并认证的，如果有大量的接口方法，这种姿势就太不优雅了，每个接口实现都要先处理认证信息。这个时候interceptor就可以用来解决了这个问题，在请求被转到具体接口之前处理认证信息，一处认证，到处无忧。 在客户端，我们增加一个请求日志，记录请求相关的参数和耗时等等。修改hello_token项目实现：
+目录结构</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>|—— hello_interceptor/
+</span></span><span style="display:flex;"><span>    |—— client/
+</span></span><span style="display:flex;"><span>        |—— main.go   // 客户端
+</span></span><span style="display:flex;"><span>    |—— server/
+</span></span><span style="display:flex;"><span>        |—— main.go   // 服务端
+</span></span><span style="display:flex;"><span>|—— keys/             // 证书目录
+</span></span><span style="display:flex;"><span>    |—— server.key
+</span></span><span style="display:flex;"><span>    |—— server.pem
+</span></span><span style="display:flex;"><span>|—— proto/
+</span></span><span style="display:flex;"><span>    |—— hello/
+</span></span><span style="display:flex;"><span>        |—— hello.proto   // proto描述文件
+</span></span><span style="display:flex;"><span>        |—— hello.pb.go   // proto编译后文件
+</span></span></code></pre></div><p>示例代码
+服务端interceptor： hello_interceptor/server/main.go</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>package main
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>import <span style="color:#f92672">(</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;fmt&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;net&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    pb <span style="color:#e6db74">&#34;github.com/jergoo/go-grpc-example/proto/hello&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;golang.org/x/net/context&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;google.golang.org/grpc&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;google.golang.org/grpc/codes&#34;</span>       // grpc 响应状态码
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;google.golang.org/grpc/credentials&#34;</span> // grpc认证包
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;google.golang.org/grpc/grpclog&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;google.golang.org/grpc/metadata&#34;</span> // grpc metadata包
+</span></span><span style="display:flex;"><span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>const <span style="color:#f92672">(</span>
+</span></span><span style="display:flex;"><span>    // Address gRPC服务地址
+</span></span><span style="display:flex;"><span>    Address <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;127.0.0.1:50052&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>// 定义helloService并实现约定的接口
+</span></span><span style="display:flex;"><span>type helloService struct<span style="color:#f92672">{}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>// HelloService Hello服务
+</span></span><span style="display:flex;"><span>var HelloService <span style="color:#f92672">=</span> helloService<span style="color:#f92672">{}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>// SayHello 实现Hello服务接口
+</span></span><span style="display:flex;"><span>func <span style="color:#f92672">(</span>h helloService<span style="color:#f92672">)</span> SayHello<span style="color:#f92672">(</span>ctx context.Context, in *pb.HelloRequest<span style="color:#f92672">)</span> <span style="color:#f92672">(</span>*pb.HelloResponse, error<span style="color:#f92672">)</span> <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>    resp :<span style="color:#f92672">=</span> new<span style="color:#f92672">(</span>pb.HelloResponse<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>    resp.Message <span style="color:#f92672">=</span> fmt.Sprintf<span style="color:#f92672">(</span><span style="color:#e6db74">&#34;Hello %s.&#34;</span>, in.Name<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> resp, nil
+</span></span><span style="display:flex;"><span><span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>func main<span style="color:#f92672">()</span> <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>    listen, err :<span style="color:#f92672">=</span> net.Listen<span style="color:#f92672">(</span><span style="color:#e6db74">&#34;tcp&#34;</span>, Address<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> err !<span style="color:#f92672">=</span> nil <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>        grpclog.Fatalf<span style="color:#f92672">(</span><span style="color:#e6db74">&#34;Failed to listen: %v&#34;</span>, err<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    var opts <span style="color:#f92672">[]</span>grpc.ServerOption
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    // TLS认证
+</span></span><span style="display:flex;"><span>    creds, err :<span style="color:#f92672">=</span> credentials.NewServerTLSFromFile<span style="color:#f92672">(</span><span style="color:#e6db74">&#34;../../keys/server.pem&#34;</span>, <span style="color:#e6db74">&#34;../../keys/server.key&#34;</span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> err !<span style="color:#f92672">=</span> nil <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>        grpclog.Fatalf<span style="color:#f92672">(</span><span style="color:#e6db74">&#34;Failed to generate credentials %v&#34;</span>, err<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    opts <span style="color:#f92672">=</span> append<span style="color:#f92672">(</span>opts, grpc.Creds<span style="color:#f92672">(</span>creds<span style="color:#f92672">))</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    // 注册interceptor
+</span></span><span style="display:flex;"><span>    opts <span style="color:#f92672">=</span> append<span style="color:#f92672">(</span>opts, grpc.UnaryInterceptor<span style="color:#f92672">(</span>interceptor<span style="color:#f92672">))</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    // 实例化grpc Server
+</span></span><span style="display:flex;"><span>    s :<span style="color:#f92672">=</span> grpc.NewServer<span style="color:#f92672">(</span>opts...<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    // 注册HelloService
+</span></span><span style="display:flex;"><span>    pb.RegisterHelloServer<span style="color:#f92672">(</span>s, HelloService<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    grpclog.Println<span style="color:#f92672">(</span><span style="color:#e6db74">&#34;Listen on &#34;</span> + Address + <span style="color:#e6db74">&#34; with TLS + Token + Interceptor&#34;</span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    s.Serve<span style="color:#f92672">(</span>listen<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>// auth 验证Token
+</span></span><span style="display:flex;"><span>func auth<span style="color:#f92672">(</span>ctx context.Context<span style="color:#f92672">)</span> error <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>    md, ok :<span style="color:#f92672">=</span> metadata.FromContext<span style="color:#f92672">(</span>ctx<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> !ok <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> grpc.Errorf<span style="color:#f92672">(</span>codes.Unauthenticated, <span style="color:#e6db74">&#34;无Token认证信息&#34;</span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    var <span style="color:#f92672">(</span>
+</span></span><span style="display:flex;"><span>        appid  string
+</span></span><span style="display:flex;"><span>        appkey string
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> val, ok :<span style="color:#f92672">=</span> md<span style="color:#f92672">[</span><span style="color:#e6db74">&#34;appid&#34;</span><span style="color:#f92672">]</span>; ok <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>        appid <span style="color:#f92672">=</span> val<span style="color:#f92672">[</span>0<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> val, ok :<span style="color:#f92672">=</span> md<span style="color:#f92672">[</span><span style="color:#e6db74">&#34;appkey&#34;</span><span style="color:#f92672">]</span>; ok <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>        appkey <span style="color:#f92672">=</span> val<span style="color:#f92672">[</span>0<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> appid !<span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;101010&#34;</span> <span style="color:#f92672">||</span> appkey !<span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;i am key&#34;</span> <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> grpc.Errorf<span style="color:#f92672">(</span>codes.Unauthenticated, <span style="color:#e6db74">&#34;Token认证信息无效: appid=%s, appkey=%s&#34;</span>, appid, appkey<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> nil
+</span></span><span style="display:flex;"><span><span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>// interceptor 拦截器
+</span></span><span style="display:flex;"><span>func interceptor<span style="color:#f92672">(</span>ctx context.Context, req interface<span style="color:#f92672">{}</span>, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler<span style="color:#f92672">)</span> <span style="color:#f92672">(</span>interface<span style="color:#f92672">{}</span>, error<span style="color:#f92672">)</span> <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>    err :<span style="color:#f92672">=</span> auth<span style="color:#f92672">(</span>ctx<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> err !<span style="color:#f92672">=</span> nil <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> nil, err
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>    // 继续处理请求
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> handler<span style="color:#f92672">(</span>ctx, req<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">}</span>
+</span></span></code></pre></div><p>实现客户端interceptor：hello_intercepror/client/main.go</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>package main
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>import <span style="color:#f92672">(</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;time&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    pb <span style="color:#e6db74">&#34;github.com/jergoo/go-grpc-example/proto/hello&#34;</span> // 引入proto包
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;golang.org/x/net/context&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;google.golang.org/grpc&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;google.golang.org/grpc/credentials&#34;</span> // 引入grpc认证包
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;google.golang.org/grpc/grpclog&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>const <span style="color:#f92672">(</span>
+</span></span><span style="display:flex;"><span>    // Address gRPC服务地址
+</span></span><span style="display:flex;"><span>    Address <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;127.0.0.1:50052&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    // OpenTLS 是否开启TLS认证
+</span></span><span style="display:flex;"><span>    OpenTLS <span style="color:#f92672">=</span> true
+</span></span><span style="display:flex;"><span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>// customCredential 自定义认证
+</span></span><span style="display:flex;"><span>type customCredential struct<span style="color:#f92672">{}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>// GetRequestMetadata 实现自定义认证接口
+</span></span><span style="display:flex;"><span>func <span style="color:#f92672">(</span>c customCredential<span style="color:#f92672">)</span> GetRequestMetadata<span style="color:#f92672">(</span>ctx context.Context, uri ...string<span style="color:#f92672">)</span> <span style="color:#f92672">(</span>map<span style="color:#f92672">[</span>string<span style="color:#f92672">]</span>string, error<span style="color:#f92672">)</span> <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> map<span style="color:#f92672">[</span>string<span style="color:#f92672">]</span>string<span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;appid&#34;</span>:  <span style="color:#e6db74">&#34;101010&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;appkey&#34;</span>: <span style="color:#e6db74">&#34;i am key&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">}</span>, nil
+</span></span><span style="display:flex;"><span><span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>// RequireTransportSecurity 自定义认证是否开启TLS
+</span></span><span style="display:flex;"><span>func <span style="color:#f92672">(</span>c customCredential<span style="color:#f92672">)</span> RequireTransportSecurity<span style="color:#f92672">()</span> bool <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> OpenTLS
+</span></span><span style="display:flex;"><span><span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>func main<span style="color:#f92672">()</span> <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>    var err error
+</span></span><span style="display:flex;"><span>    var opts <span style="color:#f92672">[]</span>grpc.DialOption
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> OpenTLS <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>        // TLS连接
+</span></span><span style="display:flex;"><span>        creds, err :<span style="color:#f92672">=</span> credentials.NewClientTLSFromFile<span style="color:#f92672">(</span><span style="color:#e6db74">&#34;../../keys/server.pem&#34;</span>, <span style="color:#e6db74">&#34;server name&#34;</span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> err !<span style="color:#f92672">=</span> nil <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>            grpclog.Fatalf<span style="color:#f92672">(</span><span style="color:#e6db74">&#34;Failed to create TLS credentials %v&#34;</span>, err<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>        opts <span style="color:#f92672">=</span> append<span style="color:#f92672">(</span>opts, grpc.WithTransportCredentials<span style="color:#f92672">(</span>creds<span style="color:#f92672">))</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">}</span> <span style="color:#66d9ef">else</span> <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>        opts <span style="color:#f92672">=</span> append<span style="color:#f92672">(</span>opts, grpc.WithInsecure<span style="color:#f92672">())</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    // 指定自定义认证
+</span></span><span style="display:flex;"><span>    opts <span style="color:#f92672">=</span> append<span style="color:#f92672">(</span>opts, grpc.WithPerRPCCredentials<span style="color:#f92672">(</span>new<span style="color:#f92672">(</span>customCredential<span style="color:#f92672">)))</span>
+</span></span><span style="display:flex;"><span>    // 指定客户端interceptor
+</span></span><span style="display:flex;"><span>    opts <span style="color:#f92672">=</span> append<span style="color:#f92672">(</span>opts, grpc.WithUnaryInterceptor<span style="color:#f92672">(</span>interceptor<span style="color:#f92672">))</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    conn, err :<span style="color:#f92672">=</span> grpc.Dial<span style="color:#f92672">(</span>Address, opts...<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> err !<span style="color:#f92672">=</span> nil <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>        grpclog.Fatalln<span style="color:#f92672">(</span>err<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>    defer conn.Close<span style="color:#f92672">()</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    // 初始化客户端
+</span></span><span style="display:flex;"><span>    c :<span style="color:#f92672">=</span> pb.NewHelloClient<span style="color:#f92672">(</span>conn<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    // 调用方法
+</span></span><span style="display:flex;"><span>    req :<span style="color:#f92672">=</span> &amp;pb.HelloRequest<span style="color:#f92672">{</span>Name: <span style="color:#e6db74">&#34;gRPC&#34;</span><span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>    res, err :<span style="color:#f92672">=</span> c.SayHello<span style="color:#f92672">(</span>context.Background<span style="color:#f92672">()</span>, req<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> err !<span style="color:#f92672">=</span> nil <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>        grpclog.Fatalln<span style="color:#f92672">(</span>err<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    grpclog.Println<span style="color:#f92672">(</span>res.Message<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>// interceptor 客户端拦截器
+</span></span><span style="display:flex;"><span>func interceptor<span style="color:#f92672">(</span>ctx context.Context, method string, req, reply interface<span style="color:#f92672">{}</span>, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption<span style="color:#f92672">)</span> error <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>    start :<span style="color:#f92672">=</span> time.Now<span style="color:#f92672">()</span>
+</span></span><span style="display:flex;"><span>    err :<span style="color:#f92672">=</span> invoker<span style="color:#f92672">(</span>ctx, method, req, reply, cc, opts...<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>    grpclog.Printf<span style="color:#f92672">(</span><span style="color:#e6db74">&#34;method=%s req=%v rep=%v duration=%s error=%v\n&#34;</span>, method, req, reply, time.Since<span style="color:#f92672">(</span>start<span style="color:#f92672">)</span>, err<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> err
+</span></span><span style="display:flex;"><span><span style="color:#f92672">}</span>
+</span></span></code></pre></div><h1 id="内置trace">内置Trace <a href="#%e5%86%85%e7%bd%aetrace" class="anchor">🔗</a></h1><p>grpc内置了客户端和服务端的请求追踪，基于<code>golang.org/x/net/trace</code>包实现，默认是开启状态，可以查看事件和请求日志，对于基本的请求状态查看调试也是很有帮助的，客户端与服务端基本一致，这里以服务端开启trace server为例，修改hello项目服务端代码：
+目录结构</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>|—— hello_trace/
+</span></span><span style="display:flex;"><span>    |—— client/
+</span></span><span style="display:flex;"><span>        |—— main.go   // 客户端
+</span></span><span style="display:flex;"><span>    |—— server/
+</span></span><span style="display:flex;"><span>        |—— main.go   // 服务端
+</span></span><span style="display:flex;"><span>|—— proto/
+</span></span><span style="display:flex;"><span>    |—— hello/
+</span></span><span style="display:flex;"><span>        |—— hello.proto   // proto描述文件
+</span></span><span style="display:flex;"><span>        |—— hello.pb.go   // proto编译后文件
+</span></span></code></pre></div><p>示例代码</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#f92672">package</span> <span style="color:#a6e22e">main</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> (
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;fmt&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;net&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;net/http&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">pb</span> <span style="color:#e6db74">&#34;github.com/jergoo/go-grpc-example/proto/hello&#34;</span> <span style="color:#75715e">// 引入编译生成的包</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;golang.org/x/net/context&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;golang.org/x/net/trace&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;google.golang.org/grpc&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;google.golang.org/grpc/grpclog&#34;</span>
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">const</span> (
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Address gRPC服务地址</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Address</span> = <span style="color:#e6db74">&#34;127.0.0.1:50052&#34;</span>
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// 定义helloService并实现约定的接口</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">helloService</span> <span style="color:#66d9ef">struct</span>{}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// HelloService Hello服务</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">var</span> <span style="color:#a6e22e">HelloService</span> = <span style="color:#a6e22e">helloService</span>{}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// SayHello 实现Hello服务接口</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">h</span> <span style="color:#a6e22e">helloService</span>) <span style="color:#a6e22e">SayHello</span>(<span style="color:#a6e22e">ctx</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>, <span style="color:#a6e22e">in</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">pb</span>.<span style="color:#a6e22e">HelloRequest</span>) (<span style="color:#f92672">*</span><span style="color:#a6e22e">pb</span>.<span style="color:#a6e22e">HelloResponse</span>, <span style="color:#66d9ef">error</span>) {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">resp</span> <span style="color:#f92672">:=</span> new(<span style="color:#a6e22e">pb</span>.<span style="color:#a6e22e">HelloResponse</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">resp</span>.<span style="color:#a6e22e">Message</span> = <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Sprintf</span>(<span style="color:#e6db74">&#34;Hello %s.&#34;</span>, <span style="color:#a6e22e">in</span>.<span style="color:#a6e22e">Name</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">resp</span>, <span style="color:#66d9ef">nil</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">main</span>() {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">listen</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">net</span>.<span style="color:#a6e22e">Listen</span>(<span style="color:#e6db74">&#34;tcp&#34;</span>, <span style="color:#a6e22e">Address</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">grpclog</span>.<span style="color:#a6e22e">Fatalf</span>(<span style="color:#e6db74">&#34;failed to listen: %v&#34;</span>, <span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// 实例化grpc Server</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">s</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">grpc</span>.<span style="color:#a6e22e">NewServer</span>()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// 注册HelloService</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">pb</span>.<span style="color:#a6e22e">RegisterHelloServer</span>(<span style="color:#a6e22e">s</span>, <span style="color:#a6e22e">HelloService</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// 开启trace</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">go</span> <span style="color:#a6e22e">startTrace</span>()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">grpclog</span>.<span style="color:#a6e22e">Println</span>(<span style="color:#e6db74">&#34;Listen on &#34;</span> <span style="color:#f92672">+</span> <span style="color:#a6e22e">Address</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">Serve</span>(<span style="color:#a6e22e">listen</span>)
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">startTrace</span>() {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">trace</span>.<span style="color:#a6e22e">AuthRequest</span> = <span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">req</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">Request</span>) (<span style="color:#66d9ef">any</span>, <span style="color:#a6e22e">sensitive</span> <span style="color:#66d9ef">bool</span>) {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">true</span>, <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">go</span> <span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">ListenAndServe</span>(<span style="color:#e6db74">&#34;:50051&#34;</span>, <span style="color:#66d9ef">nil</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">grpclog</span>.<span style="color:#a6e22e">Println</span>(<span style="color:#e6db74">&#34;Trace listen on 50051&#34;</span>)
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>这里我们开启一个http服务监听50051端口，用来查看grpc请求的trace信息</p>
+<h2 id="服务端事件查看">服务端事件查看 <a href="#%e6%9c%8d%e5%8a%a1%e7%ab%af%e4%ba%8b%e4%bb%b6%e6%9f%a5%e7%9c%8b" class="anchor">🔗</a></h2><p>访问：localhost:50051/debug/events，结果如图：
+<img src="/img/grpc_trace_events.jpg" alt="grpc-trace-events">
+可以看到服务端注册的服务和服务正常启动的事件信息。</p>
+<h2 id="请求日志信息查看">请求日志信息查看 <a href="#%e8%af%b7%e6%b1%82%e6%97%a5%e5%bf%97%e4%bf%a1%e6%81%af%e6%9f%a5%e7%9c%8b" class="anchor">🔗</a></h2><p>访问：localhost:50051/debug/requests，结果如图：
+<img src="/img/grpc_trace_requests.jpg" alt="grpc-trace-events">
+这里可以显示最近的请求状态，包括请求的服务、参数、耗时、响应，对于简单的状态查看还是很方便的，默认值显示最近10条记录。</p>
+
+    </div>
+
+    
+</section>
+
+
+            </div>
+            <div class="side">
+                <div class="side-categories">
+    <h2>Categories</h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/categories/ai">ai(3)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/go">go(23)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E4%BB%A3%E7%A0%81">代码(2)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E5%B7%A5%E5%85%B7">工具(8)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E9%80%86%E5%90%91">逆向(3)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E9%9D%A2%E8%AF%95">面试(4)</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/android/">Recent Android</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/android/redroid%E4%BD%BF%E7%94%A8/">Redroid安卓容器</a>
+            </li>
+        
+            <li>
+                <a href="/android/%E5%85%A5%E9%97%A8/">逆向环境-杂</a>
+            </li>
+        
+            <li>
+                <a href="/android/frida%E6%95%99%E7%A8%8B/">frida教程</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/tool/">Recent Tool</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/tool/linux-almalinux%E4%BC%98%E5%8C%96/">AlmaLinux10</a>
+            </li>
+        
+            <li>
+                <a href="/tool/almalinux-k8s/">AlmaLinux-k8s安装</a>
+            </li>
+        
+            <li>
+                <a href="/tool/vscode%E6%8A%98%E8%85%BE/">vscode折腾</a>
+            </li>
+        
+            <li>
+                <a href="/tool/linux-ubuntu%E4%BC%98%E5%8C%96/">Ubuntu开机优化</a>
+            </li>
+        
+            <li>
+                <a href="/tool/shell-ssh_script/">ssh常用脚本</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/llm/">Recent Llm</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/llm/transformers-%E5%85%A5%E9%97%A8%E7%AF%87/">Transformers-入门篇</a>
+            </li>
+        
+            <li>
+                <a href="/llm/%E6%A8%A1%E5%9E%8Bvllm%E9%83%A8%E7%BD%B2/">AI模型VLLM部署</a>
+            </li>
+        
+            <li>
+                <a href="/llm/%E6%A8%A1%E5%9E%8B%E5%BE%AE%E8%B0%83/">AI模型微调</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/go/">Recent Go</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/go/go%E4%B8%89%E8%89%B2%E6%A0%87%E8%AE%B0%E6%B7%B7%E5%90%88%E5%86%99%E5%B1%8F%E9%9A%9Cgc%E6%A8%A1%E5%BC%8F%E5%85%A8%E6%80%BB%E7%BB%93/">Go三色标记混合写屏障GC模式全总结</a>
+            </li>
+        
+            <li>
+                <a href="/go/go%E4%B8%ADmake%E4%B8%8Enew%E5%8C%BA%E5%88%AB/">Go中make与new区别</a>
+            </li>
+        
+            <li>
+                <a href="/go/go%E5%B8%B8%E7%94%A8bug%E5%92%8C%E6%80%A7%E8%83%BD%E9%97%AE%E9%A2%98%E7%9A%84%E5%AE%9E%E8%B7%B5%E6%96%B9%E6%B3%95/">Go常用bug和性能问题的实践方法</a>
+            </li>
+        
+            <li>
+                <a href="/go/grpc%E6%80%BB%E7%BB%93/">GRPC笔记</a>
+            </li>
+        
+            <li>
+                <a href="/go/go%E7%9A%84defer%E6%80%BB%E7%BB%93/">Go的defer总结</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/note/">Recent Note</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/note/rdis-%E7%BC%93%E5%AD%98%E7%A9%BF%E9%80%8F%E9%9B%AA%E5%B4%A9%E5%87%BB%E7%A9%BF%E7%9A%84%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95/">缓存穿透、雪崩、击穿的解决方法</a>
+            </li>
+        
+            <li>
+                <a href="/note/redis-%E5%8D%95%E7%BA%BF%E7%A8%8B%E7%9A%84redis%E4%B8%BA%E4%BB%80%E4%B9%88%E5%BF%AB/">单线程的redis为什么快</a>
+            </li>
+        
+            <li>
+                <a href="/note/redis-%E6%80%BB%E7%BB%93/">redis总结</a>
+            </li>
+        
+            <li>
+                <a href="/note/mysql-%E6%80%BB%E7%BB%93/">mysql总结</a>
+            </li>
+        
+            <li>
+                <a href="/note/java-%E4%BB%A3%E7%A0%81%E7%94%9F%E6%88%90/">JAVA代码生成</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+            </div>
+        </main>
+        <footer class="footer">
+    <div class="footer-row">
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/android/index.xml">
+                    Feed of Android
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/tool/index.xml">
+                    Feed of Tool
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/llm/index.xml">
+                    Feed of Llm
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/go/index.xml">
+                    Feed of Go
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/note/index.xml">
+                    Feed of Note
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+
+        
+            
+            
+        
+    </div>
+
+    
+</footer>
+
+    </body>
+</html>
