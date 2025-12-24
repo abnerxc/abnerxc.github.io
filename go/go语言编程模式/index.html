@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+<meta name="viewport" content="width=device-width,minimum-scale=1">
+
+
+
+
+<title>Go语言编程模式 | Abner的博客</title>
+<link rel="canonical" href="https://abnerxc.github.io/go/go%E8%AF%AD%E8%A8%80%E7%BC%96%E7%A8%8B%E6%A8%A1%E5%BC%8F/">
+<meta property="og:type" content="article" />
+<meta property="og:title" content="Go语言编程模式 | Abner的博客" />
+<meta property="og:url" content="https://abnerxc.github.io/go/go%E8%AF%AD%E8%A8%80%E7%BC%96%E7%A8%8B%E6%A8%A1%E5%BC%8F/" />
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/icofont/icofont.min.css" />
+<link rel="stylesheet" href="/css/syntax.css" />
+<link rel="stylesheet" href="/css/style.css" />
+<script src="/js/copy-code-block.js"></script>
+<link rel="shortcut icon" href="/images/favicon.ico" type="image/x-icon" />
+
+    </head>
+
+    <body>
+        <header class="header-wrapper">
+    <div class="header">
+        <a class="site-title" href="https://abnerxc.github.io/">Abner的博客</a>
+
+        <nav class="menu">
+            
+        </nav>
+    </div>
+</header>
+
+        <main class="main-wrapper">
+            <div class="main">
+                
+
+<section class="single">
+    <h1 class="title">Go语言编程模式</h1>
+
+    <div class="tip">
+        <time datetime="2019-01-15 18:35:11 &#43;0800 CST">2019/01/15</time>
+        <span class="split">·</span>
+        <span> 611 words </span>
+        <span class="split">·</span>
+        <span>
+            3 minutes to read
+        </span>
+    </div>
+
+    <div class="taxonomies">
+        
+        <div>
+            Categories:
+            
+                <a href="/categories/go">Go</a>
+            
+        </div>
+        
+
+        
+    </div>
+
+    
+    
+    <div class="post-toc">
+        <h3>目录</h3>
+        <nav id="TableOfContents">
+  <ul>
+    <li><a href="#性能提示">性能提示</a></li>
+    <li><a href="#接口编程">接口编程</a></li>
+    <li><a href="#接口完整性检查">接口完整性检查</a></li>
+    <li><a href="#functional-options-编程模式">Functional Options 编程模式</a></li>
+    <li><a href="#mapreducefilter-模式">Map,Reduce,Filter 模式</a></li>
+  </ul>
+</nav>
+    </div>
+    
+
+    <hr />
+
+    <div class="content">
+        <h1 id="性能提示">性能提示 <a href="#%e6%80%a7%e8%83%bd%e6%8f%90%e7%a4%ba" class="anchor">🔗</a></h1><ul>
+<li>如果需要把数字转换成字符串，使用 strconv.Itoa() 比 fmt.Sprintf() 要快一倍左右。</li>
+<li>尽可能避免把String转成[]Byte ，这个转换会导致性能下降。</li>
+<li>如果在 for-loop 里对某个 Slice 使用 append()，请先把 Slice 的容量扩充到位，这样可以避免内存重新分配以及系统自动按 2 的 N 次方幂进行扩展但又用不到的情况，从而避免浪费内存。</li>
+<li>使用StringBuffer 或是StringBuild 来拼接字符串，性能会比使用 + 或 +=高三到四个数量级。</li>
+<li>尽可能使用并发的 goroutine，然后使用 sync.WaitGroup 来同步分片操作。</li>
+<li>避免在热代码中进行内存分配，这样会导致 gc 很忙。尽可能使用 sync.Pool 来重用对象。</li>
+<li>使用 lock-free 的操作，避免使用 mutex，尽可能使用 sync/Atomic包</li>
+<li>使用 I/O 缓冲，I/O 是个非常非常慢的操作，使用 bufio.NewWrite() 和 bufio.NewReader() 可以带来更高的性能。</li>
+<li>对于在 for-loop 里的固定的正则表达式，一定要使用 regexp.Compile() 编译正则表达式。性能会提升两个数量级。</li>
+<li>如果你需要更高性能的协议，就要考虑使用 protobuf 或 msgp 而不是 JSON，因为 JSON 的序列化和反序列化里使用了反射。</li>
+<li>你在使用 Map 的时候，使用整型的 key 会比字符串的要快，因为整型比较比字符串比较要快。</li>
+</ul>
+<h1 id="接口编程">接口编程 <a href="#%e6%8e%a5%e5%8f%a3%e7%bc%96%e7%a8%8b" class="anchor">🔗</a></h1><pre tabindex="0"><code>
+type Country struct {
+    Name string
+}
+
+type City struct {
+    Name string
+}
+
+type Printable interface {
+    PrintStr()
+}
+func (c Country) PrintStr() {
+    fmt.Println(c.Name)
+}
+func (c City) PrintStr() {
+    fmt.Println(c.Name)
+}
+
+c1 := Country {&#34;China&#34;}
+c2 := City {&#34;Beijing&#34;}
+c1.PrintStr()
+c2.PrintStr()
+</code></pre><p>可以看到，这段代码中使用了一个 Printable 的接口，而 Country 和 City 都实现了接口方法 PrintStr() 把自己输出。然而，这些代码都是一样的，能不能省掉呢？其实，我们可以使用“结构体嵌入”的方式来完成这个事，如下所示：</p>
+<pre tabindex="0"><code>
+type WithName struct {
+    Name string
+}
+
+type Country struct {
+    WithName
+}
+
+type City struct {
+    WithName
+}
+
+type Printable interface {
+    PrintStr()
+}
+
+func (w WithName) PrintStr() {
+    fmt.Println(w.Name)
+}
+
+c1 := Country {WithName{ &#34;China&#34;}}
+c2 := City { WithName{&#34;Beijing&#34;}}
+c1.PrintStr()
+c2.PrintStr()
+</code></pre><p>引入一个叫 WithName的结构体，但是这会带来一个问题：在初始化的时候变得有点乱。那么，有没有更好的方法呢？再来看另外一个解。</p>
+<pre tabindex="0"><code>
+type Country struct {
+    Name string
+}
+
+type City struct {
+    Name string
+}
+
+type Stringable interface {
+    ToString() string
+}
+func (c Country) ToString() string {
+    return &#34;Country = &#34; + c.Name
+}
+func (c City) ToString() string{
+    return &#34;City = &#34; + c.Name
+}
+
+func PrintStr(p Stringable) {
+    fmt.Println(p.ToString())
+}
+
+d1 := Country {&#34;USA&#34;}
+d2 := City{&#34;Los Angeles&#34;}
+PrintStr(d1)
+PrintStr(d2)
+</code></pre><p>在这段代码中，我们可以看到，我们使用了一个叫Stringable 的接口，我们用这个接口把“业务类型” Country 和 City 和“控制逻辑” Print() 给解耦了。于是，只要实现了Stringable 接口，都可以传给 PrintStr() 来使用。</p>
+<h1 id="接口完整性检查">接口完整性检查 <a href="#%e6%8e%a5%e5%8f%a3%e5%ae%8c%e6%95%b4%e6%80%a7%e6%a3%80%e6%9f%a5" class="anchor">🔗</a></h1><pre tabindex="0"><code>
+type Shape interface {
+    Sides() int
+    Area() int
+}
+type Square struct {
+    len int
+}
+func (s* Square) Sides() int {
+    return 4
+}
+func main() {
+    s := Square{len: 5}
+    fmt.Printf(&#34;%d\n&#34;,s.Sides())
+}
+</code></pre><p>可以看到，Square 并没有实现 Shape 接口的所有方法，程序虽然可以跑通，但是这样的编程方式并不严谨，如果我们需要强制实现接口的所有方法，那该怎么办呢？</p>
+<pre tabindex="0"><code>var _ Shape = (*Square)(nil)
+</code></pre><p>声明一个 _ 变量（没人用）会把一个 nil 的空指针从 Square 转成 Shape，这样，如果没有实现完相关的接口方法，编译器就会报错：</p>
+<blockquote>
+<p>cannot use (*Square)(nil) (type *Square) as type Shape in assignment: *Square does not implement Shape (missing Area method)</p>
+</blockquote>
+<h1 id="functional-options-编程模式">Functional Options 编程模式 <a href="#functional-options-%e7%bc%96%e7%a8%8b%e6%a8%a1%e5%bc%8f" class="anchor">🔗</a></h1><pre tabindex="0"><code>package main
+
+import (
+	&#34;crypto/tls&#34;
+	&#34;fmt&#34;
+	&#34;time&#34;
+)
+
+type Option func(*Server)
+
+type Server struct {
+	Addr     string
+	Port     int
+	Protocol string
+	Timeout  time.Duration
+	MaxConns int
+	TLS      *tls.Config
+}
+
+func Protocol(p string) Option {
+	return func(s *Server) {
+		s.Protocol = p
+	}
+}
+func Timeout(timeout time.Duration) Option {
+	return func(s *Server) {
+		s.Timeout = timeout
+	}
+}
+func MaxConns(maxconns int) Option {
+	return func(s *Server) {
+		s.MaxConns = maxconns
+	}
+}
+func TLS(tls *tls.Config) Option {
+	return func(s *Server) {
+		s.TLS = tls
+	}
+}
+func NewService(addr string, port int, options ...func(*Server)) (*Server, error) {
+	srv := Server{
+		Addr:     addr,
+		Port:     port,
+		Protocol: &#34;tcp&#34;,
+		Timeout:  30 * time.Second,
+		MaxConns: 1000,
+		TLS:      nil,
+	}
+	for _, option := range options {
+		option(&amp;srv)
+	} //...
+	return &amp;srv, nil
+}
+
+func main() {
+	server, _ := NewService(&#34;localhost&#34;, 80, Protocol(&#34;ftp&#34;),Timeout(5*10))
+	fmt.Println(server)
+}
+</code></pre><h1 id="mapreducefilter-模式">Map,Reduce,Filter 模式 <a href="#mapreducefilter-%e6%a8%a1%e5%bc%8f" class="anchor">🔗</a></h1><pre tabindex="0"><code>
+type Employee struct {
+    Name     string
+    Age      int
+    Vacation int
+    Salary   int
+}
+
+var list = []Employee{
+    {&#34;Hao&#34;, 44, 0, 8000},
+    {&#34;Bob&#34;, 34, 10, 5000},
+    {&#34;Alice&#34;, 23, 5, 9000},
+    {&#34;Jack&#34;, 26, 0, 4000},
+    {&#34;Tom&#34;, 48, 9, 7500},
+    {&#34;Marry&#34;, 29, 0, 6000},
+    {&#34;Mike&#34;, 32, 8, 4000},
+}
+
+
+func EmployeeCountIf(list []Employee, fn func(e *Employee) bool) int {
+    count := 0
+    for i, _ := range list {
+        if fn(&amp;list[i]) {
+            count += 1
+        }
+    }
+    return count
+}
+
+func EmployeeFilterIn(list []Employee, fn func(e *Employee) bool) []Employee {
+    var newList []Employee
+    for i, _ := range list {
+        if fn(&amp;list[i]) {
+            newList = append(newList, list[i])
+        }
+    }
+    return newList
+}
+
+func EmployeeSumIf(list []Employee, fn func(e *Employee) int) int {
+    var sum = 0
+    for i, _ := range list {
+        sum += fn(&amp;list[i])
+    }
+    return sum
+}
+
+//统计有多少员工大于 40 岁
+
+old := EmployeeCountIf(list, func(e *Employee) bool {
+    return e.Age &gt; 40
+})
+fmt.Printf(&#34;old people: %d\n&#34;, old)
+//old people: 2
+</code></pre>
+    </div>
+
+    
+</section>
+
+
+            </div>
+            <div class="side">
+                <div class="side-categories">
+    <h2>Categories</h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/categories/ai">ai(3)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/go">go(23)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E4%BB%A3%E7%A0%81">代码(2)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E5%B7%A5%E5%85%B7">工具(8)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E9%80%86%E5%90%91">逆向(3)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E9%9D%A2%E8%AF%95">面试(4)</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/android/">Recent Android</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/android/redroid%E4%BD%BF%E7%94%A8/">Redroid安卓容器</a>
+            </li>
+        
+            <li>
+                <a href="/android/%E5%85%A5%E9%97%A8/">逆向环境-杂</a>
+            </li>
+        
+            <li>
+                <a href="/android/frida%E6%95%99%E7%A8%8B/">frida教程</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/tool/">Recent Tool</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/tool/linux-almalinux%E4%BC%98%E5%8C%96/">AlmaLinux10</a>
+            </li>
+        
+            <li>
+                <a href="/tool/almalinux-k8s/">AlmaLinux-k8s安装</a>
+            </li>
+        
+            <li>
+                <a href="/tool/vscode%E6%8A%98%E8%85%BE/">vscode折腾</a>
+            </li>
+        
+            <li>
+                <a href="/tool/linux-ubuntu%E4%BC%98%E5%8C%96/">Ubuntu开机优化</a>
+            </li>
+        
+            <li>
+                <a href="/tool/shell-ssh_script/">ssh常用脚本</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/llm/">Recent Llm</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/llm/transformers-%E5%85%A5%E9%97%A8%E7%AF%87/">Transformers-入门篇</a>
+            </li>
+        
+            <li>
+                <a href="/llm/%E6%A8%A1%E5%9E%8Bvllm%E9%83%A8%E7%BD%B2/">AI模型VLLM部署</a>
+            </li>
+        
+            <li>
+                <a href="/llm/%E6%A8%A1%E5%9E%8B%E5%BE%AE%E8%B0%83/">AI模型微调</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/go/">Recent Go</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/go/go%E4%B8%89%E8%89%B2%E6%A0%87%E8%AE%B0%E6%B7%B7%E5%90%88%E5%86%99%E5%B1%8F%E9%9A%9Cgc%E6%A8%A1%E5%BC%8F%E5%85%A8%E6%80%BB%E7%BB%93/">Go三色标记混合写屏障GC模式全总结</a>
+            </li>
+        
+            <li>
+                <a href="/go/go%E4%B8%ADmake%E4%B8%8Enew%E5%8C%BA%E5%88%AB/">Go中make与new区别</a>
+            </li>
+        
+            <li>
+                <a href="/go/go%E5%B8%B8%E7%94%A8bug%E5%92%8C%E6%80%A7%E8%83%BD%E9%97%AE%E9%A2%98%E7%9A%84%E5%AE%9E%E8%B7%B5%E6%96%B9%E6%B3%95/">Go常用bug和性能问题的实践方法</a>
+            </li>
+        
+            <li>
+                <a href="/go/grpc%E6%80%BB%E7%BB%93/">GRPC笔记</a>
+            </li>
+        
+            <li>
+                <a href="/go/go%E7%9A%84defer%E6%80%BB%E7%BB%93/">Go的defer总结</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/note/">Recent Note</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/note/rdis-%E7%BC%93%E5%AD%98%E7%A9%BF%E9%80%8F%E9%9B%AA%E5%B4%A9%E5%87%BB%E7%A9%BF%E7%9A%84%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95/">缓存穿透、雪崩、击穿的解决方法</a>
+            </li>
+        
+            <li>
+                <a href="/note/redis-%E5%8D%95%E7%BA%BF%E7%A8%8B%E7%9A%84redis%E4%B8%BA%E4%BB%80%E4%B9%88%E5%BF%AB/">单线程的redis为什么快</a>
+            </li>
+        
+            <li>
+                <a href="/note/redis-%E6%80%BB%E7%BB%93/">redis总结</a>
+            </li>
+        
+            <li>
+                <a href="/note/mysql-%E6%80%BB%E7%BB%93/">mysql总结</a>
+            </li>
+        
+            <li>
+                <a href="/note/java-%E4%BB%A3%E7%A0%81%E7%94%9F%E6%88%90/">JAVA代码生成</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+            </div>
+        </main>
+        <footer class="footer">
+    <div class="footer-row">
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/android/index.xml">
+                    Feed of Android
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/tool/index.xml">
+                    Feed of Tool
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/llm/index.xml">
+                    Feed of Llm
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/go/index.xml">
+                    Feed of Go
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/note/index.xml">
+                    Feed of Note
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+
+        
+            
+            
+        
+    </div>
+
+    
+</footer>
+
+    </body>
+</html>

@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+<meta name="viewport" content="width=device-width,minimum-scale=1">
+
+
+
+
+<title>Go基础-字符串高效拼 | Abner的博客</title>
+<link rel="canonical" href="https://abnerxc.github.io/go/base2.%E5%AD%97%E7%AC%A6%E4%B8%B2%E9%AB%98%E6%95%88%E6%8B%BC%E6%8E%A5/">
+<meta property="og:type" content="article" />
+<meta property="og:title" content="Go基础-字符串高效拼 | Abner的博客" />
+<meta property="og:url" content="https://abnerxc.github.io/go/base2.%E5%AD%97%E7%AC%A6%E4%B8%B2%E9%AB%98%E6%95%88%E6%8B%BC%E6%8E%A5/" />
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/icofont/icofont.min.css" />
+<link rel="stylesheet" href="/css/syntax.css" />
+<link rel="stylesheet" href="/css/style.css" />
+<script src="/js/copy-code-block.js"></script>
+<link rel="shortcut icon" href="/images/favicon.ico" type="image/x-icon" />
+
+    </head>
+
+    <body>
+        <header class="header-wrapper">
+    <div class="header">
+        <a class="site-title" href="https://abnerxc.github.io/">Abner的博客</a>
+
+        <nav class="menu">
+            
+        </nav>
+    </div>
+</header>
+
+        <main class="main-wrapper">
+            <div class="main">
+                
+
+<section class="single">
+    <h1 class="title">Go基础-字符串高效拼</h1>
+
+    <div class="tip">
+        <time datetime="2019-01-15 18:35:11 &#43;0800 CST">2019/01/15</time>
+        <span class="split">·</span>
+        <span> 923 words </span>
+        <span class="split">·</span>
+        <span>
+            5 minutes to read
+        </span>
+    </div>
+
+    <div class="taxonomies">
+        
+        <div>
+            Categories:
+            
+                <a href="/categories/go">Go</a>
+            
+        </div>
+        
+
+        
+    </div>
+
+    
+    
+    <div class="post-toc">
+        <h3>目录</h3>
+        <nav id="TableOfContents">
+  <ul>
+    <li><a href="#号拼接">+号拼接</a></li>
+    <li><a href="#fmt-拼接">fmt 拼接</a></li>
+    <li><a href="#join-拼接">Join 拼接</a></li>
+    <li><a href="#buffer-拼接">buffer 拼接</a></li>
+    <li><a href="#builder-拼接">builder 拼接</a></li>
+    <li><a href="#性能对比">性能对比</a></li>
+    <li><a href="#疑问">疑问</a></li>
+    <li><a href="#拼接函数改造">拼接函数改造</a></li>
+    <li><a href="#测试用例">测试用例</a></li>
+    <li><a href="#100个字符串">100个字符串</a></li>
+    <li><a href="#1000-个字符串">1000 个字符串。</a></li>
+    <li><a href="#小结">小结</a></li>
+    <li><a href="#builder-慢在哪">Builder 慢在哪</a></li>
+    <li><a href="#内存分配优化">内存分配优化</a></li>
+    <li><a href="#总结">总结</a></li>
+  </ul>
+</nav>
+    </div>
+    
+
+    <hr />
+
+    <div class="content">
+        <h1 id="号拼接">+号拼接 <a href="#%e5%8f%b7%e6%8b%bc%e6%8e%a5" class="anchor">🔗</a></h1><p>这种拼接最简单，也最容易被我们使用，因为它是不限编程语言的，比如Go语言有，Java也有，它们是+号运算符，在运行时计算的。现在演示下这种拼接的代码，虽然比较简单。</p>
+<pre tabindex="0"><code>func StringPlus() string{
+	var s string
+	s+=&#34;昵称&#34;+&#34;:&#34;+&#34;飞雪无情&#34;+&#34;\n&#34;
+	s+=&#34;博客&#34;+&#34;:&#34;+&#34;http://www.flysnow.org/&#34;+&#34;\n&#34;
+	s+=&#34;微信公众号&#34;+&#34;:&#34;+&#34;flysnow_org&#34;
+	return s
+}
+</code></pre><p>我们可以自己写个用例测试下，可以打印出和我们例子中一样的内容。那么这种最常见的字符串拼接的方式性能怎么样的呢，我们测试下：</p>
+<pre tabindex="0"><code>func BenchmarkStringPlus(b *testing.B) {
+	for i:=0;i&lt;b.N;i++{
+		StringPlus()
+	}
+}
+</code></pre><p>运行<code>go test -bench=. -benchmem</code> 查看性能输出如下：</p>
+<pre tabindex="0"><code>BenchmarkStringPlus-8   20000000    108 ns/op   144 B/op    2 allocs/op
+</code></pre><p>每次操作需要108ns,进行2次内存分配，分配114字节的内存。</p>
+<h1 id="fmt-拼接">fmt 拼接 <a href="#fmt-%e6%8b%bc%e6%8e%a5" class="anchor">🔗</a></h1><p>这种拼接，借助于<code>fmt.Sprint</code>系列函数进行拼接，然后返回拼接的字符串。</p>
+<pre tabindex="0"><code>func StringFmt() string{
+	return fmt.Sprint(&#34;昵称&#34;,&#34;:&#34;,&#34;飞雪无情&#34;,&#34;\n&#34;,&#34;博客&#34;,&#34;:&#34;,&#34;http://www.flysnow.org/&#34;,&#34;\n&#34;,&#34;微信公众号&#34;,&#34;:&#34;,&#34;flysnow_org&#34;)
+}
+
+func BenchmarkStringFmt(b *testing.B) {
+	for i:=0;i&lt;b.N;i++{
+		StringFmt()
+	}
+}
+</code></pre><p>运行查看测试结果：</p>
+<pre tabindex="0"><code>BenchmarkStringFmt-8    5000000     385 ns/op   80 B/op     1 allocs/op
+</code></pre><p><font color=red>虽然每次操作内存分配只有1次，分配80字节也不多，但是每次操作耗时太长，性能远没有<code>+</code>号操作快。</font></p>
+<h1 id="join-拼接">Join 拼接 <a href="#join-%e6%8b%bc%e6%8e%a5" class="anchor">🔗</a></h1><p>这个是利用<code>strings.Join</code>函数进行拼接，接受一个字符串数组，转换为一个拼接好的字符串。</p>
+<pre tabindex="0"><code>func StringJoin() string{
+	s:=[]string{&#34;昵称&#34;,&#34;:&#34;,&#34;飞雪无情&#34;,&#34;\n&#34;,&#34;博客&#34;,&#34;:&#34;,&#34;http://www.flysnow.org/&#34;,&#34;\n&#34;,&#34;微信公众号&#34;,&#34;:&#34;,&#34;flysnow_org&#34;}
+	return strings.Join(s,&#34;&#34;)
+}
+
+func BenchmarkStringJoin(b *testing.B) {
+	for i:=0;i&lt;b.N;i++{
+		StringJoin()
+	}
+}
+</code></pre><p>为了方便，把性能测试的代码放一起了，现在看看性能测试的效果。</p>
+<pre tabindex="0"><code>BenchmarkStringJoin-8   10000000    177 ns/op   160 B/op    2 allocs/op
+</code></pre><p><font color=red>整体和<code>+</code>操作相差不了太多，大概低0.5倍的样子。</font></p>
+<h1 id="buffer-拼接">buffer 拼接 <a href="#buffer-%e6%8b%bc%e6%8e%a5" class="anchor">🔗</a></h1><p>这种被用的也很多，使用的是<code>bytes.Buffer</code>进行的字符串拼接，它是非常灵活的一个结构体，不止可以拼接字符串，还是可以<code>byte,rune</code>等，并且实现了<code>io.Writer</code>接口，写入也非常方便。</p>
+<pre tabindex="0"><code>func StringBuffer() string {
+	var b bytes.Buffer
+	b.WriteString(&#34;昵称&#34;)
+	b.WriteString(&#34;:&#34;)
+	b.WriteString(&#34;飞雪无情&#34;)
+	b.WriteString(&#34;\n&#34;)
+	b.WriteString(&#34;博客&#34;)
+	b.WriteString(&#34;:&#34;)
+	b.WriteString(&#34;http://www.flysnow.org/&#34;)
+	b.WriteString(&#34;\n&#34;)
+	b.WriteString(&#34;微信公众号&#34;)
+	b.WriteString(&#34;:&#34;)
+	b.WriteString(&#34;flysnow_org&#34;)
+	return b.String()
+}
+
+func BenchmarkStringBuffer(b *testing.B) {
+	for i:=0;i&lt;b.N;i++{
+		StringBuffer()
+	}
+}
+</code></pre><p>看看他的性能，运行输出即可：</p>
+<pre tabindex="0"><code>BenchmarkStringBuffer-8     5000000     291 ns/op   336 B/op    3 allocs/op
+</code></pre><p>好像并不是太好,和最差的fmt拼接差不多，和<code>+</code>号，Join拼接差好远，内存分配也比较多。每次操作耗时也很长。</p>
+<h1 id="builder-拼接">builder 拼接 <a href="#builder-%e6%8b%bc%e6%8e%a5" class="anchor">🔗</a></h1><p>为了改进buffer拼接的性能，从go 1.10 版本开始，增加了一个builder类型，用于提升字符串拼接的性能。它的使用和buffer几乎一样。</p>
+<pre tabindex="0"><code>func StringBuilder() string {
+	var b strings.Builder
+	b.WriteString(&#34;昵称&#34;)
+	b.WriteString(&#34;:&#34;)
+	b.WriteString(&#34;飞雪无情&#34;)
+	b.WriteString(&#34;\n&#34;)
+	b.WriteString(&#34;博客&#34;)
+	b.WriteString(&#34;:&#34;)
+	b.WriteString(&#34;http://www.flysnow.org/&#34;)
+	b.WriteString(&#34;\n&#34;)
+	b.WriteString(&#34;微信公众号&#34;)
+	b.WriteString(&#34;:&#34;)
+	b.WriteString(&#34;flysnow_org&#34;)
+	return b.String()
+}
+
+func BenchmarkStringBuilder(b *testing.B) {
+	for i:=0;i&lt;b.N;i++{
+		StringBuilder()
+	}
+}
+</code></pre><p>官方都说比buffer性能好了，我们看看性能测试的结果。</p>
+<pre tabindex="0"><code>BenchmarkStringBuilder-8    10000000    170 ns/op   232 B/op    4 allocs/op
+</code></pre><p>的确提升了，提升了一倍，虽然每次分配的内存次数有点多，但是每次分配的内存大小比buffer要少。</p>
+<h1 id="性能对比">性能对比 <a href="#%e6%80%a7%e8%83%bd%e5%af%b9%e6%af%94" class="anchor">🔗</a></h1><p>以上就是常用的字符串拼接的方式，现在我们把这些测试结果，汇总到一起，对比下看看,因为Benchmark的测试，对于性能只显示，我把测试的时间设置为3s（秒），把时间拉长便于对比测试，同时生成了cpu profile文件，用于性能分析。</p>
+<p>运行<code>go test xx.go -bench=. -benchmem -benchtime=3s -cpuprofile=profile.out</code>得到如下测试结果：</p>
+<pre tabindex="0"><code>StringPlus-8    50000000    112 ns/op   144 B/op    2 allocs/op
+StringFmt-8     20000000    344 ns/op   80 B/op     1 allocs/op
+StringJoin-8    30000000    171 ns/op   160 B/op    2 allocs/op
+StringBuffer-8  20000000    302 ns/op   336 B/op    3 allocs/op
+StringBuilder-8 30000000    171 ns/op   232 B/op    4 allocs/op
+</code></pre><p>我们通过<code>go tool pprof profile.out</code> 看下我们输出的cpu profile信息。这里主要使用top命令。</p>
+<pre tabindex="0"><code>Showing top 15 nodes out of 89
+      flat  flat%   sum%        cum   cum%
+    11.99s 42.55% 42.55%     11.99s 42.55%  runtime.kevent
+     6.30s 22.36% 64.90%      6.30s 22.36%  runtime.pthread_cond_wait
+     1.65s  5.86% 70.76%      1.65s  5.86%  runtime.pthread_cond_signal
+     1.11s  3.94% 74.70%      1.11s  3.94%  runtime.usleep
+     1.10s  3.90% 78.60%      1.10s  3.90%  runtime.pthread_cond_timedwait_relative_np
+     0.58s  2.06% 80.66%      0.62s  2.20%  runtime.wbBufFlush1
+     0.51s  1.81% 82.47%      0.51s  1.81%  runtime.memmove
+     0.44s  1.56% 84.03%      1.81s  6.42%  fmt.(*pp).printArg
+     0.39s  1.38% 85.42%      2.36s  8.37%  fmt.(*pp).doPrint
+     0.36s  1.28% 86.69%      0.70s  2.48%  fmt.(*buffer).WriteString (inline)
+     0.34s  1.21% 87.90%      0.93s  3.30%  runtime.mallocgc
+     0.20s  0.71% 88.61%      1.20s  4.26%  fmt.(*fmt).fmtS
+     0.18s  0.64% 89.25%      0.18s  0.64%  fmt.(*fmt).truncate
+     0.16s  0.57% 89.82%      0.16s  0.57%  runtime.memclrNoHeapPointers
+     0.15s  0.53% 90.35%      1.35s  4.79%  fmt.(*pp).fmtString
+</code></pre><p>前15个，可以看到fmt拼接的方式是最差的，因为fmt里很多方法耗时排在了最前面。buffer的WriteString方法也比较耗时。</p>
+<p>以上的TOP可能还不是太直观，如果大家看火焰图的话，就会更清晰。性能最好的是<code>+</code>号拼接、Join拼接，最慢的是fmt拼接，这里的builder和buffer拼接差不多，并没有发挥出其能力。</p>
+<h1 id="疑问">疑问 <a href="#%e7%96%91%e9%97%ae" class="anchor">🔗</a></h1><p>从整个性能的测试和分析来看，我们期待的builder并没有发挥出来，这是不是意味着builder不实用了呢？还不如+号和Join拼接呢？继续接着分析,猜测可能原因如下：</p>
+<ul>
+<li>拼接的字符串大小</li>
+<li>拼接的字符串数量</li>
+</ul>
+<h1 id="拼接函数改造">拼接函数改造 <a href="#%e6%8b%bc%e6%8e%a5%e5%87%bd%e6%95%b0%e6%94%b9%e9%80%a0" class="anchor">🔗</a></h1><p>前面提到了2种可能的猜测，拼接字符串的数量和拼接字符串的大小，现在我们就开始证明这两种情况，为了演示方便，我们把原来的拼接函数修改一下，可以接受一个[]string类型的参数，这样我们就可以对切片数组进行字符串拼接，这里直接给出所有的拼接方法的改造后实现。</p>
+<pre tabindex="0"><code>func StringPlus(p []string) string{
+	var s string
+	l:=len(p)
+	for i:=0;i&lt;l;i++{
+		s+=p[i]
+	}
+	return s
+}
+
+func StringFmt(p []interface{}) string{
+	return fmt.Sprint(p...)
+}
+
+func StringJoin(p []string) string{
+	return strings.Join(p,&#34;&#34;)
+}
+
+func StringBuffer(p []string) string {
+	var b bytes.Buffer
+	l:=len(p)
+	for i:=0;i&lt;l;i++{
+		b.WriteString(p[i])
+	}
+	return b.String()
+}
+
+func StringBuilder(p []string) string {
+	var b strings.Builder
+	l:=len(p)
+	for i:=0;i&lt;l;i++{
+		b.WriteString(p[i])
+	}
+	return b.String()
+}
+</code></pre><h1 id="测试用例">测试用例 <a href="#%e6%b5%8b%e8%af%95%e7%94%a8%e4%be%8b" class="anchor">🔗</a></h1><p>以上的字符串拼接函数修改后，我们就可以构造不同大小的切片进行字符串拼接测试了。为了模拟上次的效果，我们先用10个切片大小的字符串进行拼接测试。</p>
+<pre tabindex="0"><code>const BLOG  = &#34;http://www.flysnow.org/&#34;
+
+func initStrings(N int) []string{
+	s:=make([]string,N)
+	for i:=0;i&lt;N;i++{
+		s[i]=BLOG
+	}
+	return s;
+}
+
+func initStringi(N int) []interface{}{
+	s:=make([]interface{},N)
+	for i:=0;i&lt;N;i++{
+		s[i]=BLOG
+	}
+	return s;
+}
+</code></pre><p>这是两个构建测试用例切片数组的函数，可以生成N个大小的切片。第二个initStringi函数返回的是[]interface{}，这是专门为StringFmt(p []interface{})拼接函数准备的，减少类型之间的转换。</p>
+<p>有了这两个生成测试用例的函数，我们就可以构建我们的Go语言性能测试了，我们先测试10个大小的切片。</p>
+<pre tabindex="0"><code>func BenchmarkStringPlus10(b *testing.B) {
+	p:= initStrings(10)
+	b.ResetTimer()
+	for i:=0;i&lt;b.N;i++{
+		StringPlus(p)
+	}
+}
+
+func BenchmarkStringFmt10(b *testing.B) {
+	p:= initStringi(10)
+	b.ResetTimer()
+	for i:=0;i&lt;b.N;i++{
+		StringFmt(p)
+	}
+}
+
+func BenchmarkStringJoin10(b *testing.B) {
+	p:= initStrings(10)
+	b.ResetTimer()
+	for i:=0;i&lt;b.N;i++{
+		StringJoin(p)
+	}
+}
+
+func BenchmarkStringBuffer10(b *testing.B) {
+	p:= initStrings(10)
+	b.ResetTimer()
+	for i:=0;i&lt;b.N;i++{
+		StringBuffer(p)
+	}
+}
+
+func BenchmarkStringBuilder10(b *testing.B) {
+	p:= initStrings(10)
+	b.ResetTimer()
+	for i:=0;i&lt;b.N;i++{
+		StringBuilder(p)
+	}
+}
+</code></pre><p>在每个性能测试函数中，我们都会调用b.ResetTimer()，这是为了避免测试用例准备时间不同，带来的性能测试效果偏差问题
+我们运行<code>go test -bench=. -run=NONE -benchmem</code> 查看结果。</p>
+<pre tabindex="0"><code>BenchmarkStringPlus10-8     3000000     593 ns/op   1312 B/op   9 allocs/op
+BenchmarkStringFmt10-8      5000000     335 ns/op   240 B/op    1 allocs/op
+BenchmarkStringJoin10-8     10000000    200 ns/op   480 B/op    2 allocs/op
+BenchmarkStringBuffer10-8   3000000     452 ns/op   864 B/op    4 allocs/op
+BenchmarkStringBuilder10-8  10000000    231 ns/op   480 B/op    4 allocs/op
+</code></pre><p>通过这次我们可以看到，<code>+</code>号拼接不再具有优势，因为string是不可变的，每次拼接都会生成一个新的<code>string</code>,也就是会进行一次内存分配，我们现在是10个大小的切片，每次操作要进行9次进行分配，占用内存，所以每次操作时间都比较长，自然性能就低下。</p>
+<p>文章上面关于<code>+</code>拼接还有印象，<code>+</code>加号拼接的性能测试中显示的只有2次内存分配，但是我们用了好多个<code>+</code>的。</p>
+<pre tabindex="0"><code>func StringPlus() string{
+	var s string
+	s+=&#34;昵称&#34;+&#34;:&#34;+&#34;飞雪无情&#34;+&#34;\n&#34;
+	s+=&#34;博客&#34;+&#34;:&#34;+&#34;http://www.flysnow.org/&#34;+&#34;\n&#34;
+	s+=&#34;微信公众号&#34;+&#34;:&#34;+&#34;flysnow_org&#34;
+	return s
+}
+</code></pre><p>再来回顾下这段代码，的确是有很多+的，但是只有2次内存分配，我们可以大胆猜测,是3次s+=导致的，正常和我们今天测试的10个长度的切片，只有9次内存分配一样。下面我们通过运行如下命令看下Go编译器对这段代码的优化：<code>go build -gcflags=&quot;-m -m&quot; main.go</code>,输出中有如下内容：</p>
+<pre tabindex="0"><code>can inline StringPlus as: func() string { var s string; s = &lt;N&gt;; s += &#34;昵称:飞雪无情\n&#34;; s += &#34;博客:http://www.flysnow.org/\n&#34;; s += &#34;微信公众号:flysnow_org&#34;; return s }
+</code></pre><p>现在一目了然了，其实是编译器帮我们把字符串做了优化，只剩下3个<code>s+=</code></p>
+<p>这次，采用长度为10个切片进行测试，也很明显测试出了Builder要比Buffer性能好很多，这个问题原因主要还是<code>[]byte</code>和<code>string</code>之间的转换，<code>Builder</code>恰恰解决了这个问题。</p>
+<pre tabindex="0"><code>func (b *Builder) String() string {
+	return *(*string)(unsafe.Pointer(&amp;b.buf))
+}
+</code></pre><p>很高效的解决方案。</p>
+<h1 id="100个字符串">100个字符串 <a href="#100%e4%b8%aa%e5%ad%97%e7%ac%a6%e4%b8%b2" class="anchor">🔗</a></h1><p>现在我们测试下100个字符串拼接的情况，对于我们上面的代码，要改造非常容易，这里直接给出测试代码。</p>
+<pre tabindex="0"><code>func BenchmarkStringPlus100(b *testing.B) {
+	p:= initStrings(100)
+	b.ResetTimer()
+	for i:=0;i&lt;b.N;i++{
+		StringPlus(p)
+	}
+}
+
+func BenchmarkStringFmt100(b *testing.B) {
+	p:= initStringi(100)
+	b.ResetTimer()
+	for i:=0;i&lt;b.N;i++{
+		StringFmt(p)
+	}
+}
+
+func BenchmarkStringJoin100(b *testing.B) {
+	p:= initStrings(100)
+	b.ResetTimer()
+	for i:=0;i&lt;b.N;i++{
+		StringJoin(p)
+	}
+}
+
+func BenchmarkStringBuffer100(b *testing.B) {
+	p:= initStrings(100)
+	b.ResetTimer()
+	for i:=0;i&lt;b.N;i++{
+		StringBuffer(p)
+	}
+}
+
+func BenchmarkStringBuilder100(b *testing.B) {
+	p:= initStrings(100)
+	b.ResetTimer()
+	for i:=0;i&lt;b.N;i++{
+		StringBuilder(p)
+	}
+}
+</code></pre><p>现在运行性能测试，看看100个字符串连接的性能怎么样，哪个函数最高效。</p>
+<pre tabindex="0"><code>BenchmarkStringPlus100-8    100000  19711 ns/op     123168 B/op     99 allocs/op
+BenchmarkStringFmt100-8     500000  2615 ns/op      2304 B/op       1 allocs/op
+BenchmarkStringJoin100-8    1000000 1516 ns/op      4608 B/op       2 allocs/op
+BenchmarkStringBuffer100-8  500000  2333 ns/op      8112 B/op       7 allocs/op
+BenchmarkStringBuilder100-8 1000000 1714 ns/op      6752 B/op       8 allocs/op
+</code></pre><p><code>+</code>号和我们上面分析得一样，这次是99次内存分配，性能体验越来越差，在后面的测试中，会排除掉。</p>
+<p><code>fmt</code>和<code>bufrer</code>已经的性能也没有提升，继续走低。剩下比较坚挺的是<code>Join</code>和<code>Builder</code>。</p>
+<h1 id="1000-个字符串">1000 个字符串。 <a href="#1000-%e4%b8%aa%e5%ad%97%e7%ac%a6%e4%b8%b2" class="anchor">🔗</a></h1><p>测试用力和上面章节的大同小异，所以我们直接看测试结果。</p>
+<pre tabindex="0"><code>BenchmarkStringPlus1000-8       1000    1611985 ns/op   12136228 B/op   999 allocs/op
+BenchmarkStringFmt1000-8        50000   28510 ns/op     24590 B/op      1 allocs/op
+BenchmarkStringJoin1000-8       100000  15050 ns/op     49152 B/op      2 allocs/op
+BenchmarkStringBuffer1000-8     100000  23534 ns/op     122544 B/op     11 allocs/op
+BenchmarkStringBuilder1000-8    100000  17996 ns/op     96224 B/op      16 allocs/op
+</code></pre><p>整体和100个字符串的时候差不多，表现好的还是<code>Join</code>和<code>Builder</code>。这两个方法的使用侧重点有些不一样， 如果有现成的数组、切片那么可以直接使用<code>Join</code>,但是如果没有，并且追求灵活性拼接，还是选择<code>Builder</code>。 <code>Join</code>还是定位于有现成切片、数组的（毕竟拼接成数组也要时间），并且使用固定方式进行分解的，比如逗号、空格等，局限比较大。</p>
+<h1 id="小结">小结 <a href="#%e5%b0%8f%e7%bb%93" class="anchor">🔗</a></h1><p>至于10000个字符串拼接我这里就不做测试了，大家可以自己试试，看看是不是大同小异的。</p>
+<p>从最近的这两篇文章的分析来看，我们大概可以总结出。</p>
+<ul>
+<li>
+<ul>
+<li>连接适用于短小的、常量字符串（明确的，非变量），因为编译器会给我们优化。</li>
+</ul>
+</li>
+<li>Join是比较统一的拼接，不太灵活</li>
+<li>fmt和buffer基本上不推荐</li>
+<li>builder从性能和灵活性上，都是上佳的选择。</li>
+</ul>
+<h1 id="builder-慢在哪">Builder 慢在哪 <a href="#builder-%e6%85%a2%e5%9c%a8%e5%93%aa" class="anchor">🔗</a></h1><p>在前面可以看出来少量拼接，<code>builder</code>并不明显，那么到底慢在哪里呢？既然要优化Builder拼接，那么我们起码知道他慢在哪，我们继续使用我们上篇文章的测试用例，运行看下性能。</p>
+<pre tabindex="0"><code>Builder10-8     5000000     258 ns/op       480 B/op        4 allocs/op
+Builder100-8    1000000     2012 ns/op      6752 B/op       8 allocs/op
+Builder1000-8   100000      21016 ns/op     96224 B/op      16 allocs/op
+Builder10000-8  10000       195098 ns/op    1120226 B/op    25 allocs/op
+</code></pre><p>针对既然要优化<code>Builder</code>拼接,采取了10、100、1000、10000四种不同数量的字符串进行拼接测试。我们发现每次操作都有不同次数的内存分配，内存分配越多，越慢，如果引起GC，就更慢了，首先我们先优化这个，减少内存分配的次数。</p>
+<h1 id="内存分配优化">内存分配优化 <a href="#%e5%86%85%e5%ad%98%e5%88%86%e9%85%8d%e4%bc%98%e5%8c%96" class="anchor">🔗</a></h1><p>通过cpuprofile，查看生成的火焰图可以得知，<code>runtime.growslice</code>函数会被频繁的调用，并且时间占比也比较长。我们查看<code>Builder.WriteString</code>的源代码：</p>
+<pre tabindex="0"><code>func (b *Builder) WriteString(s string) (int, error) {
+	b.copyCheck()
+	b.buf = append(b.buf, s...)
+	return len(s), nil
+}
+</code></pre><p>可以肯定是<code>append</code>方法触发了<code>runtime.growslice</code>，因为<code>b.buf</code>的容量<code>cap</code>不足，所以需要调用<code>runtime.growslice</code>扩充<code>b.buf</code>的容量，然后才可以追加新的元素<code>s...</code>。扩容容量自然会涉及到内存的分配，而且追加的内容越多，内存分配的次数越多，这和我们上面性能测试的数据是一样的。</p>
+<p>既然问题的原因找到了，那么我们就可以优化了，核心手段就是减少<code>runtime.growslice</code>调用，甚至不调用。照着这个思路的话，我们就要提前为<code>b.buf</code>分配好容量<code>cap</code>。幸好<code>Builder</code>为我们提供了扩充容量的方法<code>Grow</code>，我们在进行<code>WriteString</code>之前，先通过<code>Grow</code>方法，扩充好容量即可。</p>
+<p>现在开始改造我们的StringBuilder函数。</p>
+<pre tabindex="0"><code>func StringBuilder(p []string,cap int) string {
+	var b strings.Builder
+	l:=len(p)
+	b.Grow(cap)
+	for i:=0;i&lt;l;i++{
+		b.WriteString(p[i])
+	}
+	return b.String()
+}
+</code></pre><p>增加一个参数<code>cap</code>，让使用者告诉我们需要的容量大小。<code>Grow</code>方法的实现非常简单，就是一个通过<code>make</code>函数，扩充<code>b.buf</code>大小，然后再拷贝<code>b.buf</code>的过程。</p>
+<pre tabindex="0"><code>func (b *Builder) grow(n int) {
+	buf := make([]byte, len(b.buf), 2*cap(b.buf)+n)
+	copy(buf, b.buf)
+	b.buf = buf
+}
+</code></pre><p>那么现在我们的性能测试用例变成如下：</p>
+<pre tabindex="0"><code>func BenchmarkStringBuilder10(b *testing.B) {
+	p:= initStrings(10)
+	cap:=10*len(BLOG)
+	b.ResetTimer()
+	for i:=0;i&lt;b.N;i++{
+		StringBuilder(p,cap)
+	}
+}
+
+func BenchmarkStringBuilder1000(b *testing.B) {
+	p:= initStrings(1000)
+	cap:=1000*len(BLOG)
+	b.ResetTimer()
+	for i:=0;i&lt;b.N;i++{
+		StringBuilder(p,cap)
+	}
+}
+</code></pre><p>为了说明情况和简短代码，这里只有10和1000个元素的用例，其他类似。为了把性能优化到极致，我一次性把需要的容量分配足够。现在我们再运行性能（Benchmark）测试代码。</p>
+<pre tabindex="0"><code>Builder10-8     10000000    123 ns/op       352 B/op    1 allocs/op
+Builder100-8    2000000     898 ns/op       2688 B/op   1 allocs/op
+Builder1000-8   200000      7729 ns/op      24576 B/op  1 allocs/op
+Builder10000-8  20000       78678 ns/op     237568 B/op 1 allocs/op
+</code></pre><p>性能足足翻了1倍多，只有1次内存分配，每次操作占用的内存也减少了一半多，降低了GC。</p>
+<h1 id="总结">总结 <a href="#%e6%80%bb%e7%bb%93" class="anchor">🔗</a></h1><p>背后的原理也非常清楚，就是预先分配内存，减少append过程中的内存重新分配和数据拷贝，这样我们就可以提升很多的性能。所以对于可以预见的长度的切，都可以提前申请申请好内存。</p>
+<blockquote>
+<p>本文收集来源：https://www.flysnow.org</p>
+</blockquote>
+
+    </div>
+
+    
+</section>
+
+
+            </div>
+            <div class="side">
+                <div class="side-categories">
+    <h2>Categories</h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/categories/ai">ai(3)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/go">go(23)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E4%BB%A3%E7%A0%81">代码(2)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E5%B7%A5%E5%85%B7">工具(8)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E9%80%86%E5%90%91">逆向(3)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E9%9D%A2%E8%AF%95">面试(4)</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/android/">Recent Android</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/android/redroid%E4%BD%BF%E7%94%A8/">Redroid安卓容器</a>
+            </li>
+        
+            <li>
+                <a href="/android/%E5%85%A5%E9%97%A8/">逆向环境-杂</a>
+            </li>
+        
+            <li>
+                <a href="/android/frida%E6%95%99%E7%A8%8B/">frida教程</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/tool/">Recent Tool</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/tool/linux-almalinux%E4%BC%98%E5%8C%96/">AlmaLinux10</a>
+            </li>
+        
+            <li>
+                <a href="/tool/almalinux-k8s/">AlmaLinux-k8s安装</a>
+            </li>
+        
+            <li>
+                <a href="/tool/vscode%E6%8A%98%E8%85%BE/">vscode折腾</a>
+            </li>
+        
+            <li>
+                <a href="/tool/linux-ubuntu%E4%BC%98%E5%8C%96/">Ubuntu开机优化</a>
+            </li>
+        
+            <li>
+                <a href="/tool/shell-ssh_script/">ssh常用脚本</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/llm/">Recent Llm</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/llm/transformers-%E5%85%A5%E9%97%A8%E7%AF%87/">Transformers-入门篇</a>
+            </li>
+        
+            <li>
+                <a href="/llm/%E6%A8%A1%E5%9E%8Bvllm%E9%83%A8%E7%BD%B2/">AI模型VLLM部署</a>
+            </li>
+        
+            <li>
+                <a href="/llm/%E6%A8%A1%E5%9E%8B%E5%BE%AE%E8%B0%83/">AI模型微调</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/go/">Recent Go</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/go/go%E4%B8%89%E8%89%B2%E6%A0%87%E8%AE%B0%E6%B7%B7%E5%90%88%E5%86%99%E5%B1%8F%E9%9A%9Cgc%E6%A8%A1%E5%BC%8F%E5%85%A8%E6%80%BB%E7%BB%93/">Go三色标记混合写屏障GC模式全总结</a>
+            </li>
+        
+            <li>
+                <a href="/go/go%E4%B8%ADmake%E4%B8%8Enew%E5%8C%BA%E5%88%AB/">Go中make与new区别</a>
+            </li>
+        
+            <li>
+                <a href="/go/go%E5%B8%B8%E7%94%A8bug%E5%92%8C%E6%80%A7%E8%83%BD%E9%97%AE%E9%A2%98%E7%9A%84%E5%AE%9E%E8%B7%B5%E6%96%B9%E6%B3%95/">Go常用bug和性能问题的实践方法</a>
+            </li>
+        
+            <li>
+                <a href="/go/grpc%E6%80%BB%E7%BB%93/">GRPC笔记</a>
+            </li>
+        
+            <li>
+                <a href="/go/go%E7%9A%84defer%E6%80%BB%E7%BB%93/">Go的defer总结</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/note/">Recent Note</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/note/rdis-%E7%BC%93%E5%AD%98%E7%A9%BF%E9%80%8F%E9%9B%AA%E5%B4%A9%E5%87%BB%E7%A9%BF%E7%9A%84%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95/">缓存穿透、雪崩、击穿的解决方法</a>
+            </li>
+        
+            <li>
+                <a href="/note/redis-%E5%8D%95%E7%BA%BF%E7%A8%8B%E7%9A%84redis%E4%B8%BA%E4%BB%80%E4%B9%88%E5%BF%AB/">单线程的redis为什么快</a>
+            </li>
+        
+            <li>
+                <a href="/note/redis-%E6%80%BB%E7%BB%93/">redis总结</a>
+            </li>
+        
+            <li>
+                <a href="/note/mysql-%E6%80%BB%E7%BB%93/">mysql总结</a>
+            </li>
+        
+            <li>
+                <a href="/note/java-%E4%BB%A3%E7%A0%81%E7%94%9F%E6%88%90/">JAVA代码生成</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+            </div>
+        </main>
+        <footer class="footer">
+    <div class="footer-row">
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/android/index.xml">
+                    Feed of Android
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/tool/index.xml">
+                    Feed of Tool
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/llm/index.xml">
+                    Feed of Llm
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/go/index.xml">
+                    Feed of Go
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/note/index.xml">
+                    Feed of Note
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+
+        
+            
+            
+        
+    </div>
+
+    
+</footer>
+
+    </body>
+</html>

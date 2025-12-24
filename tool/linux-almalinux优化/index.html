@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+<meta name="viewport" content="width=device-width,minimum-scale=1">
+
+
+
+
+<title>AlmaLinux10 | Abner的博客</title>
+<link rel="canonical" href="https://abnerxc.github.io/tool/linux-almalinux%E4%BC%98%E5%8C%96/">
+<meta property="og:type" content="article" />
+<meta property="og:title" content="AlmaLinux10 | Abner的博客" />
+<meta property="og:url" content="https://abnerxc.github.io/tool/linux-almalinux%E4%BC%98%E5%8C%96/" />
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/icofont/icofont.min.css" />
+<link rel="stylesheet" href="/css/syntax.css" />
+<link rel="stylesheet" href="/css/style.css" />
+<script src="/js/copy-code-block.js"></script>
+<link rel="shortcut icon" href="/images/favicon.ico" type="image/x-icon" />
+
+    </head>
+
+    <body>
+        <header class="header-wrapper">
+    <div class="header">
+        <a class="site-title" href="https://abnerxc.github.io/">Abner的博客</a>
+
+        <nav class="menu">
+            
+        </nav>
+    </div>
+</header>
+
+        <main class="main-wrapper">
+            <div class="main">
+                
+
+<section class="single">
+    <h1 class="title">AlmaLinux10</h1>
+
+    <div class="tip">
+        <time datetime="2025-07-21 18:35:11 &#43;0800 CST">2025/07/21</time>
+        <span class="split">·</span>
+        <span> 85 words </span>
+        <span class="split">·</span>
+        <span>
+            1 minutes to read
+        </span>
+    </div>
+
+    <div class="taxonomies">
+        
+        <div>
+            Categories:
+            
+                <a href="/categories/%E5%B7%A5%E5%85%B7">工具</a>
+            
+        </div>
+        
+
+        
+    </div>
+
+    
+    
+    <div class="post-toc">
+        <h3>目录</h3>
+        <nav id="TableOfContents">
+  <ul>
+    <li><a href="#网络配置">网络配置</a></li>
+    <li><a href="#设置主机名">设置主机名</a></li>
+    <li><a href="#selinux关闭">selinux关闭</a></li>
+    <li><a href="#关闭firewalld">关闭firewalld</a></li>
+    <li><a href="#替换源">替换源</a></li>
+  </ul>
+</nav>
+    </div>
+    
+
+    <hr />
+
+    <div class="content">
+        <h1 id="网络配置">网络配置 <a href="#%e7%bd%91%e7%bb%9c%e9%85%8d%e7%bd%ae" class="anchor">🔗</a></h1><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span><span style="color:#75715e">#进入网络配置文件目录</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>cd /etc/NetworkManager/system-connections
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>vi /etc/NetworkManager/system-connections/ens33.nmconnection
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>将<span style="color:#f92672">[</span>ipv4<span style="color:#f92672">]</span>的method<span style="color:#f92672">=</span>auto改为method<span style="color:#f92672">=</span>manual，即改为配置静态ip
+</span></span><span style="display:flex;"><span><span style="color:#f92672">[</span>ipv4<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>method<span style="color:#f92672">=</span>manual
+</span></span><span style="display:flex;"><span>address1<span style="color:#f92672">=</span>192.168.122.10
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#address2=192.168.122.10</span>
+</span></span><span style="display:flex;"><span>gateway<span style="color:#f92672">=</span>192.168.122.1
+</span></span><span style="display:flex;"><span>route1<span style="color:#f92672">=</span>192.168.100.1
+</span></span><span style="display:flex;"><span>dns<span style="color:#f92672">=</span>114.114.114.114;8.8.8.8
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#重启网络</span>
+</span></span><span style="display:flex;"><span>systemctl restart NetworkManager
+</span></span></code></pre></div><h1 id="设置主机名">设置主机名 <a href="#%e8%ae%be%e7%bd%ae%e4%b8%bb%e6%9c%ba%e5%90%8d" class="anchor">🔗</a></h1><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>sudo hostnamectl set-hostname k8s-master
+</span></span></code></pre></div><h1 id="selinux关闭">selinux关闭 <a href="#selinux%e5%85%b3%e9%97%ad" class="anchor">🔗</a></h1><pre tabindex="0"><code>sed -i &#39;s/SELINUX=enforcing/SELINUX=disabled/g&#39; /etc/sysconfig/selinux
+sed -i &#39;s/SELINUX=enforcing/SELINUX=disabled/g&#39; /etc/selinux/config
+setenforce 0
+</code></pre><h1 id="关闭firewalld">关闭firewalld <a href="#%e5%85%b3%e9%97%adfirewalld" class="anchor">🔗</a></h1><pre tabindex="0"><code>systemctl disable firewalld
+systemctl stop firewalld
+</code></pre><h1 id="替换源">替换源 <a href="#%e6%9b%bf%e6%8d%a2%e6%ba%90" class="anchor">🔗</a></h1><pre tabindex="0"><code># 1. 配置
+# 注意：“# baseurl” 中间有个空格（AlmaLinux 专有）
+sed -e &#39;s|^mirrorlist=|#mirrorlist=|g&#39; \
+    -e &#39;s|^# baseurl=https://repo.almalinux.org|baseurl=https://mirrors.aliyun.com|g&#39; \
+    -i.bak \
+    /etc/yum.repos.d/almalinux*.repo
+# 恢复 (sysin)
+sed -e &#39;s|^#mirrorlist=|mirrorlist=|g&#39; \
+    -e &#39;s|^baseurl=https://mirrors.aliyun.com|# baseurl=https://repo.almalinux.org|g&#39; \
+    -i.bak \
+    /etc/yum.repos.d/almalinux*.repo
+
+# 2. 清理缓存并重建
+sudo dnf clean all
+sudo dnf makecache
+</code></pre>
+    </div>
+
+    
+</section>
+
+
+            </div>
+            <div class="side">
+                <div class="side-categories">
+    <h2>Categories</h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/categories/ai">ai(3)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/go">go(23)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E4%BB%A3%E7%A0%81">代码(2)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E5%B7%A5%E5%85%B7">工具(8)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E9%80%86%E5%90%91">逆向(3)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E9%9D%A2%E8%AF%95">面试(4)</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/android/">Recent Android</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/android/redroid%E4%BD%BF%E7%94%A8/">Redroid安卓容器</a>
+            </li>
+        
+            <li>
+                <a href="/android/%E5%85%A5%E9%97%A8/">逆向环境-杂</a>
+            </li>
+        
+            <li>
+                <a href="/android/frida%E6%95%99%E7%A8%8B/">frida教程</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/tool/">Recent Tool</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/tool/linux-almalinux%E4%BC%98%E5%8C%96/">AlmaLinux10</a>
+            </li>
+        
+            <li>
+                <a href="/tool/almalinux-k8s/">AlmaLinux-k8s安装</a>
+            </li>
+        
+            <li>
+                <a href="/tool/vscode%E6%8A%98%E8%85%BE/">vscode折腾</a>
+            </li>
+        
+            <li>
+                <a href="/tool/linux-ubuntu%E4%BC%98%E5%8C%96/">Ubuntu开机优化</a>
+            </li>
+        
+            <li>
+                <a href="/tool/shell-ssh_script/">ssh常用脚本</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/llm/">Recent Llm</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/llm/transformers-%E5%85%A5%E9%97%A8%E7%AF%87/">Transformers-入门篇</a>
+            </li>
+        
+            <li>
+                <a href="/llm/%E6%A8%A1%E5%9E%8Bvllm%E9%83%A8%E7%BD%B2/">AI模型VLLM部署</a>
+            </li>
+        
+            <li>
+                <a href="/llm/%E6%A8%A1%E5%9E%8B%E5%BE%AE%E8%B0%83/">AI模型微调</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/go/">Recent Go</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/go/go%E4%B8%89%E8%89%B2%E6%A0%87%E8%AE%B0%E6%B7%B7%E5%90%88%E5%86%99%E5%B1%8F%E9%9A%9Cgc%E6%A8%A1%E5%BC%8F%E5%85%A8%E6%80%BB%E7%BB%93/">Go三色标记混合写屏障GC模式全总结</a>
+            </li>
+        
+            <li>
+                <a href="/go/go%E4%B8%ADmake%E4%B8%8Enew%E5%8C%BA%E5%88%AB/">Go中make与new区别</a>
+            </li>
+        
+            <li>
+                <a href="/go/go%E5%B8%B8%E7%94%A8bug%E5%92%8C%E6%80%A7%E8%83%BD%E9%97%AE%E9%A2%98%E7%9A%84%E5%AE%9E%E8%B7%B5%E6%96%B9%E6%B3%95/">Go常用bug和性能问题的实践方法</a>
+            </li>
+        
+            <li>
+                <a href="/go/grpc%E6%80%BB%E7%BB%93/">GRPC笔记</a>
+            </li>
+        
+            <li>
+                <a href="/go/go%E7%9A%84defer%E6%80%BB%E7%BB%93/">Go的defer总结</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/note/">Recent Note</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/note/rdis-%E7%BC%93%E5%AD%98%E7%A9%BF%E9%80%8F%E9%9B%AA%E5%B4%A9%E5%87%BB%E7%A9%BF%E7%9A%84%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95/">缓存穿透、雪崩、击穿的解决方法</a>
+            </li>
+        
+            <li>
+                <a href="/note/redis-%E5%8D%95%E7%BA%BF%E7%A8%8B%E7%9A%84redis%E4%B8%BA%E4%BB%80%E4%B9%88%E5%BF%AB/">单线程的redis为什么快</a>
+            </li>
+        
+            <li>
+                <a href="/note/redis-%E6%80%BB%E7%BB%93/">redis总结</a>
+            </li>
+        
+            <li>
+                <a href="/note/mysql-%E6%80%BB%E7%BB%93/">mysql总结</a>
+            </li>
+        
+            <li>
+                <a href="/note/java-%E4%BB%A3%E7%A0%81%E7%94%9F%E6%88%90/">JAVA代码生成</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+            </div>
+        </main>
+        <footer class="footer">
+    <div class="footer-row">
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/android/index.xml">
+                    Feed of Android
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/tool/index.xml">
+                    Feed of Tool
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/llm/index.xml">
+                    Feed of Llm
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/go/index.xml">
+                    Feed of Go
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/note/index.xml">
+                    Feed of Note
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+
+        
+            
+            
+        
+    </div>
+
+    
+</footer>
+
+    </body>
+</html>

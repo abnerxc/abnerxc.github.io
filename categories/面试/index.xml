@@ -1,0 +1,1036 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>面试 on Abner的博客</title>
+    <link>https://abnerxc.github.io/categories/%E9%9D%A2%E8%AF%95/</link>
+    <description>Recent content in 面试 on Abner的博客</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-CN</language>
+    <lastBuildDate>Mon, 25 Jan 2021 22:07:58 +0800</lastBuildDate><atom:link href="https://abnerxc.github.io/categories/%E9%9D%A2%E8%AF%95/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>mysql总结</title>
+      <link>https://abnerxc.github.io/note/mysql-%E6%80%BB%E7%BB%93/</link>
+      <pubDate>Mon, 25 Jan 2021 22:07:58 +0800</pubDate>
+      
+      <guid>https://abnerxc.github.io/note/mysql-%E6%80%BB%E7%BB%93/</guid>
+      <description>&lt;h1 id=&#34;宏观了解&#34;&gt;宏观了解 &lt;a href=&#34;#%e5%ae%8f%e8%a7%82%e4%ba%86%e8%a7%a3&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;&lt;img src=&#34;https://abnerxc.github.io/img/mysql-a.jpeg&#34; alt=&#34;&#34;&gt;&lt;/p&gt;
+&lt;h1 id=&#34;查询缓存&#34;&gt;查询缓存 &lt;a href=&#34;#%e6%9f%a5%e8%af%a2%e7%bc%93%e5%ad%98&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;我们先通过&lt;code&gt;show variables like &#39;%query_cache%&#39;&lt;/code&gt;来看一下默认的数据库配置，&lt;code&gt;query_cache_type=ON&lt;/code&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;原理：MYSQL的查询缓存实质上是缓存SQL的hash值和该SQL的查询结果，如果运行相同的SQL,服务器直接从缓存中去掉结果，而不再去解析，优化，寻找最低成本的执行计划等一系列操作，大大提升了查询速度。&lt;/li&gt;
+&lt;li&gt;弊端：执行的SQL语句必须一样（大小写，间隔等），如果不一样将会产生不同的hash值&lt;/li&gt;
+&lt;li&gt;场景：通过观察云厂商，大部分情况下都是关闭查询缓存&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h1 id=&#34;引擎&#34;&gt;引擎 &lt;a href=&#34;#%e5%bc%95%e6%93%8e&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;MyISAM存储引擎
+MyISAM基于ISAM存储引擎，并对其进行扩展。使用MyISAM引擎创建数据库，将产生3个文件,文件的名字以表名字开始，&lt;code&gt;扩展名之处文件类型：frm文件存储表定义、数据文件的扩展名为.MYD（MYData）、索引文件的扩展名时.MYI（MYIndex）&lt;/code&gt;。MyISAM拥有较高的插入、查询速度，但&lt;code&gt;不支持事物&lt;/code&gt;。MyISAM主要特性有：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;大文件（达到63位文件长度）在支持大文件的文件系统和操作系统上被支持&lt;/li&gt;
+&lt;li&gt;当把删除和更新及插入操作混合使用的时候，动态尺寸的行产生更少碎片。这要通过合并相邻被删除的块，以及若下一个块被删除，就扩展到下一块自动完成&lt;/li&gt;
+&lt;li&gt;每个MyISAM表最大索引数是64，这可以通过重新编译来改变。每个索引最大的列数是16&lt;/li&gt;
+&lt;li&gt;最大的键长度是1000字节，这也可以通过编译来改变，对于键长度超过250字节的情况，一个超过1024字节的键将被用上&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;BLOB和TEXT列可以被索引&lt;/strong&gt;&lt;/li&gt;
+&lt;li&gt;NULL被允许在索引的列中，这个值占每个键的0~1个字节&lt;/li&gt;
+&lt;li&gt;所有数字键值以高字节优先被存储以允许一个更高的索引压缩&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;每个MyISAM类型的表都有一个AUTO_INCREMENT的内部列，当INSERT和UPDATE操作的时候该列被更新，同时AUTO_INCREMENT列将被刷新。所以说，MyISAM类型表的AUTO_INCREMENT列更新比InnoDB类型的AUTO_INCREMENT更快&lt;/strong&gt;&lt;/li&gt;
+&lt;li&gt;可以把数据文件和索引文件放在不同目录&lt;/li&gt;
+&lt;li&gt;每个字符列可以有不同的字符集&lt;/li&gt;
+&lt;li&gt;有VARCHAR的表可以固定或动态记录长度&lt;/li&gt;
+&lt;li&gt;VARCHAR和CHAR列可以多达64KB&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;InnoDB存储引擎
+InnoDB不创建目录，使用InnoDB时，MySQL将在MySQL数据目录下创建一个名为ibdata1的10MB大小的自动扩展数据文件，以及两个名为ib_logfile0和ib_logfile1的5MB大小的日志文件
+InnoDB是事务型数据库的首选引擎，支持事务安全表（ACID），支持行锁定和外键，InnoDB是默认的MySQL引擎。InnoDB主要特性有：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;InnoDB给MySQL提供了具有提交、回滚和崩溃恢复能力的事物安全（ACID兼容）存储引擎。InnoDB锁定在行级并且也在SELECT语句中提供一个类似Oracle的非锁定读。这些功能增加了多用户部署和性能。在SQL查询中，可以自由地将InnoDB类型的表和其他MySQL的表类型混合起来，甚至在同一个查询中也可以混合&lt;/li&gt;
+&lt;li&gt;InnoDB是为处理巨大数据量的最大性能设计。它的CPU效率可能是任何其他基于磁盘的关系型数据库引擎锁不能匹敌的&lt;/li&gt;
+&lt;li&gt;InnoDB存储引擎完全与MySQL服务器整合，InnoDB存储引擎为在主内存中缓存数据和索引而维持它自己的缓冲池。InnoDB将它的表和索引在一个逻辑表空间中，表空间可以包含数个文件（或原始磁盘文件）。这与MyISAM表不同，比如在MyISAM表中每个表被存放在分离的文件中。InnoDB表可以是任何尺寸，即使在文件尺寸被限制为2GB的操作系统上&lt;/li&gt;
+&lt;li&gt;InnoDB支持外键完整性约束，存储表中的数据时，每张表的存储都按主键顺序存放，如果没有显示在表定义时指定主键，InnoDB会为每一行生成一个6字节的ROWID，并以此作为主键&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;MySQL中myisam与innodb的区别&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;InnoDB支持事物，而MyISAM不支持事物&lt;/li&gt;
+&lt;li&gt;InnoDB支持行级锁，而MyISAM支持表级锁&lt;/li&gt;
+&lt;li&gt;InnoDB支持MVCC, 而MyISAM不支持&lt;/li&gt;
+&lt;li&gt;InnoDB支持外键，而MyISAM不支持&lt;/li&gt;
+&lt;li&gt;InnoDB不支持全文索引，而MyISAM支持（5.6版本已经支持了）&lt;/li&gt;
+&lt;li&gt;MYSQL引擎的文件包含（.frm-表结构文件、.myd-表数据文件，.myi-表索引文件）&lt;/li&gt;
+&lt;li&gt;InnoDB引擎包含文件（*.frm-表结构文件，ibd-数据和索引文件）&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h1 id=&#34;索引&#34;&gt;索引 &lt;a href=&#34;#%e7%b4%a2%e5%bc%95&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;聚集索引
+InnoDB的主键索引与行记录是存储在一起的，故叫做聚集索引（Clustered Index）：&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;非聚集索引
+MyISAM的索引与行记录是分开存储的，叫做非聚集索引（UnClustered Index）。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;联合索引
+多个字段上建立的索引，能够加速复核查询条件的检索。所以该索引也有最左匹配原则，5.6版本延伸出来的&lt;code&gt;索引下推&lt;/code&gt;见下文&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;举个说明，不妨设有表：&lt;code&gt;t(id PK, name KEY, sex, flag);&lt;/code&gt; 画外音：id是聚集索引，name是普通索引。&lt;/p&gt;
+&lt;ol start=&#34;4&#34;&gt;
+&lt;li&gt;
+&lt;p&gt;mysql的索引方法btree和hash的区别&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;hash
+&lt;ol&gt;
+&lt;li&gt;memory引擎才显示的支持Hash索引，innoDb默认是B+树&lt;/li&gt;
+&lt;li&gt;Hash 索引仅仅能满足&amp;quot;=&amp;quot;,&amp;ldquo;IN&amp;quot;和&amp;rdquo;&amp;lt;= &amp;amp; &amp;gt;=&amp;ldquo;查询，不能使用范围查询。&lt;/li&gt;
+&lt;li&gt;Hash 索引无法被用来避免数据的排序操作。&lt;/li&gt;
+&lt;li&gt;Hash 索引不能利用部分索引键查询。&lt;/li&gt;
+&lt;li&gt;Hash 索引在任何时候都不能避免表扫描。&lt;/li&gt;
+&lt;li&gt;Hash 索引遇到大量Hash值相等的情况后性能并不一定就会比B-Tree索引高。&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/li&gt;
+&lt;li&gt;btree
+与hash的缺点就是btree的特点&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;哈希(hash)比树(tree)更快，索引结构为什么要设计成树型？&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;加速查找速度的数据结构，常见的有两类：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;哈希，例如HashMap，查询/插入/修改/删除的平均时间复杂度都是O(1)；&lt;/li&gt;
+&lt;li&gt;树，例如平衡二叉搜索树，查询/插入/修改/删除的平均时间复杂度都是O(lg(n))；&lt;br&gt;
+&lt;strong&gt;可以看到，不管是读请求，还是写请求，哈希类型的索引，都要比树型的索引更快一些，那为什么，索引结构要设计成树型呢？&lt;/strong&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;索引设计成树形，和SQL的需求相关。
+对于这样一个单行查询的SQL需求：&lt;code&gt;select * from t where name=”shenjian”;&lt;/code&gt;确实是哈希索引更快，因为每次都只查询一条记录。&lt;br&gt;
+&lt;strong&gt;画外音：所以，如果业务需求都是单行访问，例如passport，确实可以使用哈希索引&lt;/strong&gt;
+但是对于排序查询的SQL需求&lt;code&gt;分组：group by   排序：order by   比较：&amp;lt;、&amp;gt;  &lt;/code&gt;哈希型的索引，时间复杂度会退化为O(n)，而树型的“有序”特性，依然能够保持O(log(n)) 的高效率。&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;数据库索引为什么使用B+树？&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;#B+%E6%A0%91&#34;&gt;B+树了解&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;二叉搜索树
+&lt;img src=&#34;https://abnerxc.github.io/img/mysql-b.jpeg&#34; alt=&#34;&#34;&gt;
+二叉搜索树，如上图，是最为大家所熟知的一种数据结构，就不展开介绍了，它为什么不适合用作数据库索引？&lt;br&gt;
+(1)当数据量大的时候，树的高度会比较高，数据量大的时候，查询会比较慢；&lt;br&gt;
+(2)每个节点只存储一个记录，可能导致一次查询有很多次磁盘IO；&lt;/li&gt;
+&lt;li&gt;B树
+&lt;img src=&#34;https://abnerxc.github.io/img/mysql-c.jpeg&#34; alt=&#34;&#34;&gt;
+B树，如上图，它的特点是：&lt;br&gt;
+(1)不再是二叉搜索，而是m叉搜索；&lt;br&gt;
+(2)叶子节点，非叶子节点，都存储数据；&lt;br&gt;
+(3)中序遍历，可以获得所有节点；&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;&lt;strong&gt;树被作为实现索引的数据结构被创造出来，是因为它能够完美的利用“局部性原理”。&lt;/strong&gt;&lt;/p&gt;
+&lt;ol start=&#34;7&#34;&gt;
+&lt;li&gt;
+&lt;p&gt;什么是回表查询？&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;InnoDB聚集索引和普通索引有什么差异？
+InnoDB聚集索引的叶子节点存储行记录，因此， InnoDB必须要有，且只有一个聚集索引：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;如果表定义了PK，则PK就是聚集索引；&lt;/li&gt;
+&lt;li&gt;如果表没有定义PK，则第一个not NULL unique列是聚集索引；&lt;/li&gt;
+&lt;li&gt;否则，InnoDB会创建一个隐藏的row-id作为聚集索引；
+&lt;em&gt;&lt;strong&gt;所以PK查询非常快，直接定位行记录。&lt;/strong&gt;&lt;/em&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;InnoDB普通索引的叶子节点存储主键值。
+&lt;em&gt;&lt;strong&gt;注意，不是存储行记录头指针，MyISAM的索引叶子节点存储记录指针。&lt;/strong&gt;&lt;/em&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;回表查询过程
+举个栗子，不妨设有表：t(id PK, name KEY, sex, flag);
+表中有四条记录：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;    1, shenjian, m, A
+    3, zhangsan, m, A
+    5, lisi, m, A
+    9, wangwu, f, B
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;img src=&#34;https://abnerxc.github.io/img/mysql-d.jpeg&#34; alt=&#34;&#34;&gt;&lt;/p&gt;
+&lt;p&gt;两个B+树索引分别如上图：
+　　（1）id为PK，聚集索引，叶子节点存储行记录；
+　　（2）name为KEY，普通索引，叶子节点存储PK值，即id；
+既然从普通索引无法直接定位行记录，那普通索引的查询过程是怎么样的呢？
+通常情况下，需要扫码两遍索引树。
+例如：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;select * from t where name=&amp;#39;lisi&amp;#39;;　 
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;img src=&#34;https://abnerxc.github.io/img/mysql-e.jpeg&#34; alt=&#34;&#34;&gt;&lt;/p&gt;
+&lt;p&gt;如红色路径，需要扫码两遍索引树：
+（1）先通过普通索引定位到主键值id=5；
+（2）在通过聚集索引定位到行记录；
+这就是&lt;code&gt;回表查询&lt;/code&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;索引覆盖(Covering index)？&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;什么是索引覆盖
+&lt;ul&gt;
+&lt;li&gt;MySQL官网，类似的说法出现在explain查询计划优化章节，即&lt;code&gt;explain的输出结果Extra字段为Using index时，能够触发索引覆盖&lt;/code&gt;。&lt;/li&gt;
+&lt;li&gt;不管是SQL-Server官网，还是MySQL官网，都表达了：&lt;code&gt;只需要在一棵索引树上就能获取SQL所需的所有列数据，无需回表，速度更快&lt;/code&gt;。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;如何实现索引覆盖？
+&lt;img src=&#34;https://abnerxc.github.io/img/mysql-f.jpeg&#34; alt=&#34;&#34;&gt;
+能够命中name索引，索引叶子节点存储了主键id，通过name的索引树即可获取id和name，无需回表，符合索引覆盖，效率较高。&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;&lt;img src=&#34;https://abnerxc.github.io/img/mysql-h.jpeg&#34; alt=&#34;&#34;&gt;
+能够命中name索引，索引叶子节点存储了主键id，但sex字段必须回表查询才能获取到，不符合索引覆盖，需要再次通过id值扫码聚集索引获取sex字段，效率会降低。
+如果把(name)单列索引升级为&lt;code&gt;联合索引(name, sex)&lt;/code&gt;就不同了。&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://abnerxc.github.io/img/mysql-i.jpeg&#34; alt=&#34;&#34;&gt;
+&lt;code&gt;都能够命中索引覆盖，无需回表&lt;/code&gt;。
+3.  哪些场景可以利用索引覆盖来优化SQL？
+1) 全表count查询优化 &lt;img src=&#34;https://abnerxc.github.io/img/mysql-j.jpeg&#34; alt=&#34;&#34;&gt;
+2) 列查询回表优化(同上面的例子)&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;非常隐蔽的全表扫描，不能命中索引&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;code&gt;列类型&lt;/code&gt;与&lt;code&gt;where 值类型不符合&lt;/code&gt;不能命中索引，会导致全表扫描&lt;/li&gt;
+&lt;li&gt;相&lt;code&gt;join&lt;/code&gt;的两个表的字符编码不同，不能命中索引，会导致迪卡尔积的运算&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;数据库主键索引不宜太长？？（特指InnoDB）&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;MyISAM引擎，无影响。原因：进行检索时，会先从索引树定位到记录指针，再通过指针定位到具体的记录&lt;/li&gt;
+&lt;li&gt;InnoDB通过主键索引查询时，能够直接定位到行记录。 原因：身份证号id_code是一个比较长的字符串，每个索引都存储这个值，在数据量大，内存珍贵的情况下，MySQL有限的缓冲区，存储的索引与数据会减少，磁盘IO的概率会增加。同时，索引占用的磁盘空间也会增加。&lt;/li&gt;
+&lt;li&gt;总结
+（1）MyISAM的索引与数据分开存储，索引叶子存储指针，主键索引与普通索引无太大区别；
+（2）InnoDB的聚集索引和数据行统一存储，聚集索引存储数据行本身，普通索引存储主键；
+（3）InnoDB不建议使用太长字段作为PK（此时可以加入一个自增键PK），MyISAM则无所谓；&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;like查询一定不命中索引吗？
+mysql在使用like查询，%在最前面不会用到索引，中间或最后是会用到索引的，只是越靠前扫描的行数越多
+&lt;img src=&#34;https://abnerxc.github.io/img/mysql-k.jpeg&#34; alt=&#34;&#34;&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;索引下推&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;例如对于user_table表，我们现在有（username,age）联合索引，如果现在有一个需求，查出名称中以“张”开头且年龄小于等于10的用户信息，语句如下：&amp;ldquo;select * from user_table where username like &amp;lsquo;张%&amp;rsquo; and age &amp;gt; 10&amp;rdquo;.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;ul&gt;
+&lt;li&gt;索引下推：like ‘zhang%’and age &amp;gt;10 检索，MySQL5.6版本之前，会对匹配的数据进行回表查询。5.6版本后，会先过滤掉age&amp;lt;10的数据，再进行回表查询，减少回表率，提升检索速度&lt;/li&gt;
+&lt;li&gt;注意：
+&lt;ol&gt;
+&lt;li&gt;innodb引擎的表，索引下推只能用于二级索引。 原因：innodb的主键索引树叶子结点上保存的是全行数据，所以这个时候索引下推并不会起到减少查询全行数据的效果。&lt;/li&gt;
+&lt;li&gt;索引下推一般可用于所求查询字段（select列）不是/不全是联合索引的字段，查询条件为多条件查询且查询条件子句（where/order by）字段全是联合索引。&lt;/li&gt;
+&lt;/ol&gt;
+&lt;blockquote&gt;
+&lt;p&gt;假设表t有联合索引（a,b）,下面语句可以使用索引下推提高效率&lt;code&gt;select * from t where a &amp;gt; 2 and b &amp;gt; 10&lt;/code&gt;;&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h1 id=&#34;日志&#34;&gt;日志 &lt;a href=&#34;#%e6%97%a5%e5%bf%97&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;ol&gt;
+&lt;li&gt;MySQL多少种日志
+&lt;ul&gt;
+&lt;li&gt;错误日志：记录mysql启动和运行的出错信息，也记录一些警告信息或者正确的信息，在my.cnf中log_error指定路径。&lt;/li&gt;
+&lt;li&gt;查询日志：记录所有对数据库请求的信息，不论这些请求是否得到了正确的执行。&lt;/li&gt;
+&lt;li&gt;慢查询日志：设置一个阈值（log_query_time），将运行时间超过该值的所有SQL语句都记录到慢查询的日志文件中。&lt;/li&gt;
+&lt;li&gt;二进制日志：又叫做bin-log日志，纪录所有的写操作(增改删)，纪录一些执行时间，执行时长，数据变更等。主要用于&lt;code&gt;恢复、复制、审计&lt;/code&gt;，生成的文件格式mysql-bin.001..等一系列序号。&lt;/li&gt;
+&lt;li&gt;中继日志：理解上relay log很多方面都跟binary log差不多。区别是：从服务器I/O线程将主服务器的二进制日志读取过来记录到从服务器本地文件，然后SQL线程会读取relay-log日志的内容并应用到从服务器，从而使从服务器和主服务器的数据保持一致&lt;/li&gt;
+&lt;li&gt;事务日志： 事务日志文件名为&lt;code&gt;ib_logfile0&lt;/code&gt;和&lt;code&gt;ib_logfile1&lt;/code&gt;，默认存放在表空间所在目录&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;MySQL binlog的几种日志录入格式以及区别
+&lt;ul&gt;
+&lt;li&gt;格式：&lt;code&gt;Statement&lt;/code&gt;,&lt;code&gt;Row&lt;/code&gt;，&lt;code&gt;Mixedlevel&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;区别:
+&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;基于语句纪录（Statement ）:每一条会修改数据的sql都会记录在binlog中&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;优点：只需要记录执行语句的细节和上下文环境，避免了记录每一行的变化，在一些修改记录较多的情况下相比ROW level能大大减少binlog日志量，节约IO，提高性能；还可以用于实时的还原；&lt;/li&gt;
+&lt;li&gt;缺点：为了保证sql语句能在slave上正确执行，必须记录上下文信息，以保证所有语句能在slave得到和在master端执行时候相同的结果；另外，主从复制时，存在部分函数（如sleep）及存储过程在slave上会出现与master结果不一致的情况，而相比Row level记录每一行的变化细节，绝不会发生这种不一致的情况.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;基于行（Row）：仅保存记录被修改细节，不记录sql语句上下文相关信息。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;优点： 能非常清晰的记录下每行数据的修改细节，不需要记录上下文相关信息，因此不会发生某些特定情况下的procedure、function、及trigger的调用触发无法被正确复制的问题，任何情况都可以被复制，且能加快从库重放日志的效率，保证从库数据的一致性&lt;/li&gt;
+&lt;li&gt;缺点:由于所有的执行的语句在日志中都将以每行记录的修改细节来记录，因此，可能会产生大量的日志内容，干扰内容也较多；比如一条update语句，如修改多条记录，则binlog中每一条修改都会有记录，这样造成binlog日志量会很大，特别是当执行alter table之类的语句的时候，由于表结构修改，每条记录都发生改变，那么该表每一条记录都会记录到日志中，实际等于重建了表。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;混合模式（Mixedlevel）：是以上两种level的混合使用
+一般的语句修改使用statment格式保存binlog，如一些函数，statement无法完成主从复制的操作，则 采用row格式保存binlog,MySQL会根据执行的每一条具体的sql语句来区分对待记录的日志形式，也就是在Statement和Row之间选择 一种.新版本的MySQL中队row level模式也被做了优化，并不是所有的修改都会以row level来记录，像遇到表结构变更的时候就会以statement模式来记录。至于update或者delete等修改数据的语句，还是会记录所有行的 变更。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;...............................................................................
+# at 552
+#131128 17:50:46 server id 1  end_log_pos 665   Query   thread_id=11    exec_time=0     error_code=0 +++-&amp;gt;执行时间:17:50:46；pos点:665
+SET TIMESTAMP=1385632246/*!*/;
+update zyyshop.stu set name=&amp;#39;李四&amp;#39; where id=4              +++-&amp;gt;执行的SQL
+/*!*/;
+# at 665
+#131128 17:50:46 server id 1  end_log_pos 692   Xid = 1454 +++-&amp;gt;执行时间:17:50:46；pos点:692 
+...............................................................................
+&lt;/code&gt;&lt;/pre&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h1 id=&#34;事物&#34;&gt;事物 &lt;a href=&#34;#%e4%ba%8b%e7%89%a9&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;数据库事务特性(ACID)&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;原子性：即步骤要么都成功，要么都失败&lt;/li&gt;
+&lt;li&gt;一致性：即操作的总数据量状态保证一致。例如A-&amp;gt;B转账总数木变化是100，不多也不少&lt;/li&gt;
+&lt;li&gt;隔离性：即每个事物的操作，不影响其他的事物&lt;/li&gt;
+&lt;li&gt;持久性：即一旦提交结果永久保存&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;事物是如何通过日志实现的
+&lt;img src=&#34;https://abnerxc.github.io/img/mysql-l.jpeg&#34; alt=&#34;&#34;&gt;&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;redo_log 实现持久化和原子性，而undo_log实现一致性，二种日志均可以视为一种恢复操作，redo_log是恢复提交事务修改的页操作，而undo_log是回滚行记录到特定版本。二者记录的内容也不同，redo_log是物理日志，记录页的物理修改操作，而undo_log是逻辑日志，根据每行记录进行记录。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;ol&gt;
+&lt;li&gt;事务日志是通过redo(重做日志)和innodb的存储引擎日志缓冲（Innodb log buffer）来实现的，&lt;/li&gt;
+&lt;li&gt;当开始一个事务的时候，会记录该事务的lsn(log sequence number)号;&lt;/li&gt;
+&lt;li&gt;当事务执行时，会往InnoDB存储引擎的日志的日志缓存里面插入事务日志；&lt;/li&gt;
+&lt;li&gt;当事务提交时，必须将存储引擎的日志缓冲写入磁盘（通过innodb_flush_log_at_trx_commit来控制），也就是写数据前，需要先写日志。这种方式称为“预写日志方式”&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;事务干扰例子&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;读脏&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;- 事务A，先执行，处于未提交的状态：insert into t values(4, wangwu);
+- 事务B，后执行，也未提交：select * from t;
+如果事务B能够读取到(4, wangwu)这条记录，事务A就对事务B产生了影响，
+这个影响叫做“读脏”，读到了未提交事务操作的记录。
+&lt;/code&gt;&lt;/pre&gt;&lt;ul&gt;
+&lt;li&gt;不可重复读&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;- 事务A，先执行：select * from t where id=1;结果集为：1, zhangsan
+- 事务B，后执行，并且提交：update t set name=xxoo where id=1;commit;
+- 事务A，再次执行相同的查询：select * from t where id=1;结果集为：1, xxoo
+这次是已提交事务B对事务A产生的影响，
+这个影响叫做“不可重复读”，一个事务内相同的查询，得到了不同的结果。
+&lt;/code&gt;&lt;/pre&gt;&lt;ul&gt;
+&lt;li&gt;幻读&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;- 事务A，先执行：select * from t where id&amp;gt;3; 结果为null
+- 事务B，后执行，并且提交：insert into t values(4, wangwu);commit;
+- 事务A，首次查询了id&amp;gt;3的结果为NULL，于是想插入一条为4的记录：insert into t values(4, xxoo);结果集为：Error : duplicate key!
+这次是已提交事务B对事务A产生的影响，这个影响叫做“幻读”。
+&lt;/code&gt;&lt;/pre&gt;&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;数据库的隔离级别&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;未提交读(Read Uncommitted)（S锁）: 此时，可能读取到不一致的数据，即“读脏”。这是并发最高，一致性最差的隔离级别。高并发量的场景下，几乎不会使用&lt;/li&gt;
+&lt;li&gt;串行化(Serializable)（X锁）: 这种事务的隔离级别下，所有select语句都会被隐式的转化为select &amp;hellip; in share mode.这可能导致，如果有未提交的事务正在修改某些行，所有读取这些行的select都会被阻塞住。这是一致性最好的，但并发性最差的隔离级别。可以解决 脏读 不可重复读 和 虚读+++相当于锁表,所以高并发量的场景下，几乎不会使用&lt;/li&gt;
+&lt;li&gt;可重复读(Repeated Read, RR)（X锁），这是InnoDB默认的隔离级别
+(1) &lt;code&gt;普通的select&lt;/code&gt;使用快照读(snapshot read)，这是一种不加锁的一致性读(Consistent Nonlocking Read)，底层使用MVCC来实现
+(2) &lt;code&gt;加锁的select&lt;/code&gt;(select &amp;hellip; in share mode / select &amp;hellip; for update), update, delete等语句，它们的锁，依赖于它们是否在唯一索引(unique index)上使用了唯一的查询条件(unique search condition)，或者范围查询条件(range-type search condition)：
+&lt;ul&gt;
+&lt;li&gt;在唯一索引上使用唯一的查询条件，会使用记录锁(record lock)，而不会封锁记录之间的间隔，即不会使用间隙锁(gap lock)与临键锁(next-key lock)&lt;/li&gt;
+&lt;li&gt;范围查询条件，会使用间隙锁与临键锁，锁住索引记录之间的范围，避免范围间插入记录，以避免产生幻影行记录，以及避免不可重复的读&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;读已提交(Read Committed, RC): 这是互联网最常用的隔离级别
+&lt;ul&gt;
+&lt;li&gt;普通读是快照读；&lt;/li&gt;
+&lt;li&gt;加锁的select, update, delete等语句，除了在外键约束检查(foreign-key constraint checking)以及重复键检查(duplicate-key checking)时会封锁区间，其他时刻都只使用记录锁；&lt;/li&gt;
+&lt;li&gt;此时，其他事务的插入依然可以执行，就可能导致，读取到幻影记录。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;MVCC解释&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;MVCC (Multiversion Concurrency Control)，即多版本并发控制技术,它使得大部分支持行锁的事务引擎，不再单纯的使用行锁来进行数据库的并发控制，取而代之的是把数据库的行锁与行的多个版本结合起来，只需要很小的开销,就可以实现非锁定读，从而大大提高数据库系统的并发性能&lt;/li&gt;
+&lt;li&gt;核心原理
+(1) 写任务发生时，将数据克隆一份，以版本号区分；
+(2) 写任务操作新克隆的数据，直至提交；
+(3) 并发读任务可以继续读取旧版本的数据，不至于阻塞；
+&lt;img src=&#34;https://abnerxc.github.io/img/mysql-m.jpeg&#34; alt=&#34;&#34;&gt;
+如上图：
+&lt;ol&gt;
+&lt;li&gt;最开始数据的版本是V0；&lt;/li&gt;
+&lt;li&gt;T1时刻发起了一个写任务，这是把数据clone了一份，进行修改，版本变为V1，但任务还未完成；&lt;/li&gt;
+&lt;li&gt;T2时刻并发了一个读任务，依然可以读V0版本的数据；&lt;/li&gt;
+&lt;li&gt;T3时刻又并发了一个读任务，依然不会阻塞；
+可以看到，数据多版本，通过“读取旧版本数据”能够极大提高任务的并发度。
+提高并发的演进思路，就在如此：&lt;/li&gt;
+&lt;/ol&gt;
+&lt;ul&gt;
+&lt;li&gt;普通锁，本质是串行执行&lt;/li&gt;
+&lt;li&gt;读写锁，可以实现读读并发&lt;/li&gt;
+&lt;li&gt;数据多版本，可以实现读写并发&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h1 id=&#34;锁&#34;&gt;锁 &lt;a href=&#34;#%e9%94%81&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;&lt;img src=&#34;https://abnerxc.github.io/img/mysql-n.jpeg&#34; alt=&#34;&#34;&gt;&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;锁机制&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;悲观锁：利用了数据库内部提供的锁机制；在并发过程中一旦有一个事务持有了数据库记录的锁，其他线程就不能再对数据库进行更新&lt;/li&gt;
+&lt;li&gt;乐观锁：乐观锁是一种不会阻塞其它线程并发的机制，它不会使用数据库的锁进行实现。所以就不会引起线程的频繁挂起和恢复，这样效率就提高了。它的实现关键在于CAS算法或者版本号机制。
+&lt;ul&gt;
+&lt;li&gt;版本号机制：
+&lt;ol&gt;
+&lt;li&gt;先读task表的数据（实际上这个表只有一条记录），得到version的值为versionValue&lt;/li&gt;
+&lt;li&gt;update task set value = newValue,version =  versionValue + 1   where version = versionValue;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/li&gt;
+&lt;li&gt;CAS算法：&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;锁粒度&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;行锁详解
+&lt;img src=&#34;https://abnerxc.github.io/img/mysql-o.jpeg&#34; alt=&#34;&#34;&gt;&lt;/li&gt;
+&lt;li&gt;表锁详解&lt;/li&gt;
+&lt;li&gt;页锁详解&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;当前读与快照读&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;当前读
+使用当前读的操作主要包括：显式加锁的读操作与插入/更新/删除等写操作，如下所示：&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;select * from table where ? lock in share mode;
+select * from table where ? for update;
+insert into table values (…);
+update table set ? where ?;
+delete from table where ?;
+&lt;/code&gt;&lt;/pre&gt;&lt;ul&gt;
+&lt;li&gt;快照读
+即不加锁读，读取记录的快照版本而非最新版本，通过MVCC实现；&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;锁模式&lt;/p&gt;
+&lt;table&gt;
+  &lt;thead&gt;
+      &lt;tr&gt;
+          &lt;th&gt;锁模式&lt;/th&gt;
+          &lt;th&gt;锁定内容&lt;/th&gt;
+      &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+      &lt;tr&gt;
+          &lt;td&gt;Record Lock&lt;/td&gt;
+          &lt;td&gt;记录锁,锁定一条纪录&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;Gap Lock&lt;/td&gt;
+          &lt;td&gt;间隙锁,锁定一个区间&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+          &lt;td&gt;Next-key Lock&lt;/td&gt;
+          &lt;td&gt;记录+间隙锁,锁定一个区间+记录行&lt;/td&gt;
+      &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h1 id=&#34;网络&#34;&gt;网络 &lt;a href=&#34;#%e7%bd%91%e7%bb%9c&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;主从复制原理
+&lt;img src=&#34;https://abnerxc.github.io/img/mysql-p.jpeg&#34; alt=&#34;&#34;&gt;&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;mysql启动以后会存在2个进程，一个是sqlThred进程一个IOThred进程&lt;/li&gt;
+&lt;li&gt;在Slave 服务器上执行sart slave命令开启主从复制开关，开始进行主从复制&lt;/li&gt;
+&lt;li&gt;Slave服务器的IO线程会通过在master上已经授权的复制用户权限请求连接master服务器，并请求从执行binlog日志文件的指定位置之后开始发送binlog日志内容&lt;/li&gt;
+&lt;li&gt;Master服务器接收到来自Slave服务器的IO线程的请求后，二进制转储IO线程会根据Slave服务器的IO线程请求的信息分批读取指定binlog日志文件指定位置之后的binlog日志信息，然后返回给Slave端的IO线程。返回的信息中除了binlog日志内容外，还有在master服务器端记录的新的binlog文件名称，以及在新的binlog中的下一个指定更新位置。&lt;/li&gt;
+&lt;li&gt;当Slave服务器的IO线程获取到Master服务器上IO线程发送的日志内容、日志文件及位置点后，会将binlog日志内容依次写到Slave端自身的Relay Log（即中继日志）文件（MySQL-relay-bin.xxx）的最末端，并将新的binlog文件名和位置记录到master-info文件中，以便下一次读取master端新binlog日志时能告诉Master服务器从新binlog日志的指定文件及位置开始读取新的binlog日志内容&lt;/li&gt;
+&lt;li&gt;Slave服务器端的SQL线程会实时检测本地Relay Log 中IO线程新增的日志内容，然后及时把Relay LOG 文件中的内容解析成sql语句，并在自身Slave服务器上按解析SQL语句的位置顺序执行应用这样sql语句，并在relay-log.info中记录当前应用中继日志的文件名和位置点&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;主从延迟的问题和解决办法&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;主从同步的延迟的原因：我们知道，一个服务器开放Ｎ个链接给客户端来连接的，　这样有会有大并发的更新操作, 但是从服务器的里面读取binlog 的线程仅有一个， 当某个SQL在从服务器上执行的时间稍长 或者由于某个SQL要进行锁表就会导致，主服务器的SQL大量积压，未被同步到从服务器里。这就导致了主从不一致， 也就是主从延迟。&lt;/li&gt;
+&lt;li&gt;解决办法：
+1）实际上主从同步延迟根本没有什么一招制敌的办法，因为所有的SQL必须都要在从服务器里面执行一遍，但是主服务器如果不断的有更新操作源源不断的写入，那么一旦有延迟产生，那么延迟加重的可能性就会原来越大。当然我们可以做一些缓解的措施。
+2）我们知道因为主服务器要负责更新操作，他对安全性的要求比从服务器高，所有有些设置可以修改，比如sync_binlog=1，innodb_flush_log_at_trx_commit=1之类的设置，而slave则不需要这么高的数据安全，完全可以讲sync_binlog设置为0或者关闭binlog，innodb_flushlog，innodb_flush_log_at_trx_commit也可以设置为0来提高sql的执行效率这个能很大程度上提高效率。另外就是使用比主库更好的硬件设备作为slave。
+3）就是把，一台从服务器当度作为备份使用，而不提供查询，那边他的负载下来了，执行relaylog里面的SQL效率自然就高了。
+4）增加从服务器喽，这个目的还是分散读的压力，从而降低服务器负载。&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h1 id=&#34;压力测试&#34;&gt;压力测试 &lt;a href=&#34;#%e5%8e%8b%e5%8a%9b%e6%b5%8b%e8%af%95&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;blockquote&gt;
+&lt;p&gt;&lt;a href=&#34;https://imysql.com/tag/%E5%8E%8B%E6%B5%8B&#34;&gt;https://imysql.com/tag/%E5%8E%8B%E6%B5%8B&lt;/a&gt;
+比较常用的MySQL基准压力测试工具有 tpcc-mysql、sysbench、mysqlslap 等几个。
+&lt;img src=&#34;https://abnerxc.github.io/img/mysql-q.jpeg&#34; alt=&#34;&#34;&gt;&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h1 id=&#34;延伸知识点&#34;&gt;延伸知识点 &lt;a href=&#34;#%e5%bb%b6%e4%bc%b8%e7%9f%a5%e8%af%86%e7%82%b9&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;h2 id=&#34;mysql-count总结&#34;&gt;MYSQL count总结 &lt;a href=&#34;#mysql-count%e6%80%bb%e7%bb%93&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;COUNT有几种用法？count(*),count(常数)，count(列名)&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;COUNT(字段名)和COUNT(&lt;em&gt;)的查询结果有什么不同？为什么《阿里巴巴Java开发手册》建议使用COUNT(&lt;/em&gt;)
+count(&lt;em&gt;)是SQL92定义的标准语法，count(&lt;/em&gt;)会统计值为null的行，count(列明)不会统计改列为null的行&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;COUNT(1)和COUNT(&lt;em&gt;)、count(列名)之间有什么不同？
+COUNT(常量) 和 COUNT(&lt;/em&gt;)表示的是直接查询符合条件的数据库表的行数。而COUNT(列名)表示的是查询符合条件的列的值不为NULL的行数。
+除了查询得到结果集有区别之外，COUNT(&lt;em&gt;)相比COUNT(常量) 和 COUNT(列名)来讲，COUNT(&lt;/em&gt;)是SQL92定义的标准统计行数的语法，因为他是标准语法，所以MySQL数据库对他进行过很多优化。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;COUNT(1)和COUNT(*)之间的效率哪个更高？&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;blockquote&gt;
+&lt;p&gt;InnoDB handles SELECT COUNT(*) and SELECT COUNT(1) operations in the same way. There is no performance difference.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;&lt;strong&gt;画重点：same way , no performance difference。所以，对于COUNT(1)和COUNT(*)，MySQL的优化是完全一样的，根本不存在谁比谁快!&lt;/strong&gt;
+建议使用COUNT(*)！因为这个是SQL92定义的标准统计行数的语法，而且本文只是基于MySQL做了分析，关于Oracle中的这个问题，也是众说纷纭的呢。&lt;/p&gt;
+&lt;ol start=&#34;5&#34;&gt;
+&lt;li&gt;
+&lt;p&gt;MySQL的MyISAM引擎对COUNT(&lt;em&gt;)做了哪些优化？
+因为MyISAM的锁是表级锁，所以同一张表上面的操作需要串行进行，所以，MyISAM做了一个简单的优化，那就是它可以把表的总行数单独记录下来，如果从一张表中使用COUNT(&lt;/em&gt;)进行查询的时候，可以直接返回这个记录下来的数值就可以了，当然，前提是不能有where条件。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;MySQL的InnoDB引擎对COUNT(&lt;em&gt;)做了哪些优化？
+在InnoDB中，使用COUNT(&lt;/em&gt;)查询行数的时候，不可避免的要进行扫表了，那么，就可以在扫表过程中下功夫来优化效率了。
+从MySQL 8.0.13开始，针对InnoDB的SELECT COUNT(&lt;em&gt;) FROM tbl_name语句，确实在扫表的过程中做了一些优化。前提是查询语句中不包含WHERE或GROUP BY等条件。
+我们知道，COUNT(&lt;/em&gt;)的目的只是为了统计总行数，所以，他根本不关心自己查到的具体值，所以，他如果能够在扫表的过程中，选择一个成本较低的索引进行的话，那就可以大大节省时间。
+我们知道，InnoDB中索引分为聚簇索引（主键索引）和非聚簇索引（非主键索引），聚簇索引的叶子节点中保存的是整行记录，而非聚簇索引的叶子节点中保存的是该行记录的主键的值。
+所以，相比之下，非聚簇索引要比聚簇索引小很多，所以MySQL会优先选择最小的非聚簇索引来扫表。所以，当我们建表的时候，除了主键索引以外，创建一个非主键索引还是有必要的。
+至此，我们介绍完了MySQL数据库对于COUNT(*)的优化，这些优化的前提都是查询语句中不包含WHERE以及GROUP BY条件。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;上面提到的MySQL对COUNT(*)做的优化，有一个关键的前提是什么？
+无where条件或者group by等条件&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h2 id=&#34;什么是局部性原理&#34;&gt;什么是局部性原理？ &lt;a href=&#34;#%e4%bb%80%e4%b9%88%e6%98%af%e5%b1%80%e9%83%a8%e6%80%a7%e5%8e%9f%e7%90%86&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;局部性原理的逻辑是这样的：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;内存读写块，磁盘读写慢，而且慢很多；&lt;/li&gt;
+&lt;li&gt;磁盘预读：磁盘读写并不是按需读取，而是按页预读，一次会读一页的数据，每次加载更多的数据，如果未来要读取的数据就在这一页中，可以避免未来的磁盘IO，提高效率；（通常，一页数据是4K）&lt;/li&gt;
+&lt;li&gt;局部性原理：软件设计要尽量遵循“数据读取集中”与“使用到一个数据，大概率会使用其附近的数据”，这样磁盘预读能充分提高磁盘IO；&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h2 id=&#34;b树为何适合做索引&#34;&gt;B树为何适合做索引？ &lt;a href=&#34;#b%e6%a0%91%e4%b8%ba%e4%bd%95%e9%80%82%e5%90%88%e5%81%9a%e7%b4%a2%e5%bc%95&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;ol&gt;
+&lt;li&gt;由于是m分叉的，高度能够大大降低；&lt;/li&gt;
+&lt;li&gt;每个节点可以存储j个记录，如果将节点大小设置为页大小，例如4K，能够充分的利用预读的特性，极大减少磁盘IO；&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h2 id=&#34;b树&#34;&gt;&lt;a id=&#34;B+树&#34;&gt;B+树&lt;/a&gt; &lt;a href=&#34;#b%e6%a0%91&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;&lt;img src=&#34;https://abnerxc.github.io/img/mysql-r.jpeg&#34; alt=&#34;&#34;&gt;
+B树的插入及平衡化操作和2-3树很相似，这里就不介绍了。下面是往B树中依次插入
+&lt;code&gt;6 10 4 14 5 11 15 3 2 12 1 7 8 8 6 3 6 21 5 15 15 6 32 23 45 65 7 8 6 5 4&lt;/code&gt;
+&lt;img src=&#34;https://abnerxc.github.io/img/mysql-s.gif&#34; alt=&#34;&#34;&gt;
+B+树，如上图，仍是m叉搜索树，在B树的基础上，做了一些改进：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;非叶子节点不再存储数据，数据只存储在同一层的叶子节点上；（画外音：B+树中根到每一个节点的路径长度一样，而B树不是这样。）&lt;/li&gt;
+&lt;li&gt;叶子之间，增加了链表，获取所有节点，不再需要中序遍历；
+这些改进让B+树比B树有更优的特性：&lt;/li&gt;
+&lt;li&gt;范围查找，定位min与max之后，中间叶子节点，就是结果集，不用中序回溯；（画外音：范围查询在SQL中用得很多，这是B+树比B树最大的优势。）&lt;/li&gt;
+&lt;li&gt;叶子节点存储实际记录行，记录行相对比较紧密的存储，适合大数据量&lt;font color=red&gt;磁盘存储&lt;/font&gt;；非叶子节点存储记录的PK，用于查询加速，适合&lt;font color=red&gt;内存存储&lt;/font&gt;；&lt;/li&gt;
+&lt;li&gt;非叶子节点，不存储实际记录，而只存储记录的KEY的话，那么在相同内存的情况下，B+树能够存储更多索引；
+最后，量化说下，为什么m叉的B+树比二叉搜索树的高度大大大大降低？
+大概计算一下：
+(1)局部性原理，将一个节点的大小设为一页，一页4K，假设一个KEY有8字节，一个节点可以存储500个KEY，即j=500
+(2)m叉树，大概m/2&amp;lt;= j &amp;lt;=m，即可以差不多是1000叉树
+(3)那么：
+一层树：1个节点，1&lt;em&gt;500个KEY，大小4K
+二层树：1000个节点，1000&lt;/em&gt;500=50W个KEY，大小1000&lt;em&gt;4K=4M
+三层树：1000&lt;/em&gt;1000个节点，1000&lt;em&gt;1000&lt;/em&gt;500=5亿个KEY，大小1000&lt;em&gt;1000&lt;/em&gt;4K=4G
+可以看到，存储大量的数据（5亿），并不需要太高树的深度（高度3），索引也不是太占内存（4G）。&lt;/li&gt;
+&lt;/ol&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>redis总结</title>
+      <link>https://abnerxc.github.io/note/redis-%E6%80%BB%E7%BB%93/</link>
+      <pubDate>Mon, 25 Jan 2021 22:07:58 +0800</pubDate>
+      
+      <guid>https://abnerxc.github.io/note/redis-%E6%80%BB%E7%BB%93/</guid>
+      <description>&lt;h1 id=&#34;redis为什么那么快&#34;&gt;Redis为什么那么快 &lt;a href=&#34;#redis%e4%b8%ba%e4%bb%80%e4%b9%88%e9%82%a3%e4%b9%88%e5%bf%ab&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;ol&gt;
+&lt;li&gt;纯内存操作&lt;/li&gt;
+&lt;li&gt;单线程操作，避免了频繁的上下文切换&lt;/li&gt;
+&lt;li&gt;采用了非阻塞I/O多路复用机制
+我们的redis-client在操作的时候，会产生具有不同事件类型的socket。在服务端，有一段I/0多路复用程序，将其置入队列之中。然后，文件事件分派器，依次去队列中取，转发到不同的事件处理器中。&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h1 id=&#34;redis数据类型&#34;&gt;Redis数据类型 &lt;a href=&#34;#redis%e6%95%b0%e6%8d%ae%e7%b1%bb%e5%9e%8b&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;ol&gt;
+&lt;li&gt;String,Hash,List,Set,SortedSet&lt;/li&gt;
+&lt;li&gt;Pub/Sub&lt;/li&gt;
+&lt;li&gt;HyperLogLog(2.8.9版本新增):用来做基数统计的算法，HyperLogLog 的优点是，在输入元素的数量或者体积非常非常大时，计算基数所需的空间总是固定 的、并且是很小的。使用场景最常见的就是计算网站UV等，对数据精度要求不高&lt;/li&gt;
+&lt;li&gt;Geo（3.2版本新增）：GEO(地理位置)的支持，主要是对经纬度一个位置计算等特性&lt;/li&gt;
+&lt;li&gt;BitMap&lt;/li&gt;
+&lt;li&gt;BloomFilter
+&lt;img src=&#34;https://abnerxc.github.io/img/redis-i.jpeg&#34; alt=&#34;data-struct&#34;&gt;
+&lt;img src=&#34;https://abnerxc.github.io/img/redis-j.jpeg&#34; alt=&#34;data-struct&#34;&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h1 id=&#34;redis的过期策略以及内存淘汰机制&#34;&gt;Redis的过期策略以及内存淘汰机制 &lt;a href=&#34;#redis%e7%9a%84%e8%bf%87%e6%9c%9f%e7%ad%96%e7%95%a5%e4%bb%a5%e5%8f%8a%e5%86%85%e5%ad%98%e6%b7%98%e6%b1%b0%e6%9c%ba%e5%88%b6&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;h2 id=&#34;三种过期策略&#34;&gt;三种过期策略 &lt;a href=&#34;#%e4%b8%89%e7%a7%8d%e8%bf%87%e6%9c%9f%e7%ad%96%e7%95%a5&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;ul&gt;
+&lt;li&gt;定时删除：在设置键的过期时间的同时，创建一个定时器(timer)，让定时器在键的过期时间来临时，立即执行对键的删除操作；&lt;/li&gt;
+&lt;li&gt;惰性删除：放任键过期不管，但是每次从键空间中获取键时，都检查取得的键是否过期，如果过期的话，就删除该键；如果没有过期，那就返回该键；&lt;/li&gt;
+&lt;li&gt;定期删除：每隔一段时间，程序就对数据库进行一次检查，删除里面的过期键。至于删除多少过期键，以及要检查多少个数据库，则由算法决定。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Redis采用的是定期删除+惰性删策略。&lt;br&gt;
+为什么不用定时删除策略？定时删除策略需要定时器来监视key，过期则自动删除。虽然内存及时释放了，但是CPU消耗大。在大并发的情况下，这一策略得不偿失&lt;/p&gt;
+&lt;p&gt;Redis采用的是定期删除+惰性删策略工作机制。&lt;br&gt;
+定期删除，redis默认每100ms检查一次是否存在过期key，有则删除。需要说明的是redis并不是100ms检查所有的key一次，而是随机进行抽取检查。因此，惰性删除派上用处。
+惰性删策略延伸出来的问题就是，redis缓存淘汰机制&lt;/p&gt;
+&lt;h2 id=&#34;redis30版本6种缓存淘汰机制&#34;&gt;Redis(3.0版本)6种缓存淘汰机制 &lt;a href=&#34;#redis30%e7%89%88%e6%9c%ac6%e7%a7%8d%e7%bc%93%e5%ad%98%e6%b7%98%e6%b1%b0%e6%9c%ba%e5%88%b6&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;pre&gt;&lt;code&gt;1.  no-enviction(驱逐)：禁止驱逐数据（不删除数据策略，达到最大的内存限制时，如果有更多的数据写入，返回错误给客户端）
+2.  allkeys-lru：所有key通用，优先删除最少使用的key（less recently used,LRU算法）
+3.  allkeys-random ：所有key通用，随机删除一部分key
+4.  volatile-lru：只限于设置了expire的部分，优先删除最少使用的key（less recently used,LRU算法）
+5.  volatile-random：只限于设置了 expire 的部分; 随机删除一部分key
+6.  volatile-ttl：只限于设置了 expire 的部分; 优先删除剩余时间(time to live,TTL) 短的key。
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;strong&gt;注意：如果没有设置 expire 的key, 不满足先决条件(prerequisites); 那么 volatile-lru, volatile-random 和 volatile-ttl 策略的行为, 和 noeviction(不删除) 基本上一致。&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;一般来说：如果分为热数据与冷数据, 推荐使用allkeys-lru策略。 也就是, 其中一部分key经常被读写. 如果不确定具体的业务特征, 那么allkeys-lru是一个很好的选择。 如果需要循环读写所有的key, 或者各个key的访问频率差不多, 可以使用allkeys-random策略, 即读写所有元素的概率差不多。&lt;/p&gt;
+&lt;p&gt;假如要让 Redis 根据 TTL 来筛选需要删除的key, 请使用volatile-ttl策略。&lt;/p&gt;
+&lt;h1 id=&#34;redis持久化原理&#34;&gt;Redis持久化原理 &lt;a href=&#34;#redis%e6%8c%81%e4%b9%85%e5%8c%96%e5%8e%9f%e7%90%86&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;h2 id=&#34;快照特点bgsave做镜像全量持久化&#34;&gt;快照（特点：bgsave做镜像全量持久化） &lt;a href=&#34;#%e5%bf%ab%e7%85%a7%e7%89%b9%e7%82%b9bgsave%e5%81%9a%e9%95%9c%e5%83%8f%e5%85%a8%e9%87%8f%e6%8c%81%e4%b9%85%e5%8c%96&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;缺省情况下，Redis把数据快照存放在磁盘上的二进制文件中，文件名为dump.rdb。你可以配置Redis的持久化策略，例如数据集中每N秒钟有超过M次更新，就将数据写入磁盘；或者你可以手工调用命令SAVE或BGSAVE。
+工作原理:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;主进程开启一个 Redis forks（子进程）.&lt;/li&gt;
+&lt;li&gt;子进程开始将数据写到临时RDB文件中。&lt;/li&gt;
+&lt;li&gt;当子进程完成写RDB文件，用新文件替换老文件。&lt;/li&gt;
+&lt;li&gt;bgsave的原理是什么？你给出两个词汇就可以了，fork和cow。fork是指redis通过创建子进程来进行bgsave操作，cow指的是copy on write，子进程创建后，父子进程共享数据段，父进程继续提供读写服务，写脏的页面数据会逐渐和子进程分离开来。
+&lt;img src=&#34;https://abnerxc.github.io/img/redis-k.jpeg&#34; alt=&#34;fork&#34;&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h2 id=&#34;aof特点aof增量持久化&#34;&gt;AOF（特点：AOF增量持久化） &lt;a href=&#34;#aof%e7%89%b9%e7%82%b9aof%e5%a2%9e%e9%87%8f%e6%8c%81%e4%b9%85%e5%8c%96&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;AOF持久化以日志的形式记录服务器所处理的每一个写、删除操作，查询操作不会记录，以文本的方式记录，可以打开文件看到详细的操作记录。
+&lt;img src=&#34;https://abnerxc.github.io/img/redis-l.jpeg&#34; alt=&#34;aof&#34;&gt;&lt;/p&gt;
+&lt;h1 id=&#34;redis主从复制30开始支持原理&#34;&gt;Redis主从复制(3.0开始支持)原理 &lt;a href=&#34;#redis%e4%b8%bb%e4%bb%8e%e5%a4%8d%e5%88%b630%e5%bc%80%e5%a7%8b%e6%94%af%e6%8c%81%e5%8e%9f%e7%90%86&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;h2 id=&#34;全量同步&#34;&gt;全量同步 &lt;a href=&#34;#%e5%85%a8%e9%87%8f%e5%90%8c%e6%ad%a5&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;ol&gt;
+&lt;li&gt;当启动一个slave node的时候，它会发送一个PSYNC命令给master&lt;/li&gt;
+&lt;li&gt;如果这是slave node重新链接master，master会将缺少的数据发送给slave，如果是第一次链接master，则会触发一次full resynchronization,开始 full resynchronization的时候，master启动一个后台线程，先将现有数据生成一个零时的rdb文件，生成文件后，master会将这个rdb文件发送给slave，slave会先把这个rdb文件存放到本地磁盘，然后在加载到内存，然后master会将生成rdb这段时间内接收到的在内存中的数据发送给slave，slave也会接收这份数据。&lt;/li&gt;
+&lt;li&gt;slave如果跟master网络故障，断开了，当重新连接上以后，master发现有多个slave都来重新连接，master会生成一个rdb文件，将这个文件同时发送个多个slave node
+&lt;img src=&#34;https://abnerxc.github.io/img/redis-m.jpeg&#34; alt=&#34;full_sync&#34;&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h2 id=&#34;主从复制的断点续传&#34;&gt;主从复制的断点续传 &lt;a href=&#34;#%e4%b8%bb%e4%bb%8e%e5%a4%8d%e5%88%b6%e7%9a%84%e6%96%ad%e7%82%b9%e7%bb%ad%e4%bc%a0&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;ol&gt;
+&lt;li&gt;redis从2.8开始就支持断点续传功能，即当slave与master断开后，重新连接时，会继续从上一次断开的点继续传送数据，而不是full resynchronization。&lt;/li&gt;
+&lt;li&gt;master会在内存中创建一个backlog，master和slave都会保存一个offset,slave还有一个master id,offset就是保存在backlog中的，如果slave和master网络断开，重新连接后slave会让master从replica offset开始续传。但是如果没有找到offset，则会触发full resynchronization。&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h2 id=&#34;无磁盘化复制&#34;&gt;无磁盘化复制 &lt;a href=&#34;#%e6%97%a0%e7%a3%81%e7%9b%98%e5%8c%96%e5%a4%8d%e5%88%b6&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;ol&gt;
+&lt;li&gt;master在内存中直接创建rdb,然后直接发送给slave,不会存入本地磁盘&lt;/li&gt;
+&lt;li&gt;参数配置&lt;br&gt;
+repl-diskless-sync&lt;br&gt;
+repl-diskless-sync-delay, 等待一定时长在复制，因为要等更多的slave重新连接&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h2 id=&#34;过期key处理&#34;&gt;过期key处理 &lt;a href=&#34;#%e8%bf%87%e6%9c%9fkey%e5%a4%84%e7%90%86&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;ol&gt;
+&lt;li&gt;slave不会有过期Key,只有master有过期key,如果master过期了一个可以或者通过LRU算法淘汰了一个key，那么master会模拟发送一个del命令给slave&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h1 id=&#34;redis-cluster集群&#34;&gt;Redis-Cluster集群 &lt;a href=&#34;#redis-cluster%e9%9b%86%e7%be%a4&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;&lt;img src=&#34;https://abnerxc.github.io/img/redis-n.jpeg&#34; alt=&#34;&#34;&gt;&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;所有的redis节点彼此互联(PING-PONG机制),内部使用二进制协议优化传输速度和带宽。&lt;/li&gt;
+&lt;li&gt;节点的fail是通过集群中超过半数的节点检测失效时才生效。&lt;/li&gt;
+&lt;li&gt;客户端与redis节点直连,不需要中间proxy层.客户端不需要连接集群所有节点,连接集群中任何一个可用节点即可。&lt;/li&gt;
+&lt;li&gt;redis-cluster把所有的物理节点映射到[0-16383]slot上（不一定是平均分配）,cluster 负责维护node&amp;lt;-&amp;gt;slot&amp;lt;-&amp;gt;value。&lt;/li&gt;
+&lt;li&gt;Redis集群预分好16384个桶，当需要在 Redis 集群中放置一个 key-value 时，根据 CRC16(key) mod 16384的值，决定将一个key放到哪个桶中。&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;为什么是16384（2^14）个？
+在redis节点发送心跳包时需要把所有的槽放到这个心跳包里，以便让节点知道当前集群信息，16384=16k，在发送心跳包时使用char进行bitmap压缩后是2k（2 * 8 (8 bit) * 1024(1k) = 2K），也就是说使用2k的空间创建了16k的槽数。&lt;/p&gt;
+&lt;p&gt;虽然使用CRC16算法最多可以分配65535（2^16-1）个槽位，65535=65k，压缩后就是8k（8 * 8 (8 bit) * 1024(1k) = 8K），也就是说需要需要8k的心跳包，作者认为这样做不太值得；并且一般情况下一个redis集群不会有超过1000个master节点，所以16k的槽位是个比较合适的选择。&lt;/p&gt;
+&lt;h1 id=&#34;redis哨兵&#34;&gt;Redis哨兵 &lt;a href=&#34;#redis%e5%93%a8%e5%85%b5&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;在Server1 掉线后：
+&lt;img src=&#34;https://abnerxc.github.io/img/redis-p1.jpeg&#34; alt=&#34;&#34;&gt;
+升级Server2 为新的主服务器：
+&lt;img src=&#34;https://abnerxc.github.io/img/redis-p2.jpeg&#34; alt=&#34;&#34;&gt;&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;Sentinel的作用：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Master 状态监测&lt;/li&gt;
+&lt;li&gt;如果Master 异常，则会进行Master-slave 转换，将其中一个Slave作为Master，将之前的Master作为Slave&lt;/li&gt;
+&lt;li&gt;Master-Slave切换后，master_redis.conf、slave_redis.conf和sentinel.conf的内容都会发生改变，即master_redis.conf中会多一行slaveof的配置，sentinel.conf的监控目标会随之调换&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Sentinel的工作方式:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;每个Sentinel以每秒钟一次的频率向它所知的Master，Slave以及其他 Sentinel 实例发送一个 PING 命令&lt;/li&gt;
+&lt;li&gt;如果一个实例（instance）距离最后一次有效回复 PING 命令的时间超过 down-after-milliseconds 选项所指定的值， 则这个实例会被 Sentinel 标记为主观下线。&lt;/li&gt;
+&lt;li&gt;如果一个Master被标记为主观下线，则正在监视这个Master的所有 Sentinel 要以每秒一次的频率确认Master的确进入了主观下线状态。&lt;/li&gt;
+&lt;li&gt;当有足够数量的 Sentinel（大于等于配置文件指定的值）在指定的时间范围内确认Master的确进入了主观下线状态， 则Master会被标记为客观下线&lt;/li&gt;
+&lt;li&gt;在一般情况下， 每个 Sentinel 会以每 10 秒一次的频率向它已知的所有Master，Slave发送 INFO 命令&lt;/li&gt;
+&lt;li&gt;当Master被 Sentinel 标记为客观下线时，Sentinel 向下线的 Master 的所有 Slave 发送 INFO 命令的频率会从 10 秒一次改为每秒一次&lt;/li&gt;
+&lt;li&gt;若没有足够数量的 Sentinel 同意 Master 已经下线， Master 的客观下线状态就会被移除。&lt;/li&gt;
+&lt;li&gt;若 Master 重新向 Sentinel 的 PING 命令返回有效回复， Master 的主观下线状态就会被移除。&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h1 id=&#34;redis和数据库双写一致性问题&#34;&gt;Redis和数据库双写一致性问题 &lt;a href=&#34;#redis%e5%92%8c%e6%95%b0%e6%8d%ae%e5%ba%93%e5%8f%8c%e5%86%99%e4%b8%80%e8%87%b4%e6%80%a7%e9%97%ae%e9%a2%98&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;一致性问题是分布式系统常见问题，可以分为最终一致性和强一致性。所以弄清诉求
+数据库强一致性，不放缓存，我们所做的一切只是保证最终一致性，另外无法完全避免，讨论三种更新策略：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;先更新数据库，再更新缓存&lt;/li&gt;
+&lt;li&gt;先删除缓存，再更新数据库&lt;/li&gt;
+&lt;li&gt;先更新数据库，再删除缓存&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h2 id=&#34;先更新数据库再更新缓存&#34;&gt;先更新数据库，再更新缓存 &lt;a href=&#34;#%e5%85%88%e6%9b%b4%e6%96%b0%e6%95%b0%e6%8d%ae%e5%ba%93%e5%86%8d%e6%9b%b4%e6%96%b0%e7%bc%93%e5%ad%98&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;这套方案，大家是普遍反对的，为什么呢？有如下两点原因：
+原因一、线程安全问题，同时有请求A和请求B进行更新操作，那么会出现：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;线程A更新了数据库
+线程B更新了数据库
+线程B更新了缓存
+线程A更新了缓存
+这就出现请求A更新缓存应该比请求B更新缓存早才对，但是因为网络等原因，B比A更早更新了缓存。这就导致了脏数据，因此不考虑！
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;原因二、业务场景考虑&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;如果是写数据库场景比较多，读数据库场景比较少业务需求。&amp;ldquo;先更新数据库，再更新缓存&amp;quot;这种方案会导致，数据压根还没读到，缓存就被频繁的更新浪费性能&lt;/li&gt;
+&lt;li&gt;如果写入数据库是经过复杂计算以后再更新数据库，那么每次写入数据库后更新缓存，性能存在浪费&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h2 id=&#34;先删除缓存再更新数据库&#34;&gt;先删除缓存，再更新数据库 &lt;a href=&#34;#%e5%85%88%e5%88%a0%e9%99%a4%e7%bc%93%e5%ad%98%e5%86%8d%e6%9b%b4%e6%96%b0%e6%95%b0%e6%8d%ae%e5%ba%93&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;该方案会导致不一致的原因：同时有一个请求A进行更新操作，另一个请求B进行查询操作。那么就会出现以下情形：
+情况一：多进程读写原因&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;请求A进行写操作，删除缓存
+请求B查询发现缓存不存在
+请求B去数据库查询得到旧值
+请求B将旧值写入缓存
+请求A将新值写入数据库
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;上诉请求出现不一致的情况，如果没采用缓存过期策略。则缓存数据一直是脏数据。&lt;/p&gt;
+&lt;p&gt;情况二：MYSQL主从分离原因&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;请求A进行写操作，删除缓存；
+请求A将数据写入数据库了；
+请求B查询缓存发现，缓存没有值；
+请求B去从库查询，这时，还没有完成主从同步，因此查询到的是旧值；
+请求B将旧值写入缓存；
+数据库完成主从同步，从库变为新值；
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;解决方案：采用延迟双删策略。先删除缓存，再删除数据库，进程休眠1秒再次删除缓存&lt;/p&gt;
+&lt;h2 id=&#34;先更新数据库再删除缓存&#34;&gt;先更新数据库，再删除缓存 &lt;a href=&#34;#%e5%85%88%e6%9b%b4%e6%96%b0%e6%95%b0%e6%8d%ae%e5%ba%93%e5%86%8d%e5%88%a0%e9%99%a4%e7%bc%93%e5%ad%98&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;这种情况不存在并发问题么？
+不是的。假设这会有两个请求，一个请求A做查询操作，一个请求B做更新操作，那么会有如下情形产生：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;缓存刚好失效；&lt;/li&gt;
+&lt;li&gt;请求A查询数据库，得一个旧值；&lt;/li&gt;
+&lt;li&gt;请求B将新值写入数据库；&lt;/li&gt;
+&lt;li&gt;请求B删除缓存；&lt;/li&gt;
+&lt;li&gt;请求A将查到的旧值写入缓存；
+ok，如果发生上述情况，确实是会发生脏数据。&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;解决方案：发生上述情况有一个先天性条件，就是上述步骤（3）的写数据库操作比步骤（2）的读数据库操作耗时更短，才有可能使得步骤（4）先于步骤（5）。可是，大家想想，数据库的读操作的速度远快于写操作的（不然做读写分离干嘛，做读写分离的意义就是因为读操作比较快，耗资源少），因此步骤（3）耗时比步骤（2）更短，这一情形很难出现。  首先，给缓存设有效时间是一种方案。其次，采用策略2（先删除缓存，再更新数据库）里给出的异步延时删除策略，保证读请求完成以后，再进行删除操作。&lt;/p&gt;
+&lt;h1 id=&#34;如何解决redis的并发竞争key问题&#34;&gt;如何解决redis的并发竞争key问题 &lt;a href=&#34;#%e5%a6%82%e4%bd%95%e8%a7%a3%e5%86%b3redis%e7%9a%84%e5%b9%b6%e5%8f%91%e7%ab%9e%e4%ba%89key%e9%97%ae%e9%a2%98&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;分析:这个问题大致就是，同时有多个子系统去set一个key。这个时候要注意什么呢？大家思考过么。需要说明一下，博主提前百度了一下，发现答案基本都是推荐用redis事务机制。博主不推荐使用redis的事务机制。因为我们的生产环境，基本都是redis集群环境，做了数据分片操作。你一个事务中有涉及到多个key操作的时候，这多个key不一定都存储在同一个redis-server上。因此，redis的事务机制，十分鸡肋。&lt;/p&gt;
+&lt;p&gt;解决方案&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;如果对key操作不要求顺序&lt;br&gt;
+这种情况下，准备一个分布式锁，谁抢到锁谁set即可&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;如果对key操作要求顺序&lt;br&gt;
+假设有一个key1,系统A需要将key1设置为valueA,系统B需要将key1设置为valueB,系统C需要将key1设置为valueC.&lt;br&gt;
+期望按照key1的value值按照 valueA–&amp;gt;valueB–&amp;gt;valueC的顺序变化。这种时候我们在数据写入数据库的时候，需要保存一个时间戳。假设时间戳如下&lt;br&gt;
+系统A key 1 {valueA 3:00}&lt;br&gt;
+系统B key 1 {valueB 3:05}&lt;br&gt;
+系统C key 1 {valueC 3:10}&lt;br&gt;
+那么，假设这会系统B先抢到锁，将key1设置为{valueB 3:05}。接下来系统A抢到锁，发现自己的valueA的时间戳早于缓存中的时间戳，那就不做set操作了。以此类推。&lt;br&gt;
+或者使用队列，将set操作进行串联即可&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h1 id=&#34;redis常见性能问题和解决方案&#34;&gt;redis常见性能问题和解决方案 &lt;a href=&#34;#redis%e5%b8%b8%e8%a7%81%e6%80%a7%e8%83%bd%e9%97%ae%e9%a2%98%e5%92%8c%e8%a7%a3%e5%86%b3%e6%96%b9%e6%a1%88&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;ol&gt;
+&lt;li&gt;Master写内存快照，save命令调度rdbSave函数，会阻塞主线程的工作，当快照比较大时对性能影响是非常大的，会间断性暂停服务，所以Master最好不要写内存快照。&lt;/li&gt;
+&lt;li&gt;Master AOF持久化，如果不重写AOF文件，这个持久化方式对性能的影响是最小的，但是AOF文件会不断增大，AOF文件过大会影响Master重启的恢复速度。Master最好不要做任何持久化工作，包括内存快照和AOF日志文件，特别是不要启用内存快照做持久化,如果数据比较关键，某个Slave开启AOF备份数据，策略为每秒同步一次。&lt;/li&gt;
+&lt;li&gt;Master调用BGREWRITEAOF重写AOF文件，AOF在重写的时候会占大量的CPU和内存资源，导致服务load过高，出现短暂服务暂停现象。&lt;/li&gt;
+&lt;li&gt;Redis主从复制的性能问题，为了主从复制的速度和连接的稳定性，Slave和Master最好在同一个局域网内&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h1 id=&#34;redis60-多线程&#34;&gt;Redis6.0 多线程 &lt;a href=&#34;#redis60-%e5%a4%9a%e7%ba%bf%e7%a8%8b&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;其实本质只是在网络IO上面实现了多线程读取和写入，然后进行执行队列，执行还是单线程
+&lt;img src=&#34;https://abnerxc.github.io/img/redis-q.jpeg&#34; alt=&#34;1.jpeg&#34;&gt;
+加入多线程 IO 之后，整体的读流程如下:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;主线程负责接收建连请求，读事件到来(收到请求)则放到一个全局等待读处理队列&lt;/li&gt;
+&lt;li&gt;主线程处理完读事件之后，通过 RR(Round Robin) 将这些连接分配给这些 IO 线程，然后主线程忙等待(spinlock 的效果)状态&lt;/li&gt;
+&lt;li&gt;IO 线程将请求数据读取并解析完成(这里只是读数据和解析并不执行)&lt;/li&gt;
+&lt;li&gt;主线程执行所有命令并清空整个请求等待读处理队列(执行部分串行)&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;上面的这个过程是完全无锁的，因为在 IO 线程处理的时主线程会等待全部的 IO 线程完成，所以不会出现data race的场景。&lt;/p&gt;
+&lt;h1 id=&#34;redis新特性&#34;&gt;Redis新特性 &lt;a href=&#34;#redis%e6%96%b0%e7%89%b9%e6%80%a7&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;Redis Module&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;任何C/C++程序现在都可以运行在Redis上&lt;/li&gt;
+&lt;li&gt;Modules是用一种本地的方式来扩展Redis的新用例和功能&lt;/li&gt;
+&lt;li&gt;使用现有的或者添加新的数据结构&lt;/li&gt;
+&lt;li&gt;享受简单，无限可扩展性和高可用性的同时保持着redis的本机的速度&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Redis Search
+高性能的全文搜索引擎（Faster, in-memory, highly available full text search），可作为Redis Module运行在Redis上。但是它与其他Redis搜索库不同的是，它不使用Redis内部数据结构，例如：集合、排序集（ps.后面会写一篇基于Redis的数据结构来设计搜索引擎），Redis原声的搜索还是有很大的局限性，简单的分词搜索是可以满足，但是应用到复杂的场景就不太适合。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Redis ML
+机器学习模型服务器&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>单线程的redis为什么快</title>
+      <link>https://abnerxc.github.io/note/redis-%E5%8D%95%E7%BA%BF%E7%A8%8B%E7%9A%84redis%E4%B8%BA%E4%BB%80%E4%B9%88%E5%BF%AB/</link>
+      <pubDate>Mon, 25 Jan 2021 22:07:58 +0800</pubDate>
+      
+      <guid>https://abnerxc.github.io/note/redis-%E5%8D%95%E7%BA%BF%E7%A8%8B%E7%9A%84redis%E4%B8%BA%E4%BB%80%E4%B9%88%E5%BF%AB/</guid>
+      <description>&lt;h1 id=&#34;基本概念&#34;&gt;基本概念 &lt;a href=&#34;#%e5%9f%ba%e6%9c%ac%e6%a6%82%e5%bf%b5&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;Redis性能如此高的原因，我总结了如下几点：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;纯内存操作&lt;/li&gt;
+&lt;li&gt;单线程&lt;/li&gt;
+&lt;li&gt;高效的数据结构&lt;/li&gt;
+&lt;li&gt;合理的数据编码&lt;/li&gt;
+&lt;li&gt;其他方面的优化&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;在 Redis 中，常用的几种数据结构和应用场景如下：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;String：缓存、计数器、分布式锁等。&lt;/li&gt;
+&lt;li&gt;List：链表、队列、微博关注人时间轴列表等。&lt;/li&gt;
+&lt;li&gt;Hash：用户信息、Hash 表等。&lt;/li&gt;
+&lt;li&gt;Set：去重、赞、踩、共同好友等。&lt;/li&gt;
+&lt;li&gt;Zset：访问量排行榜、点击量排行榜等。&lt;/li&gt;
+&lt;li&gt;HyperLogLog: 网站UV,独立IP计算等，主要也是一些去重计算，对数据精度要求不高，主要由于计算数据空间是固定的&lt;/li&gt;
+&lt;li&gt;Geo：GEO(地理位置)的支持，主要是对经纬度一个位置计算等特性&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h1 id=&#34;内部数据结构&#34;&gt;内部数据结构 &lt;a href=&#34;#%e5%86%85%e9%83%a8%e6%95%b0%e6%8d%ae%e7%bb%93%e6%9e%84&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;redis的底层数据结构有以下7种，包括&lt;code&gt;简单动态字符串(SDS)，链表、字典、跳跃表、整数集合、压缩列表、对象&lt;/code&gt;。
+&lt;img src=&#34;https://abnerxc.github.io/img/redis-d.jpeg&#34; alt=&#34;1.jpeg&#34;&gt;&lt;/p&gt;
+&lt;h1 id=&#34;简单动态字符串sds&#34;&gt;简单动态字符串(SDS) &lt;a href=&#34;#%e7%ae%80%e5%8d%95%e5%8a%a8%e6%80%81%e5%ad%97%e7%ac%a6%e4%b8%b2sds&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;Redis 是用 C 语言开发完成的，但在 Redis 字符串中，并没有使用 C 语言中的字符串，而是用一种称为 SDS（Simple Dynamic String）的结构体来保存字符串。
+在redis数据库里，包含字符串值的键值对在底层都是由SDS实现的。除了用来保存数据库中的字符串值之外，sds还被用来作缓冲区（buffer）：AOF（一种持久化策略）模块中的AOF缓冲区，以及客户端状态中的输入缓冲区，都是由SDS实现的。&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://abnerxc.github.io/img/redis-e.jpeg&#34; alt=&#34;1.jpeg&#34;&gt;&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;struct __attribute__ ((__packed__)) sdshdr64 {
+    uint64_t len; /*  记录buff数组中已使用字节的数量 */   
+    uint64_t free; /* 记录未使用字节数量*/
+    char buf[]; /*存储实际内容*/
+};
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;例如：执行命令 set key value，key 和 value 都是一个 SDS 类型的结构存储在内存中。&lt;/p&gt;
+&lt;h2 id=&#34;sds-与-c-字符串的区别&#34;&gt;SDS 与 C 字符串的区别 &lt;a href=&#34;#sds-%e4%b8%8e-c-%e5%ad%97%e7%ac%a6%e4%b8%b2%e7%9a%84%e5%8c%ba%e5%88%ab&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;常数时间内获得字符串长度:
+C 字符串本身不记录长度信息，每次获取长度信息都需要遍历整个字符串，复杂度为 O(n)；C 字符串遍历时遇到&amp;rsquo;\0‘ 时结束。
+SDS 中 len 字段保存着字符串的长度，所以总能在常数时间内获取字符串长度，复杂度是 O(1)。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;避免缓冲区溢出
+假设在内存中有两个紧挨着的两个字符串，s1=&amp;ldquo;xxxxx&amp;quot;和 s2=&amp;ldquo;yyyyy&amp;rdquo;&lt;br&gt;
+由于在内存上紧紧相连，当我们对 s1 进行扩充的时候，将 s1=“xxxxxzzzzz”后，由于没有进行相应的内存重新分配，导致 s1 把 s2 覆盖掉，导致 s2 被莫名其妙的修改。&lt;br&gt;
+但 SDS 的 API 对 zfc 修改时首先会检查空间是否足够，若不充足则会分配新空间，避免了缓冲区溢出问题。&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;减少字符串修改时带来的内存重新分配的次数&#34;&gt;减少字符串修改时带来的内存重新分配的次数 &lt;a href=&#34;#%e5%87%8f%e5%b0%91%e5%ad%97%e7%ac%a6%e4%b8%b2%e4%bf%ae%e6%94%b9%e6%97%b6%e5%b8%a6%e6%9d%a5%e7%9a%84%e5%86%85%e5%ad%98%e9%87%8d%e6%96%b0%e5%88%86%e9%85%8d%e7%9a%84%e6%ac%a1%e6%95%b0&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;由于C语言修改字符需要重新分配空间&lt;br&gt;
+而SDS实现了预分配和惰性释放&lt;br&gt;
+预分配规则：SDS空间进行扩充时，会分配足够的内存空间还会分配额外未使用的空间。如果对 SDS 修改后，len 的长度小于 1M，那么程序将分配和 len 相同长度的未使用空间。举个例子，如果 len=10，重新分配后，buf 的实际长度会变为 10(已使用空间)+10(额外空间)+1(空字符)=21。如果对 SDS 修改后 len 长度大于 1M，那么程序将分配 1M 的未使用空间。&lt;/p&gt;
+&lt;p&gt;惰性空间释放：当对 SDS 进行缩短操作时，程序并不会回收多余的内存空间，而是使用 free 字段将这些字节数量记录下来不释放，后面如果需要 append 操作，则直接使用 free 中未使用的空间，减少了内存的分配。&lt;/p&gt;
+&lt;h1 id=&#34;3字典hash&#34;&gt;3.字典(Hash) &lt;a href=&#34;#3%e5%ad%97%e5%85%b8hash&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;Redis底层hash结构如下：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;typedef struct dict{
+      dictType *type;
+    void *privdata;
+    dictht ht[2];
+    int trehashidx;
+}
+
+
+typedef struct dictht{
+    //哈希表数组
+    dectEntrt **table;
+    //哈希表大小
+    unsigned long size;
+    //
+    unsigned long sizemask;
+    //哈希表已有节点数量
+    unsigned long used;
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;重要的两个字段是 dictht 和 trehashidx&lt;/p&gt;
+&lt;h2 id=&#34;rehash&#34;&gt;Rehash &lt;a href=&#34;#rehash&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;blockquote&gt;
+&lt;p&gt;Rehash解释：随着操作的不断执行， 哈希表保存的键值对会逐渐地增多或者减少， 为了让哈希表的负载因子（load factor）维持在一个合理的范围之内， 当哈希表保存的键值对数量太多或者太少时， 程序需要对哈希表的大小进行相应的扩展或者收缩。扩展和收缩哈希表的工作可以通过执行 rehash （重新散列）操作来完成&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;由上段代码，我们可知 dict 中存储了一个 dictht 的数组，长度为 2，表明这个数据结构中实际存储着两个哈希表 ht[0] 和 ht[1]，为什么要存储两张 hash 表呢？&lt;br&gt;
+当然是为了Rehash,Rehash的过程&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;为 ht[1] 分配空间。如果是扩容操作，ht[1] 的大小为第一个大于等于 ht[0].used*2 的 2^n；如果是缩容操作，ht[1] 的大小为第一个大于等于 ht[0].used 的 2^n。&lt;/li&gt;
+&lt;li&gt;将 ht[0] 中的键值 Rehash 到 ht[1] 中。&lt;/li&gt;
+&lt;li&gt;当 ht[0] 全部迁移到 ht[1] 中后，释放 ht[0]，将 ht[1] 置为 ht[0]，并为 ht[1] 创建一张新表，为下次 Rehash 做准备。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;渐进式-rehash&#34;&gt;渐进式 Rehash &lt;a href=&#34;#%e6%b8%90%e8%bf%9b%e5%bc%8f-rehash&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;上面提到的如果ht[0]全部移动到ht[1]中，如果数据量小很快，如果数据量很大则会有影响使用
+所以redis采用了分多次、渐进式的迁移策略&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;为 ht[1] 分配空间，让字典同时拥有 ht[0] 和 ht[1] 两个哈希表。&lt;/li&gt;
+&lt;li&gt;字典中维护一个 rehashidx，并将它置为 0，表示 Rehash 开始。&lt;/li&gt;
+&lt;li&gt;在 Rehash 期间，每次对字典操作时，程序还顺便将 ht[0] 在 rehashidx 索引上的所有键值对 rehash 到 ht[1] 中，当 Rehash 完成后，将 rehashidx 属性+1。当全部 rehash 完成后，将 rehashidx 置为 -1，表示 rehash 完成。
+注意，由于维护了两张 Hash 表，所以在 Rehash 的过程中内存会增长。另外，在 Rehash 过程中，字典会同时使用 ht[0] 和 ht[1]。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;所以在删除、查找、更新时会在两张表中操作，在查询时会先在第一张表中查询，如果第一张表中没有，则会在第二张表中查询。但新增时一律会在 ht[1] 中进行，确保 ht[0] 中的数据只会减少不会增加。&lt;/p&gt;
+&lt;h1 id=&#34;4-zset底层&#34;&gt;4. Zset底层 &lt;a href=&#34;#4-zset%e5%ba%95%e5%b1%82&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;zset底层的存储结构包括ziplist或skiplist，在同时满足以下两个条件的时候使用ziplist，其他时候使用skiplist，两个条件如下：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;有序集合保存的元素数量小于128个&lt;/li&gt;
+&lt;li&gt;有序集合保存的所有元素的长度小于64字节&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;当ziplist作为zset的底层存储结构时候，每个集合元素使用两个紧挨在一起的压缩列表节点来保存，第一个节点保存元素的成员，第二个元素保存元素的分值。&lt;/p&gt;
+&lt;p&gt;当skiplist作为zset的底层存储结构的时候，使用skiplist按序保存元素及分值，使用dict来保存元素和分值的映射关系。&lt;/p&gt;
+&lt;p&gt;ziplist数据结构
+&lt;img src=&#34;https://abnerxc.github.io/img/redis-f.jpeg&#34; alt=&#34;1.jpeg&#34;&gt;&lt;/p&gt;
+&lt;p&gt;skiplist数据结构
+ skiplist作为zset的存储结构，整体存储结构如下图，核心点主要是包括一个dict对象和一个skiplist对象。dict保存key/value，key为元素，value为分值；skiplist保存的有序的元素列表，每个元素包括元素和分值。两种数据结构下的元素指向相同的位置。&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://abnerxc.github.io/img/redis-g.jpeg&#34; alt=&#34;1.jpeg&#34;&gt;&lt;/p&gt;
+&lt;h1 id=&#34;5-set底层&#34;&gt;5. Set底层 &lt;a href=&#34;#5-set%e5%ba%95%e5%b1%82&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;set的底层存储intset和hashtable是存在编码转换的，使用intset存储必须满足下面两个条件，否则使用hashtable，条件如下：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;结合对象保存的所有元素都是整数值&lt;/li&gt;
+&lt;li&gt;集合对象保存的元素数量不超过512个&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;typedef struct intset {
+    // 编码方式
+    uint32_t encoding;
+    // 集合包含的元素数量
+    uint32_t length;
+    // 保存元素的数组
+    int8_t contents[];
+} intset;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;set的单个元素的添加过程，首先如果已经是hashtable的编码，那么我们就走正常的hashtable的元素添加，如果原来是intset的情况，那么我们就需要进行如下判断：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;如果能够转成int的对象（isObjectRepresentableAsLongLong），那么就用intset保存。&lt;/li&gt;
+&lt;li&gt;如果用intset保存的时候，如果长度超过512（REDIS_SET_MAX_INTSET_ENTRIES）就转为hashtable编码。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h1 id=&#34;list底层&#34;&gt;List底层 &lt;a href=&#34;#list%e5%ba%95%e5%b1%82&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;redis list数据结构底层采用压缩列表ziplist或linkedlist两种数据结构进行存储，首先以ziplist进行存储，在不满足ziplist的存储要求后转换为linkedlist列表。
+ 当列表对象同时满足以下两个条件时，列表对象使用ziplist进行存储，否则用linkedlist存储。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;列表对象保存的所有字符串元素的长度小于64字节&lt;/li&gt;
+&lt;li&gt;列表对象保存的元素数量小于512个。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h1 id=&#34;编码转化&#34;&gt;编码转化 &lt;a href=&#34;#%e7%bc%96%e7%a0%81%e8%bd%ac%e5%8c%96&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;Redis 使用对象（redisObject）来表示数据库中的键值，当我们在 Redis 中创建一个键值对时，至少创建两个对象，一个对象是用做键值对的键对象，另一个是键值对的值对象。&lt;/p&gt;
+&lt;p&gt;例如我们执行 SET MSG XXX 时，键值对的键是一个包含了字符串“MSG“的对象，键值对的值对象是包含字符串”XXX”的对象。&lt;/p&gt;
+&lt;p&gt;redisObject 的结构如下：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;typedef struct redisObject{
+    //类型
+   unsigned type:4;
+   //编码
+   unsigned encoding:4;
+   //指向底层数据结构的指针
+   void *ptr;
+    //...
+ }robj;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;其中 type 字段记录了对象的类型，包含字符串对象、列表对象、哈希对象、集合对象、有序集合对象。&lt;br&gt;
+ptr 指针字段指向对象底层实现的数据结构，而这些数据结构是由 encoding 字段决定的，每种对象至少有两种数据编码：&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://abnerxc.github.io/img/redis-h.jpeg&#34; alt=&#34;1.jpeg&#34;&gt;
+可以通过 object encoding key 来查看对象所使用&lt;/p&gt;
+&lt;h2 id=&#34;string-对象的编码转化&#34;&gt;String 对象的编码转化 &lt;a href=&#34;#string-%e5%af%b9%e8%b1%a1%e7%9a%84%e7%bc%96%e7%a0%81%e8%bd%ac%e5%8c%96&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;String 对象的编码可以是 int 或 raw，对于 String 类型的键值，如果我们存储的是纯数字，Redis 底层采用的是 int 类型的编码，如果其中包括非数字，则会立即转为 raw 编码：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;127.0.0.1:6379&amp;gt; set str 1
+OK
+127.0.0.1:6379&amp;gt; object encoding str
+&amp;#34;int&amp;#34;
+127.0.0.1:6379&amp;gt; set str 1a
+OK
+127.0.0.1:6379&amp;gt; object encoding str
+&amp;#34;raw&amp;#34;
+127.0.0.1:6379&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;list-对象的编码转化&#34;&gt;List 对象的编码转化 &lt;a href=&#34;#list-%e5%af%b9%e8%b1%a1%e7%9a%84%e7%bc%96%e7%a0%81%e8%bd%ac%e5%8c%96&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;List 对象的编码可以是ziplist 或 linkedlist，对于 List 类型的键值，当列表对象同时满足以下两个条件时，采用 ziplist 编码：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;列表对象保存的所有字符串元素的长度都小于 64 字节。&lt;/li&gt;
+&lt;li&gt;列表对象保存的元素个数小于 512 个。
+如果不满足这两个条件的任意一个，就会转化为 linkedlist 编码。注意：这两个条件是可以修改的，在 redis.conf 中：&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;list-max-ziplist-entries 512
+list-max-ziplist-value 64
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;set-类型的编码转化&#34;&gt;Set 类型的编码转化 &lt;a href=&#34;#set-%e7%b1%bb%e5%9e%8b%e7%9a%84%e7%bc%96%e7%a0%81%e8%bd%ac%e5%8c%96&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;Set 对象的编码可以是 intset 或 hashtable，intset 编码的结构对象使用整数集合作为底层实现，把所有元素都保存在一个整数集合里面。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;127.0.0.1:6379&amp;gt; sadd set 1 2 3
+(integer) 3
+127.0.0.1:6379&amp;gt; object encoding set
+&amp;#34;intset&amp;#34;
+127.0.0.1:6379&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;如果 set 集合中保存了非整数类型的数据时，Redis 会将 intset 转化为 hashtable：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;127.0.0.1:6379&amp;gt; sadd set 1 2 3
+(integer) 3
+127.0.0.1:6379&amp;gt; object encoding set
+&amp;#34;intset&amp;#34;
+127.0.0.1:6379&amp;gt; sadd set a
+(integer) 1
+127.0.0.1:6379&amp;gt; object encoding set
+&amp;#34;hashtable&amp;#34;
+ 127.0.0.1:6379&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;当 Set 对象同时满足以下两个条件时，对象采用 intset 编码：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;保存的所有元素都是整数值（小数不行）。&lt;/li&gt;
+&lt;li&gt;Set 对象保存的所有元素个数小于 512 个。
+不能满足这两个条件的任意一个，Set 都会采用 hashtable 存储。注意：第两个条件是可以修改的，在 redis.conf 中：&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;set-max-intset-entries 512
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;hash-对象的编码转化&#34;&gt;Hash 对象的编码转化 &lt;a href=&#34;#hash-%e5%af%b9%e8%b1%a1%e7%9a%84%e7%bc%96%e7%a0%81%e8%bd%ac%e5%8c%96&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;Hash 对象的编码可以是 ziplist 或 hashtable，当 Hash 以 ziplist 编码存储的时候，保存同一键值对的两个节点总是紧挨在一起，键节点在前，值节点在后：
+当 Hash 对象同时满足以下两个条件时，Hash 对象采用 ziplist 编码：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Hash 对象保存的所有键值对的键和值的字符串长度均小于 64 字节。&lt;/li&gt;
+&lt;li&gt;Hash 对象保存的键值对数量小于 512 个。
+如果不满足以上条件的任意一个，ziplist 就会转化为 hashtable 编码。注意：这两个条件是可以修改的，在 redis.conf 中：&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;hash-max-ziplist-entries 512
+hash-max-ziplist-value 64
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;zset-对象的编码转化&#34;&gt;Zset 对象的编码转化 &lt;a href=&#34;#zset-%e5%af%b9%e8%b1%a1%e7%9a%84%e7%bc%96%e7%a0%81%e8%bd%ac%e5%8c%96&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;Zset 对象的编码可以是 ziplist 或 zkiplist，当采用 ziplist 编码存储时，每个集合元素使用两个紧挨在一起的压缩列表来存储。&lt;/p&gt;
+&lt;p&gt;第一个节点存储元素的成员，第二个节点存储元素的分值，并且按分值大小从小到大有序排列。&lt;/p&gt;
+&lt;p&gt;当 Zset 对象同时满足一下两个条件时，采用 ziplist 编码：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Zset 保存的元素个数小于 128。&lt;/li&gt;
+&lt;li&gt;Zset 元素的成员长度都小于 64 字节。
+如果不满足以上条件的任意一个，ziplist 就会转化为 zkiplist 编码。注意：这两个条件是可以修改的，在 redis.conf 中：&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;zset-max-ziplist-entries 128
+zset-max-ziplist-value 64
+&lt;/code&gt;&lt;/pre&gt;</description>
+    </item>
+    
+    <item>
+      <title>缓存穿透、雪崩、击穿的解决方法</title>
+      <link>https://abnerxc.github.io/note/rdis-%E7%BC%93%E5%AD%98%E7%A9%BF%E9%80%8F%E9%9B%AA%E5%B4%A9%E5%87%BB%E7%A9%BF%E7%9A%84%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95/</link>
+      <pubDate>Mon, 25 Jan 2021 22:07:58 +0800</pubDate>
+      
+      <guid>https://abnerxc.github.io/note/rdis-%E7%BC%93%E5%AD%98%E7%A9%BF%E9%80%8F%E9%9B%AA%E5%B4%A9%E5%87%BB%E7%A9%BF%E7%9A%84%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95/</guid>
+      <description>&lt;h1 id=&#34;1缓存穿透&#34;&gt;1.缓存穿透 &lt;a href=&#34;#1%e7%bc%93%e5%ad%98%e7%a9%bf%e9%80%8f&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;缓存穿透是指查询一个一定不存在的数据，由于缓存是不命中时需要从数据库查询，查不到数据则不写入缓存，这将导致这个不存在的数据每次请求都要到数据库查询，失去了缓存的意义。在流量大时，可能DB就挂掉了，要是有人利用不存在的key频繁攻击我们的应用，这就是漏洞。&lt;br&gt;
+例如下图:&lt;br&gt;
+&lt;img src=&#34;https://abnerxc.github.io/img/redis-a.jpeg&#34; alt=&#34;&#34;&gt;&lt;/p&gt;
+&lt;h2 id=&#34;11解决办法&#34;&gt;1.1解决办法 &lt;a href=&#34;#11%e8%a7%a3%e5%86%b3%e5%8a%9e%e6%b3%95&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;将不存在的key设置默认的值&lt;/p&gt;
+&lt;p&gt;如果有人利用ID攻击应用，可以将这个key预先设置一个null或者程序可判断的值，决定应用是否进行下面的执行。当缓存失效或者缓存key经过轮训以后不再为空，则进行程序的后续执行&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;布隆过滤器&lt;/p&gt;
+&lt;p&gt;简单的说，bloom算法类似一个hash set,用来判断某个元素的key是否存在集合中。和一般的hash set不同的是，这个算法无需存储key的值，值需要k个比特位，每个存在一个标志，用来判断key是否存在集合中。&lt;br&gt;
+算法：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;首先需要k个hasn函数，每个函数可以把key散列成为1个整数&lt;/li&gt;
+&lt;li&gt;初始化时，需要一个长度为n比特的数组，每个比特位初始化为0&lt;/li&gt;
+&lt;li&gt;某个key加入集合时，用k个hash函数计算出k个散列值，并把数组中对应的比特位设置为1&lt;/li&gt;
+&lt;li&gt;判断某个key是否在集合时，用k个hash函数计算出k个散列值，并查询数组中对应的比特位，如果所有的比特位都是1，则认为在集合中&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;优点:不需要存储key，节省空间&lt;/p&gt;
+&lt;p&gt;缺点：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;算法判断key在集合时，有一定的概率key其实不在集合中&lt;/li&gt;
+&lt;li&gt;无法删除&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h1 id=&#34;2缓存雪崩&#34;&gt;2.缓存雪崩 &lt;a href=&#34;#2%e7%bc%93%e5%ad%98%e9%9b%aa%e5%b4%a9&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;大量的key设置了相同的过期时间，导致在缓存在同一时刻失效，造成DB的请求大、压力大，引起雪崩&lt;/p&gt;
+&lt;h2 id=&#34;21解决办法&#34;&gt;2.1解决办法 &lt;a href=&#34;#21%e8%a7%a3%e5%86%b3%e5%8a%9e%e6%b3%95&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;从业务层面。可以给缓存设置过期时间上加上一个随机值，使得每个key的过期时间分布开来，不会集中在同一时刻&lt;/p&gt;
+&lt;h1 id=&#34;3-缓存击穿并发&#34;&gt;3. 缓存击穿（并发） &lt;a href=&#34;#3-%e7%bc%93%e5%ad%98%e5%87%bb%e7%a9%bf%e5%b9%b6%e5%8f%91&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;一个存在的key，在缓存过期的一刻，同时有大量的请求，这些请求都会击穿到DB，造成瞬时DB请求量大、压力骤增。&lt;/p&gt;
+&lt;h2 id=&#34;31解决办法&#34;&gt;3.1解决办法 &lt;a href=&#34;#31%e8%a7%a3%e5%86%b3%e5%8a%9e%e6%b3%95&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;ol&gt;
+&lt;li&gt;使用互斥锁：让一个线程构建缓存，其他线程等待等待构建缓存的线程执行完，从新从缓存中获取数据就行（如下图）
+&lt;img src=&#34;https://abnerxc.github.io/img/redis-b.jpeg&#34; alt=&#34;&#34;&gt;
+如果是单机，可以用synchronize或者lock来处理，如果是分布式环境可以使用分布式锁（memcached的add、redis的setnx,zookeeper的添加节点）,当缓存构建完成以后释放分布式锁&lt;/li&gt;
+&lt;li&gt;后台刷新：定义个Job专门主动刷新缓存，比如缓存30分钟，那么Job可以设置每隔29分钟定时将DB数据刷新缓存中。&lt;code&gt;这种方案适合key相对固定，cache粒度较大&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;检查更新：将缓存的过期时间（绝对时间）一起保存到缓存中（可以是key拼接，或者value中存放字段），在每次只需get操作以后都将get出来的缓存与当前系统时间进行比较，缓存时间-当前时间&amp;lt;=1分钟（自定义时间阈值），则主动更新缓存&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h1 id=&#34;4-如何解决缓存单机热点问题&#34;&gt;4. 如何解决缓存单机热点问题 &lt;a href=&#34;#4-%e5%a6%82%e4%bd%95%e8%a7%a3%e5%86%b3%e7%bc%93%e5%ad%98%e5%8d%95%e6%9c%ba%e7%83%ad%e7%82%b9%e9%97%ae%e9%a2%98&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;分布式缓存一致性hash算法解决&lt;br&gt;
+&lt;img src=&#34;https://abnerxc.github.io/img/redis-c.jpeg&#34; alt=&#34;&#34;&gt;&lt;br&gt;
+简单概述：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;一致性hash算法通过构造一个长度为2^32的整数环&lt;/li&gt;
+&lt;li&gt;根据节点名（或者服务器IP等信息）的hash值将缓存服务器节点放置在这个环上&lt;/li&gt;
+&lt;li&gt;计算需要缓存的key的hash值，顺时针找到最近的的服务器节点，将数据存放在该节点上&lt;/li&gt;
+&lt;/ol&gt;
+</description>
+    </item>
+    
+  </channel>
+</rss>
