@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+<meta name="viewport" content="width=device-width,minimum-scale=1">
+
+
+
+
+<title>Docker搭建可一键部署的多域名LNMP环境 | Abner的博客</title>
+<link rel="canonical" href="https://abnerxc.github.io/tool/docker-%E6%90%AD%E5%BB%BA%E5%8F%AF%E4%B8%80%E9%94%AE%E9%83%A8%E7%BD%B2%E7%9A%84%E5%A4%9A%E5%9F%9F%E5%90%8Dlnmp%E7%8E%AF%E5%A2%83/">
+<meta property="og:type" content="article" />
+<meta property="og:title" content="Docker搭建可一键部署的多域名LNMP环境 | Abner的博客" />
+<meta property="og:url" content="https://abnerxc.github.io/tool/docker-%E6%90%AD%E5%BB%BA%E5%8F%AF%E4%B8%80%E9%94%AE%E9%83%A8%E7%BD%B2%E7%9A%84%E5%A4%9A%E5%9F%9F%E5%90%8Dlnmp%E7%8E%AF%E5%A2%83/" />
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/icofont/icofont.min.css" />
+<link rel="stylesheet" href="/css/syntax.css" />
+<link rel="stylesheet" href="/css/style.css" />
+<link rel="stylesheet" href="/css/custom.css" />
+<script src="/js/copy-code-block.js"></script>
+<link rel="shortcut icon" href="/images/favicon.ico" type="image/x-icon" />
+
+    </head>
+
+    <body>
+        <header class="header-wrapper">
+    <div class="header">
+        <a class="site-title" href="https://abnerxc.github.io/">Abner的博客</a>
+
+        <nav class="menu">
+            
+        </nav>
+    </div>
+</header>
+
+        <main class="main-wrapper">
+            <div class="main">
+                
+
+<section class="single">
+    <h1 class="title">Docker搭建可一键部署的多域名LNMP环境</h1>
+
+    <div class="tip">
+        <time datetime="2022-07-21 18:35:11 &#43;0800 CST">2022/07/21</time>
+        <span class="split">·</span>
+        <span> 993 words </span>
+        <span class="split">·</span>
+        <span>
+            5 minutes to read
+        </span>
+    </div>
+
+    <div class="taxonomies">
+        
+        <div>
+            Categories:
+            
+                <a href="/categories/%E5%B7%A5%E5%85%B7">工具</a>
+            
+        </div>
+        
+
+        
+    </div>
+
+    
+    
+    <div class="post-toc">
+        <h3>目录</h3>
+        <nav id="TableOfContents">
+  <ul>
+    <li><a href="#docker搭建可一键部署的多域名lnmp环境">Docker搭建可一键部署的多域名LNMP环境</a>
+      <ul>
+        <li><a href="#特点">特点</a></li>
+        <li><a href="#安装步骤">安装步骤</a></li>
+        <li><a href="#docker安装">docker安装</a>
+          <ul>
+            <li><a href="#1--centos7安装方法">1.  Centos7安装方法</a></li>
+            <li><a href="#2--ubuntu安装方法">2.  Ubuntu安装方法</a></li>
+          </ul>
+        </li>
+        <li><a href="#docker-compose安装">docker-compose安装</a></li>
+        <li><a href="#查看版本加入到docker组">查看版本，加入到docker组</a></li>
+        <li><a href="#使用国内镜像仓库">使用国内镜像仓库</a></li>
+        <li><a href="#安装容器和镜像">安装容器和镜像</a></li>
+        <li><a href="#如果是windows下基于virtualbox挂载目录到linux">如果是windows下基于virtualbox挂载目录到linux</a>
+          <ul>
+            <li><a href="#安装增强工具centos7版本">安装增强工具(centos7版本)</a></li>
+            <li><a href="#配置共享目录">配置共享目录</a></li>
+            <li><a href="#手动挂载">手动挂载</a>
+              <ul>
+                <li><a href="#ubuntu">ubuntu</a></li>
+                <li><a href="#centos7">centos7</a></li>
+              </ul>
+            </li>
+            <li><a href="#开机自动挂载">开机自动挂载</a>
+              <ul>
+                <li><a href="#ubuntu-1">ubuntu</a></li>
+                <li><a href="#centos7-1">centos7</a></li>
+              </ul>
+            </li>
+            <li><a href="#若走的端口转发按图如下配置">若走的端口转发按图如下配置</a></li>
+            <li><a href="#若走的桥接网卡正常ip地址连接即可">若走的桥接网卡，正常IP地址连接即可</a></li>
+          </ul>
+        </li>
+      </ul>
+    </li>
+    <li><a href="#以下部分属于扩展">以下部分属于扩展</a>
+      <ul>
+        <li><a href="#目录说明">目录说明</a>
+          <ul>
+            <li>
+              <ul>
+                <li><a href="#大致框架">大致框架</a></li>
+                <li><a href="#目录结构">目录结构</a></li>
+                <li><a href="#nginx配置">nginx配置</a></li>
+                <li><a href="#站点部署">站点部署</a></li>
+                <li><a href="#https使用">HTTPS使用</a></li>
+                <li><a href="#docker-composeyml文件">docker-compose.yml文件</a></li>
+                <li><a href="#站点根目录写权限">站点根目录写权限</a></li>
+                <li><a href="#mysql连接">MYSQL连接</a></li>
+                <li><a href="#一键安装脚本">一键安装脚本</a></li>
+                <li><a href="#常用操作">常用操作</a></li>
+              </ul>
+            </li>
+          </ul>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+    </div>
+    
+
+    <hr />
+
+    <div class="content">
+        <h1 id="docker搭建可一键部署的多域名lnmp环境">Docker搭建可一键部署的多域名LNMP环境 <a href="#docker%e6%90%ad%e5%bb%ba%e5%8f%af%e4%b8%80%e9%94%ae%e9%83%a8%e7%bd%b2%e7%9a%84%e5%a4%9a%e5%9f%9f%e5%90%8dlnmp%e7%8e%af%e5%a2%83" class="anchor">🔗</a></h1><h2 id="特点">特点 <a href="#%e7%89%b9%e7%82%b9" class="anchor">🔗</a></h2><ol>
+<li>完全开源</li>
+<li>支持多版本PHP切换（PHP5.4、PHP5.6、PHP7.2&hellip;)</li>
+<li>支持绑定任意多个域名</li>
+<li>支持HTTPS和HTTP/2</li>
+<li>PHP源代码位于host中</li>
+<li>MySQL data位于host中</li>
+<li>所有配置文件可在host中直接修改</li>
+<li>所有日志文件可在host中直接查看</li>
+<li>内置完整PHP扩展安装命令</li>
+<li>实际使用，确保100%可行</li>
+<li>实现一次配置，可在任何支持Docker系统使用</li>
+</ol>
+<hr>
+<h2 id="安装步骤">安装步骤 <a href="#%e5%ae%89%e8%a3%85%e6%ad%a5%e9%aa%a4" class="anchor">🔗</a></h2><h2 id="docker安装">docker安装 <a href="#docker%e5%ae%89%e8%a3%85" class="anchor">🔗</a></h2><h3 id="1--centos7安装方法">1.  Centos7安装方法 <a href="#1--centos7%e5%ae%89%e8%a3%85%e6%96%b9%e6%b3%95" class="anchor">🔗</a></h3><pre tabindex="0"><code>sudo yum install -y yum-utils device-mapper-persistent-data lvm2
+sudo yum-config-manager --add-repo http://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo
+sudo yum makecache fast
+sudo yum -y install docker-ce
+sudo service docker start
+</code></pre><h3 id="2--ubuntu安装方法">2.  Ubuntu安装方法 <a href="#2--ubuntu%e5%ae%89%e8%a3%85%e6%96%b9%e6%b3%95" class="anchor">🔗</a></h3><pre tabindex="0"><code>sudo apt-get update
+sudo apt-get -y install apt-transport-https ca-certificates curl software-properties-common
+curl -fsSL http://mirrors.aliyun.com/docker-ce/linux/ubuntu/gpg | sudo apt-key add -
+sudo add-apt-repository &#34;deb [arch=amd64] http://mirrors.aliyun.com/docker-ce/linux/ubuntu $(lsb_release -cs) stable&#34;
+sudo apt-get -y update
+sudo apt-get -y install docker-ce
+</code></pre><h2 id="docker-compose安装">docker-compose安装 <a href="#docker-compose%e5%ae%89%e8%a3%85" class="anchor">🔗</a></h2><pre tabindex="0"><code>sudo curl -L https://get.daocloud.io/docker/compose/releases/download/1.18.0/docker-compose-`uname -s`-`uname -m` -o /usr/local/bin/docker-compose
+sudo chmod +x /usr/local/bin/docker-compose
+</code></pre><h2 id="查看版本加入到docker组">查看版本，加入到docker组 <a href="#%e6%9f%a5%e7%9c%8b%e7%89%88%e6%9c%ac%e5%8a%a0%e5%85%a5%e5%88%b0docker%e7%bb%84" class="anchor">🔗</a></h2><pre tabindex="0"><code>$ docker -v
+$ docker-compose -v
+$ sudo gpasswd -a ${USER} docker     
+</code></pre><p>就不用每次启动Docker都得加sudo了，注意，执行gpasswd命令之后要重新登陆才有效。</p>
+<h2 id="使用国内镜像仓库">使用国内镜像仓库 <a href="#%e4%bd%bf%e7%94%a8%e5%9b%bd%e5%86%85%e9%95%9c%e5%83%8f%e4%bb%93%e5%ba%93" class="anchor">🔗</a></h2><ul>
+<li>首先注册一个阿里云账号，然后访问阿里云的<a href="https://cr.console.aliyun.com/">Docker镜像仓库</a>，能找到加速器地址。</li>
+<li>对于Docker 1.10+，打开配置文件 /etc/docker/daemon.json（没有时新建该文件）：</li>
+</ul>
+<pre tabindex="0"><code>sudo mkdir -p /etc/docker
+echo &#39;{ &#34;registry-mirrors&#34;: [&#34;https://l714mp7z.mirror.aliyuncs.com&#34;] }&#39; &gt;  /etc/docker/daemon.json
+sudo systemctl daemon-reload
+sudo systemctl restart docker
+sudo systemctl enable docker
+
+#开机启动centos7
+systemctl enable docker
+</code></pre><p>Docker 1.10以下请看：https://yq.aliyun.com/articles/29941。</p>
+<h2 id="安装容器和镜像">安装容器和镜像 <a href="#%e5%ae%89%e8%a3%85%e5%ae%b9%e5%99%a8%e5%92%8c%e9%95%9c%e5%83%8f" class="anchor">🔗</a></h2><pre tabindex="0"><code>docker-compose up -d
+</code></pre><h2 id="如果是windows下基于virtualbox挂载目录到linux">如果是windows下基于virtualbox挂载目录到linux <a href="#%e5%a6%82%e6%9e%9c%e6%98%afwindows%e4%b8%8b%e5%9f%ba%e4%ba%8evirtualbox%e6%8c%82%e8%bd%bd%e7%9b%ae%e5%bd%95%e5%88%b0linux" class="anchor">🔗</a></h2><h3 id="安装增强工具centos7版本">安装增强工具(centos7版本) <a href="#%e5%ae%89%e8%a3%85%e5%a2%9e%e5%bc%ba%e5%b7%a5%e5%85%b7centos7%e7%89%88%e6%9c%ac" class="anchor">🔗</a></h3><p><img src="/img/docker-win-a.jpeg" alt=""></p>
+<pre tabindex="0"><code>yum install -y gcc gcc-devel gcc-c++ gcc-c++-devel make kernel kernel-devel bzip2 vim wget  
+sudo reboot  #重启
+ln -s /usr/src/kernels/3.10.0（注意内核版本号自动补全） /usr/src/linux　   ## 增加软连接
+#点击虚拟机设备-&gt;安装增强
+mount /dev/cdrom /mnt  #挂载增强光盘到系统，提示只读不用管
+cd /mnt &amp;&amp;  ./VBoxLinuxAdditions.run
+</code></pre><h3 id="配置共享目录">配置共享目录 <a href="#%e9%85%8d%e7%bd%ae%e5%85%b1%e4%ba%ab%e7%9b%ae%e5%bd%95" class="anchor">🔗</a></h3><p><img src="/img/docker-win-b.jpeg" alt=""></p>
+<h3 id="手动挂载">手动挂载 <a href="#%e6%89%8b%e5%8a%a8%e6%8c%82%e8%bd%bd" class="anchor">🔗</a></h3><h4 id="ubuntu">ubuntu <a href="#ubuntu" class="anchor">🔗</a></h4><pre tabindex="0"><code>sudo mkdir /home/abner/server  &amp;&amp; chmod -R 777 /home/abner/server 
+sudo mount -t vboxsf docker /home/abner/server   #手动挂载 （这里挂载的目录最好不要和共享文件夹名称一样）
+</code></pre><h4 id="centos7">centos7 <a href="#centos7" class="anchor">🔗</a></h4><pre tabindex="0"><code>sudo mkdir /root/server  &amp;&amp; chmod -R 777 /root/server 
+sudo mount -t vboxsf docker /root/server
+</code></pre><h3 id="开机自动挂载">开机自动挂载 <a href="#%e5%bc%80%e6%9c%ba%e8%87%aa%e5%8a%a8%e6%8c%82%e8%bd%bd" class="anchor">🔗</a></h3><p><em><strong><code>virbox自动挂载不能勾选</code></strong></em></p>
+<h4 id="ubuntu-1">ubuntu <a href="#ubuntu-1" class="anchor">🔗</a></h4><pre tabindex="0"><code>sudo vim /etc/rc.local
+##exit 0 前增加如下命令
+sleep 1
+sudo mount -t vboxsf docker /home/abner/server
+</code></pre><h4 id="centos7-1">centos7 <a href="#centos7-1" class="anchor">🔗</a></h4><pre tabindex="0"><code>mkdir /root/server &amp;&amp; chmod -R 777 /root/server
+mount -t vboxsf docker /root/server   #手动挂载
+## 此时如果提示/sbin/mount.vboxsf: mounting failed with the error: No such device，说明内核模块vboxsf未加载，可通过lsmod | grep vboxsf查看（无结果说明未加载）。执行 `modprobe vboxsf` #加载vboxsf模块
+#自动挂载
+sudo vim /etc/fstab
+docker /root/server   vboxsf rw,gid=100,uid=1000,auto 0 0
+</code></pre><h3 id="若走的端口转发按图如下配置">若走的端口转发按图如下配置 <a href="#%e8%8b%a5%e8%b5%b0%e7%9a%84%e7%ab%af%e5%8f%a3%e8%bd%ac%e5%8f%91%e6%8c%89%e5%9b%be%e5%a6%82%e4%b8%8b%e9%85%8d%e7%bd%ae" class="anchor">🔗</a></h3><p><img src="/img/docker-win-c.jpeg" alt=""></p>
+<h3 id="若走的桥接网卡正常ip地址连接即可">若走的桥接网卡，正常IP地址连接即可 <a href="#%e8%8b%a5%e8%b5%b0%e7%9a%84%e6%a1%a5%e6%8e%a5%e7%bd%91%e5%8d%a1%e6%ad%a3%e5%b8%b8ip%e5%9c%b0%e5%9d%80%e8%bf%9e%e6%8e%a5%e5%8d%b3%e5%8f%af" class="anchor">🔗</a></h3><h1 id="以下部分属于扩展">以下部分属于扩展 <a href="#%e4%bb%a5%e4%b8%8b%e9%83%a8%e5%88%86%e5%b1%9e%e4%ba%8e%e6%89%a9%e5%b1%95" class="anchor">🔗</a></h1><h2 id="目录说明">目录说明 <a href="#%e7%9b%ae%e5%bd%95%e8%af%b4%e6%98%8e" class="anchor">🔗</a></h2><h4 id="大致框架">大致框架 <a href="#%e5%a4%a7%e8%87%b4%e6%a1%86%e6%9e%b6" class="anchor">🔗</a></h4><p><img src="/img/docker-win-d.jpeg" alt=""></p>
+<h4 id="目录结构">目录结构 <a href="#%e7%9b%ae%e5%bd%95%e7%bb%93%e6%9e%84" class="anchor">🔗</a></h4><pre tabindex="0"><code>├── docker-compose.yml          容器启动配置文件
+├── Dockerfile                  PHP-FPM构建配置文件
+├── conf                        配置目录
+│   ├── mysql                   MySQL配置文件目录
+│   │   └── my.cnf              MySQL配置文件
+│   ├── nginx                   Nginx配置文件目录
+│   │   ├── conf.d              站点配置文件目录
+│   │   │   ├── certs           SSL认证文件、密钥和加密文件目录
+│   │   │   │   └── site2       站点2的认证文件目录
+│   │   │   ├── site1.conf      站点1 Nginx配置文件
+│   │   │   └── site2.conf      站点2 Nginx配置文件
+│   │   └── nginx.conf          Nginx通用配置文件
+│   └── php                     PHP配置目录
+│       ├── php-fpm.d           PHP-FPM配置目录
+│       │   └── www.conf        PHP-FPM配置文件
+│       └── php.ini             PHP配置文件
+├── log                         日志目录
+│   ├── mysql                   MySQL日志目录
+│   ├── nginx                   Nginx日志目录
+│   └── php-fpm                 PHP-FPM日志目录
+├── mysql                       MySQL数据文件目录
+└── www                         站点根目录
+    ├── site1                   站点1根目录
+    └── site2                   站点2根目录
+</code></pre><h4 id="nginx配置">nginx配置 <a href="#nginx%e9%85%8d%e7%bd%ae" class="anchor">🔗</a></h4><pre tabindex="0"><code>server {
+    listen  80;
+    server_name www.site1.com;
+    root /var/www/html/site1;
+    index index.shtml index.php index.html;
+    location ~* \.(css|js)$ {
+        sendfile  off;
+        break;
+    }
+    expires off;
+    client_max_body_size 2M;
+    client_body_temp_path /var/www/html;
+
+    location / {
+            index index.shtml index.php index.html;
+            if (!-e $request_filename){
+                 rewrite ^/(.+)$ /index.php?_url=/$1 last;
+            }
+    }
+
+    location ~ ^/.+\.php(/|$) {
+        fastcgi_pass [容器的ip或者名称]:9000;  
+        include fastcgi_params;
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        fastcgi_read_timeout 600; 
+    }
+}
+</code></pre><h4 id="站点部署">站点部署 <a href="#%e7%ab%99%e7%82%b9%e9%83%a8%e7%bd%b2" class="anchor">🔗</a></h4><p>本文有默认加了两个站点：www.site1.com（同localhost）和www.site2.com。<br>
+要在本地访问这两个域名，需要修改你的hosts文件，添加以下两行：<br>
+127.0.0.1 <a href="https://www.site1.com">www.site1.com</a><br>
+127.0.0.1 <a href="https://www.site2.com">www.site2.com</a><br>
+其中，www.site2.com为支持SSL/https和HTTP/2的示例站点。<br>
+因为站点2的SSL采用自签名方式，所以浏览器有安全提示，继续访问就可以了，自己的站点用第三方SSL认证证书替换即可。<br>
+如果只用到站点1，把站点2相关的目录和配置文件删除：<br>
+./conf/nginx/conf.d/certs/site2/<br>
+./conf/nginx/conf.d/site2.conf<br>
+./www/site2/<br>
+重启容器内的Nginx生效：<br>
+docker exec -it dlnmp_nginx_1 nginx -s reload</p>
+<h4 id="https使用">HTTPS使用 <a href="#https%e4%bd%bf%e7%94%a8" class="anchor">🔗</a></h4><p>./conf/nginx/conf.d/site2.conf<br>
+如果是自签名，可以用廖雪峰提供的一个自动生成认证文件、私钥脚本：gencert.sh，
+这个脚本已经放在项目中，在这个目录下：<br>
+./conf/nginx/conf.d/certs/site2/<br>
+在Bash中输入：<br>
+$ ./gencert.sh<br>
+输入一次域名，和几次密码（内容随意）后，就会生成几个认证文件。<br>
+其中自签名情况不需要.csr和.origin.key后缀的文件。<br>
+然后修改Nginx配置文件，配置SSL支持就可以了。</p>
+<h4 id="docker-composeyml文件">docker-compose.yml文件 <a href="#docker-composeyml%e6%96%87%e4%bb%b6" class="anchor">🔗</a></h4><p>如下是docker容器的运行配置docker-compose.yml的内容：</p>
+<pre tabindex="0"><code>nginx:
+  image: nginx:alpine
+  ports:
+    - &#34;80:80&#34;
+    - &#34;443:443&#34;
+  volumes:
+    - ./www/:/var/www/html/:rw
+    - ./conf/nginx/conf.d:/etc/nginx/conf.d/:ro
+    - ./conf/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    - ./log/nginx/:/var/log/nginx/:rw
+  links:
+    - php-fpm:fpm
+
+php-fpm:
+  build: .
+  expose:
+    - &#34;9000&#34;
+  volumes:
+    - ./www/:/var/www/html/:rw
+    - ./conf/php/php.ini:/usr/local/etc/php/php.ini:ro
+    - ./conf/php/php-fpm.d/www.conf:/usr/local/etc/php-fpm.d/www.conf:rw
+    - ./log/php-fpm/:/var/log/php-fpm/:rw
+  links:
+    - mysql:mysql
+    - redis:redis
+
+mysql:
+  image: mysql:latest
+  ports:
+    - &#34;3306:3306&#34;
+  volumes:
+    - ./conf/mysql/my.cnf:/etc/mysql/my.cnf:ro
+    - ./mysql/:/var/lib/mysql/:rw
+    - ./log/mysql/:/var/log/mysql/:rw
+  environment:
+    MYSQL_ROOT_PASSWORD: &#34;123456&#34;
+
+redis:
+  image: redis:latest
+  ports:
+    - &#34;6379:6379&#34;
+</code></pre><h4 id="站点根目录写权限">站点根目录写权限 <a href="#%e7%ab%99%e7%82%b9%e6%a0%b9%e7%9b%ae%e5%bd%95%e5%86%99%e6%9d%83%e9%99%90" class="anchor">🔗</a></h4><p>默认的，容器中的/var/www/html目录属于root，我们需要修改为www-data，PHP才能正常写目录。<br>
+先进入到容器中：<br>
+$ docker exec -it dlnmp_php-fpm_1 /bin/bash<br>
+然后修改目录权限：<br>
+$ chown -R www-data:www-data /var/www/html</p>
+<h4 id="mysql连接">MYSQL连接 <a href="#mysql%e8%bf%9e%e6%8e%a5" class="anchor">🔗</a></h4><ol>
+<li>$ mysql -h 127.0.0.1 -u root -p
+<ul>
+<li>说明：这里MySQL的连接主机不能用localhost，因为MySQL客户端默认使用unix socket方式连接，应该直接用本地IP。</li>
+</ul>
+</li>
+<li>$pdo = new PDO(&lsquo;mysql:host=mysql;dbname=site1&rsquo;, &lsquo;root&rsquo;, &lsquo;123456&rsquo;);
+<ul>
+<li>说明：，host的值就是在指定的MySQL容器的名称。 redis,memcaced等类似</li>
+</ul>
+</li>
+</ol>
+<h4 id="一键安装脚本">一键安装脚本 <a href="#%e4%b8%80%e9%94%ae%e5%ae%89%e8%a3%85%e8%84%9a%e6%9c%ac" class="anchor">🔗</a></h4><pre tabindex="0"><code>#!/bin/bash
+
+function getVersionNum(){
+    version=`cat /proc/version`
+    cut=${version%%(*}
+    dd=${cut:14}
+}
+
+function dockerAlis() {
+    dps=&#34;\$(docker ps -aq)&#34;
+    dcup=&#34;ztth=&#39;docker-compose -f /root/docker/ztth.yml up -d&#39;&#34;
+    dcrs=&#34;ztth-rs=&#39;docker-compose -f /root/docker/ztth.yml restart&#39;&#34;
+    dcrm=&#34;ztth-rm=&#39;docker-compose -f /root/docker/ztth.yml stop &amp;&amp; docker-compose -f /root/docker/ztth.yml rm&#39;&#34;
+    dcps=&#34;ztth-ps=&#39;docker-compose -f /root/docker/ztth.yml ps&#39;&#34;
+    dcip=&#34;docker-ips=&#39;docker inspect --format=&#39;\&#34;&#39;\&#34;&#39;{{.Name}} - {{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}&#39;\&#34;&#39;\&#34;&#39; $dps&#39;&#34;
+}
+
+function main(){
+	while [ True ];do
+		echo -e &#34;\033[33m CentOs7 docker安装步骤: \033[0m&#34;
+		echo -e &#34;\033[33m The #1 docker服务安装 \033[0m&#34;
+		echo -e &#34;\033[33m The #2 virtual box挂载安装，请保证安装增加工具和挂载目录已经添加 \033[0m&#34;
+		echo -e &#34;\033[33m q键退出 \033[0m&#34;
+		read -p &#39;选择安装: &#39; number
+		case $number in
+          1)
+            echo -e &#34;\033[31m docker install starting \033[0m&#34; \
+            &amp;&amp; yum install -y wget \
+            &amp;&amp; mv /etc/yum.repos.d/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo.backup \
+            &amp;&amp; wget -O /etc/yum.repos.d/CentOS-Base.repo http://mirrors.aliyun.com/repo/Centos-7.repo \
+            &amp;&amp; yum install -y yum-utils \
+            &amp;&amp; yum-config-manager --add-repo http://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo \
+            &amp;&amp; yum install -y gcc gcc-devel gcc-c++ gcc-c++-devel make kernel kernel-devel bzip2 vim wget device-mapper-persistent-data lvm2 docker-ce \
+            &amp;&amp; yum makecache fast \
+            &amp;&amp; service docker start \
+            &amp;&amp; curl -L  https://ghproxy.com/https://github.com/docker/compose/releases/download/v2.16.0/docker-compose-`uname -s`-`uname -m` -o /usr/local/bin/docker-compose \
+            &amp;&amp; chmod +x /usr/local/bin/docker-compose\
+            &amp;&amp; gpasswd -a $USER docker \
+            &amp;&amp; mkdir -p /etc/docker \
+            &amp;&amp; echo &#39;{&#34;registry-mirrors&#34;:[&#34;https://l714mp7z.mirror.aliyuncs.com&#34;]}&#39;&gt;&gt; /etc/docker/daemon.json \
+            &amp;&amp; systemctl daemon-reload \
+            &amp;&amp; systemctl restart docker \
+            &amp;&amp; systemctl enable docker \
+            &amp;&amp; echo -e &#34;\033[31m docker安装完成，请重启电脑，执行步骤2 \033[0m&#34; &amp;&amp; exit
+            ;;
+
+          2)
+            echo -e &#34;\033[31m virtual box增强工具 install starting \033[0m&#34; \
+            &amp;&amp; getVersionNum &amp;&amp; rm -rf /usr/src/linux &amp;&amp; ln -s /usr/src/kernels/$dd /usr/src/linux \
+            &amp;&amp; mount /dev/cdrom /mnt \
+            &amp;&amp; cd /mnt &amp;&amp;  ./VBoxLinuxAdditions.run \
+            &amp;&amp; mkdir -p /root/docker  &amp;&amp; chmod -R 777 /root/docker \
+            &amp;&amp; echo &#39;docker /root/docker   vboxsf rw,gid=100,uid=1000,auto 0 0&#39;&gt;&gt; /etc/fstab \
+            &amp;&amp; dockerAlis \
+            &amp;&amp; echo &#34;alias $dcup&#34;&gt;&gt; /root/.bashrc \
+            &amp;&amp; echo &#34;alias $dcrs&#34;&gt;&gt; /root/.bashrc \
+            &amp;&amp; echo &#34;alias $dcrm&#34;&gt;&gt; /root/.bashrc \
+            &amp;&amp; echo &#34;alias $dcps&#34;&gt;&gt; /root/.bashrc \
+            &amp;&amp; echo &#34;alias $dcip&#34;&gt;&gt; /root/.bashrc \
+            &amp;&amp; source /root/.bashrc \
+            &amp;&amp; echo -e &#34;\033[31m 请服务器重启 \033[0m&#34;] &amp;&amp; exit
+            ;;
+
+		 &#34;q&#34;|&#34;quit&#34;)
+            exit
+            ;;
+
+         *)
+            echo &#34;Input error!!&#34;
+             ;;
+
+		esac
+	done
+}
+
+main
+</code></pre><h4 id="常用操作">常用操作 <a href="#%e5%b8%b8%e7%94%a8%e6%93%8d%e4%bd%9c" class="anchor">🔗</a></h4><p>别名配置</p>
+<pre tabindex="0"><code>alias docker-ips=&#39;docker inspect --format=&#39;&#34;&#39;&#34;&#39;{{.Name}} - {{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}&#39;&#34;&#39;&#34;&#39; $(docker ps -aq)&#39;
+alias ztth=&#39;docker-compose --compatibility -f /root/docker/ztth.yml up -d&#39;
+alias ztth-rs=&#39;docker-compose --compatibility -f /root/docker/ztth.yml restart&#39;
+alias ztth-rm=&#39;docker-compose --compatibility -f /root/docker/ztth.yml down -v&#39;
+alias ztth-ps=&#39;docker-compose --compatibility -f /root/docker/ztth.yml ps&#39;
+</code></pre><p>批量操作</p>
+<pre tabindex="0"><code>批量删除镜像
+docker rmi -f $(docker images -aq)
+清理所有未使用资源
+docker system prune -a --volumes
+删除未使用镜像
+docker image prune -a -f
+删除未使用容器
+docker rm -vf $(docker ps -aq)
+批量删除卷
+docker volume rm $(docker volume ls -qf dangling=true)
+删除所有关闭的容器
+docker ps -a | grep Exit | cut -d &#39; &#39; -f 1 | xargs docker rm
+删除所有dangling镜像（即无tag的镜像）
+docker rmi $(docker images | grep &#34;^&lt;none&gt;&#34; | awk &#34;{print $3}&#34;)
+</code></pre><p>自动脚本</p>
+<pre tabindex="0"><code>挂载到目录`/docker-entrypoint-initdb.d/`,首次创建容器会执行，但是多脚本必须是`01\02\03\04\05`这样的顺序开头，否则会报错。
+</code></pre><blockquote>
+<p>docker pull docker.1ms.run/apache/rocketmq:5.3.2</p></blockquote>
+
+    </div>
+
+    
+</section>
+
+
+            </div>
+            <div class="side">
+                <div class="side-categories">
+    <h2>Categories</h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/categories/ai">ai(3)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/go">go(23)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E4%BB%A3%E7%A0%81">代码(2)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E5%B7%A5%E5%85%B7">工具(8)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E9%80%86%E5%90%91">逆向(3)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E9%9D%A2%E8%AF%95">面试(4)</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/android/">Recent Android</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/android/redroid%E4%BD%BF%E7%94%A8/">Redroid安卓容器</a>
+            </li>
+        
+            <li>
+                <a href="/android/%E5%85%A5%E9%97%A8/">逆向环境-杂</a>
+            </li>
+        
+            <li>
+                <a href="/android/frida%E6%95%99%E7%A8%8B/">frida教程</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/tool/">Recent Tool</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/tool/linux-almalinux%E4%BC%98%E5%8C%96/">AlmaLinux10</a>
+            </li>
+        
+            <li>
+                <a href="/tool/almalinux-k8s/">AlmaLinux-k8s安装</a>
+            </li>
+        
+            <li>
+                <a href="/tool/vscode%E6%8A%98%E8%85%BE/">vscode折腾</a>
+            </li>
+        
+            <li>
+                <a href="/tool/linux-ubuntu%E4%BC%98%E5%8C%96/">Ubuntu开机优化</a>
+            </li>
+        
+            <li>
+                <a href="/tool/shell-ssh_script/">ssh常用脚本</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/llm/">Recent Llm</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/llm/transformers-%E5%85%A5%E9%97%A8%E7%AF%87/">Transformers-入门篇</a>
+            </li>
+        
+            <li>
+                <a href="/llm/%E6%A8%A1%E5%9E%8Bvllm%E9%83%A8%E7%BD%B2/">AI模型VLLM部署</a>
+            </li>
+        
+            <li>
+                <a href="/llm/%E6%A8%A1%E5%9E%8B%E5%BE%AE%E8%B0%83/">AI模型微调</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/go/">Recent Go</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/go/go%E4%B8%89%E8%89%B2%E6%A0%87%E8%AE%B0%E6%B7%B7%E5%90%88%E5%86%99%E5%B1%8F%E9%9A%9Cgc%E6%A8%A1%E5%BC%8F%E5%85%A8%E6%80%BB%E7%BB%93/">Go三色标记混合写屏障GC模式全总结</a>
+            </li>
+        
+            <li>
+                <a href="/go/go%E4%B8%ADmake%E4%B8%8Enew%E5%8C%BA%E5%88%AB/">Go中make与new区别</a>
+            </li>
+        
+            <li>
+                <a href="/go/go%E5%B8%B8%E7%94%A8bug%E5%92%8C%E6%80%A7%E8%83%BD%E9%97%AE%E9%A2%98%E7%9A%84%E5%AE%9E%E8%B7%B5%E6%96%B9%E6%B3%95/">Go常用bug和性能问题的实践方法</a>
+            </li>
+        
+            <li>
+                <a href="/go/grpc%E6%80%BB%E7%BB%93/">GRPC笔记</a>
+            </li>
+        
+            <li>
+                <a href="/go/go%E7%9A%84defer%E6%80%BB%E7%BB%93/">Go的defer总结</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/note/">Recent Note</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/note/rdis-%E7%BC%93%E5%AD%98%E7%A9%BF%E9%80%8F%E9%9B%AA%E5%B4%A9%E5%87%BB%E7%A9%BF%E7%9A%84%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95/">缓存穿透、雪崩、击穿的解决方法</a>
+            </li>
+        
+            <li>
+                <a href="/note/redis-%E5%8D%95%E7%BA%BF%E7%A8%8B%E7%9A%84redis%E4%B8%BA%E4%BB%80%E4%B9%88%E5%BF%AB/">单线程的redis为什么快</a>
+            </li>
+        
+            <li>
+                <a href="/note/redis-%E6%80%BB%E7%BB%93/">redis总结</a>
+            </li>
+        
+            <li>
+                <a href="/note/mysql-%E6%80%BB%E7%BB%93/">mysql总结</a>
+            </li>
+        
+            <li>
+                <a href="/note/java-%E4%BB%A3%E7%A0%81%E7%94%9F%E6%88%90/">JAVA代码生成</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+            </div>
+        </main>
+        <footer class="footer">
+    <div class="footer-row">
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/android/index.xml">
+                    Feed of Android
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/tool/index.xml">
+                    Feed of Tool
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/llm/index.xml">
+                    Feed of Llm
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/go/index.xml">
+                    Feed of Go
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/note/index.xml">
+                    Feed of Note
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+
+        
+            
+            
+        
+    </div>
+
+    
+</footer>
+
+    </body>
+</html>
