@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+<meta name="viewport" content="width=device-width,minimum-scale=1">
+
+
+
+
+<title>Go-深入解析slice底层实现 | Abner的博客</title>
+<link rel="canonical" href="https://abnerxc.github.io/go/%E6%B7%B1%E5%85%A5%E8%A7%A3%E6%9E%90slice%E5%BA%95%E5%B1%82%E5%AE%9E%E7%8E%B0/">
+<meta property="og:type" content="article" />
+<meta property="og:title" content="Go-深入解析slice底层实现 | Abner的博客" />
+<meta property="og:url" content="https://abnerxc.github.io/go/%E6%B7%B1%E5%85%A5%E8%A7%A3%E6%9E%90slice%E5%BA%95%E5%B1%82%E5%AE%9E%E7%8E%B0/" />
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/icofont/icofont.min.css" />
+<link rel="stylesheet" href="/css/syntax.css" />
+<link rel="stylesheet" href="/css/style.css" />
+<link rel="stylesheet" href="/css/custom.css" />
+<script src="/js/copy-code-block.js"></script>
+<link rel="shortcut icon" href="/images/favicon.ico" type="image/x-icon" />
+
+    </head>
+
+    <body>
+        <header class="header-wrapper">
+    <div class="header">
+        <a class="site-title" href="https://abnerxc.github.io/">Abner的博客</a>
+
+        <nav class="menu">
+            
+        </nav>
+    </div>
+</header>
+
+        <main class="main-wrapper">
+            <div class="main">
+                
+
+<section class="single">
+    <h1 class="title">Go-深入解析slice底层实现</h1>
+
+    <div class="tip">
+        <time datetime="2021-05-15 18:35:11 &#43;0800 CST">2021/05/15</time>
+        <span class="split">·</span>
+        <span> 1474 words </span>
+        <span class="split">·</span>
+        <span>
+            7 minutes to read
+        </span>
+    </div>
+
+    <div class="taxonomies">
+        
+        <div>
+            Categories:
+            
+                <a href="/categories/go">Go</a>
+            
+        </div>
+        
+
+        
+    </div>
+
+    
+    
+    <div class="post-toc">
+        <h3>目录</h3>
+        <nav id="TableOfContents">
+  <ul>
+    <li><a href="#切片和数组">切片和数组</a></li>
+    <li><a href="#切片上的数据结构">切片上的数据结构</a></li>
+    <li><a href="#创建切片">创建切片</a></li>
+    <li><a href="#切片扩容">切片扩容</a></li>
+    <li><a href="#切片拷贝">切片拷贝</a></li>
+  </ul>
+</nav>
+    </div>
+    
+
+    <hr />
+
+    <div class="content">
+        <p>原文地址：https://halfrost.com/go_slice/</p>
+<p>切片是 Go 中的一种基本的数据结构，使用这种结构可以用来管理数据集合。切片的设计想法是由动态数组概念而来，为了开发者可以更加方便的使一个数据结构可以自动增加和减少。但是切片本身并不是动态数据或者数组指针。切片常见的操作有 reslice、append、copy。与此同时，切片还具有可索引，可迭代的优秀特性。</p>
+<h1 id="切片和数组">切片和数组 <a href="#%e5%88%87%e7%89%87%e5%92%8c%e6%95%b0%e7%bb%84" class="anchor">🔗</a></h1><p>在 Go 中，与 C 数组变量隐式作为指针使用不同，Go 数组是值类型，赋值和函数传参操作都会复制整个数组数据。</p>
+<pre tabindex="0"><code>func main() {
+	arrayA := [2]int{100, 200}
+	var arrayB [2]int
+
+	arrayB = arrayA
+
+	fmt.Printf(&#34;arrayA : %p , %v\n&#34;, &amp;arrayA, arrayA)
+	fmt.Printf(&#34;arrayB : %p , %v\n&#34;, &amp;arrayB, arrayB)
+
+	testArray(arrayA)
+}
+
+func testArray(x [2]int) {
+	fmt.Printf(&#34;func Array : %p , %v\n&#34;, &amp;x, x)
+}
+</code></pre><p>打印结果：</p>
+<pre tabindex="0"><code>arrayA : 0xc4200bebf0 , [100 200]
+arrayB : 0xc4200bec00 , [100 200]
+func Array : 0xc4200bec30 , [100 200]
+</code></pre><p>可以看到，三个内存地址都不同，这也就验证了 Go 中数组赋值和函数传参都是值复制的。那这会导致什么问题呢？</p>
+<p>假想每次传参都用数组，那么每次数组都要被复制一遍。如果数组大小有 100万，在64位机器上就需要花费大约 800W 字节，即 8MB 内存。这样会消耗掉大量的内存。于是乎有人想到，函数传参用数组的指针。</p>
+<pre tabindex="0"><code>func main() {
+	arrayA := []int{100, 200}
+	testArrayPoint(&amp;arrayA)   // 1.传数组指针
+	arrayB := arrayA[:]
+	testArrayPoint(&amp;arrayB)   // 2.传切片
+	fmt.Printf(&#34;arrayA : %p , %v\n&#34;, &amp;arrayA, arrayA)
+}
+
+func testArrayPoint(x *[]int) {
+	fmt.Printf(&#34;func Array : %p , %v\n&#34;, x, *x)
+	(*x)[1] += 100
+}
+</code></pre><p>打印结果:</p>
+<pre tabindex="0"><code>func Array : 0xc4200b0140 , [100 200]
+func Array : 0xc4200b0180 , [100 300]
+arrayA : 0xc4200b0140 , [100 400]
+</code></pre><p>这也就证明了数组指针确实到达了我们想要的效果。现在就算是传入10亿的数组，也只需要再栈上分配一个8个字节的内存给指针就可以了。这样更加高效的利用内存，性能也比之前的好。</p>
+<p>不过传指针会有一个弊端，从打印结果可以看到，第一行和第三行指针地址都是同一个，万一原数组的指针指向更改了，那么函数里面的指针指向都会跟着更改。</p>
+<p>切片的优势也就表现出来了。用切片传数组参数，既可以达到节约内存的目的，也可以达到合理处理好共享内存的问题。打印结果第二行就是切片，切片的指针和原来数组的指针是不同的。</p>
+<p>由此我们可以得出结论：</p>
+<p>把第一个大数组传递给函数会消耗很多内存，采用切片的方式传参可以避免上述问题。切片是引用传递，所以它们不需要使用额外的内存并且比使用数组更有效率。</p>
+<p>但是，依旧有反例。</p>
+<pre tabindex="0"><code>package main
+
+import &#34;testing&#34;
+
+func array() [1024]int {
+	var x [1024]int
+	for i := 0; i &lt; len(x); i++ {
+		x[i] = i
+	}
+	return x
+}
+
+func slice() []int {
+	x := make([]int, 1024)
+	for i := 0; i &lt; len(x); i++ {
+		x[i] = i
+	}
+	return x
+}
+
+func BenchmarkArray(b *testing.B) {
+	for i := 0; i &lt; b.N; i++ {
+		array()
+	}
+}
+
+func BenchmarkSlice(b *testing.B) {
+	for i := 0; i &lt; b.N; i++ {
+		slice()
+	}
+}
+</code></pre><p>我们做一次性能测试，并且禁用内联和优化，来观察切片的堆上内存分配的情况。</p>
+<pre tabindex="0"><code>  go test -bench . -benchmem -gcflags &#34;-N -l&#34;
+</code></pre><p>输出结果比较“令人意外”：</p>
+<pre tabindex="0"><code>BenchmarkArray-4          500000              3637 ns/op               0 B/op          0 alloc s/op
+BenchmarkSlice-4          300000              4055 ns/op            8192 B/op          1 alloc s/op
+</code></pre><p>解释一下上述结果，在测试 Array 的时候，用的是4核，循环次数是500000，平均每次执行时间是3637 ns，每次执行堆上分配内存总量是0，分配次数也是0 。</p>
+<p>而切片的结果就“差”一点，同样也是用的是4核，循环次数是300000，平均每次执行时间是4055 ns，但是每次执行一次，堆上分配内存总量是8192，分配次数也是1 。</p>
+<p>这样对比看来，并非所有时候都适合用切片代替数组，因为切片底层数组可能会在堆上分配内存，而且小数组在栈上拷贝的消耗也未必比 make 消耗大。</p>
+<h1 id="切片上的数据结构">切片上的数据结构 <a href="#%e5%88%87%e7%89%87%e4%b8%8a%e7%9a%84%e6%95%b0%e6%8d%ae%e7%bb%93%e6%9e%84" class="anchor">🔗</a></h1><p>切片本身并不是动态数组或者数组指针。它内部实现的数据结构通过指针引用底层数组，设定相关属性将数据读写操作限定在指定的区域内。<strong>切片本身是一个只读对象，其工作机制类似数组指针的一种封装。</strong></p>
+<p>切片（slice）是对数组一个连续片段的引用，所以切片是一个引用类型（因此更类似于 C/C++ 中的数组类型，或者 Python 中的 list 类型）。这个片段可以是整个数组，或者是由起始和终止索引标识的一些项的子集。需要注意的是，终止索引标识的项不包括在切片内。切片提供了一个与指向数组的动态窗口。</p>
+<p>给定项的切片索引可能比相关数组的相同元素的索引小。和数组不同的是，切片的长度可以在运行时修改，最小为 0 最大为相关数组的长度：切片是一个长度可变的数组。</p>
+<pre tabindex="0"><code>type slice struct {
+	array unsafe.Pointer
+	len   int
+	cap   int
+}
+</code></pre><p><img src="/img/go-s1.jpeg" alt="slice_内存模型"></p>
+<p>切片的结构体由3部分构成，Pointer 是指向一个数组的指针，len 代表当前切片的长度，cap 是当前切片的容量。cap 总是大于等于 len 的。</p>
+<p><img src="/img/go-s2.jpeg" alt="57_3.png"></p>
+<p>如果想从 slice 中得到一块内存地址，可以这样做：</p>
+<pre tabindex="0"><code>s := make([]byte, 200)
+ptr := unsafe.Pointer(&amp;s[0])
+</code></pre><p>如果反过来呢？从 Go 的内存地址中构造一个 slice。</p>
+<pre tabindex="0"><code>var ptr unsafe.Pointer
+var s1 = struct {
+    addr uintptr
+    len int
+    cap int
+}{ptr, length, length}
+s := *(*[]byte)(unsafe.Pointer(&amp;s1))
+</code></pre><p>构造一个虚拟的结构体，把 slice 的数据结构拼出来。</p>
+<p>当然还有更加直接的方法，在 Go 的反射中就存在一个与之对应的数据结构 SliceHeader，我们可以用它来构造一个 slice</p>
+<pre tabindex="0"><code>var o []byte
+sliceHeader := (*reflect.SliceHeader)((unsafe.Pointer(&amp;o)))
+sliceHeader.Cap = length
+sliceHeader.Len = length
+sliceHeader.Data = uintptr(ptr)
+</code></pre><h1 id="创建切片">创建切片 <a href="#%e5%88%9b%e5%bb%ba%e5%88%87%e7%89%87" class="anchor">🔗</a></h1><p>make 函数允许在运行期动态指定数组长度，绕开了数组类型必须使用编译期常量的限制。</p>
+<p>创建切片有两种形式，make 创建切片，空切片。</p>
+<h2 id="make-和切片字面量">make 和切片字面量 <a href="#make-%e5%92%8c%e5%88%87%e7%89%87%e5%ad%97%e9%9d%a2%e9%87%8f" class="anchor">🔗</a></h2><pre tabindex="0"><code>func makeslice(et *_type, len, cap int) slice {
+	// 根据切片的数据类型，获取切片的最大容量
+	maxElements := maxSliceCap(et.size)
+    // 比较切片的长度，长度值域应该在[0,maxElements]之间
+	if len &lt; 0 || uintptr(len) &gt; maxElements {
+		panic(errorString(&#34;makeslice: len out of range&#34;))
+	}
+    // 比较切片的容量，容量值域应该在[len,maxElements]之间
+	if cap &lt; len || uintptr(cap) &gt; maxElements {
+		panic(errorString(&#34;makeslice: cap out of range&#34;))
+	}
+    // 根据切片的容量申请内存
+	p := mallocgc(et.size*uintptr(cap), et, true)
+    // 返回申请好内存的切片的首地址
+	return slice{p, len, cap}
+}
+</code></pre><p><img src="/img/go-s3.jpeg" alt=""></p>
+<p>上图是用 make 函数创建的一个 len = 4， cap = 6 的切片。内存空间申请了6个 int 类型的内存大小。由于 len = 4，所以后面2个暂时访问不到，但是容量还是在的。这时候数组里面每个变量都是0 。</p>
+<p>除了 make 函数可以创建切片以外，字面量也可以创建切片。</p>
+<p><img src="/img/go-s4.jpeg" alt=""></p>
+<p>这里是用字面量创建的一个 len = 6，cap = 6 的切片，这时候数组里面每个元素的值都初始化完成了。<strong>需要注意的是 [ ] 里面不要写数组的容量，因为如果写了个数以后就是数组了，而不是切片了。</strong></p>
+<p><img src="/img/go-s5.jpeg" alt=""></p>
+<p>还有一种简单的字面量创建切片的方法。如上图。上图就 Slice A 创建出了一个 len = 3，cap = 3 的切片。从原数组的第二位元素(0是第一位)开始切，一直切到第四位为止(不包括第五位)。同理，Slice B 创建出了一个 len = 2，cap = 4 的切片。</p>
+<h2 id="nil-和空切片">nil 和空切片 <a href="#nil-%e5%92%8c%e7%a9%ba%e5%88%87%e7%89%87" class="anchor">🔗</a></h2><p>nil 切片和空切片也是常用的。</p>
+<pre tabindex="0"><code>var slice []int
+</code></pre><p><img src="/img/go-s6.jpeg" alt=""></p>
+<p>nil 切片被用在很多标准库和内置函数中，描述一个不存在的切片的时候，就需要用到 nil 切片。比如函数在发生异常的时候，返回的切片就是 nil 切片。nil 切片的指针指向 nil。</p>
+<p>空切片一般会用来表示一个空的集合。比如数据库查询，一条结果也没有查到，那么就可以返回一个空切片。</p>
+<pre tabindex="0"><code>silce := make( []int , 0 )
+slice := []int{ }
+</code></pre><p><img src="/img/go-s7.jpeg" alt=""></p>
+<p>空切片和 nil 切片的区别在于，空切片指向的地址不是nil，指向的是一个内存地址，但是它没有分配任何内存空间，即底层元素包含0个元素。</p>
+<p>最后需要说明的一点是。不管是使用 nil 切片还是空切片，对其调用内置函数 append，len 和 cap 的效果都是一样的。</p>
+<h1 id="切片扩容">切片扩容 <a href="#%e5%88%87%e7%89%87%e6%89%a9%e5%ae%b9" class="anchor">🔗</a></h1><p>首先看看源码</p>
+<pre tabindex="0"><code>func growslice(et *_type, old slice, cap int) slice {
+	if raceenabled {
+		callerpc := getcallerpc(unsafe.Pointer(&amp;et))
+		racereadrangepc(old.array, uintptr(old.len*int(et.size)), callerpc, funcPC(growslice))
+	}
+	if msanenabled {
+		msanread(old.array, uintptr(old.len*int(et.size)))
+	}
+
+	if et.size == 0 {
+		// 如果新要扩容的容量比原来的容量还要小，这代表要缩容了，那么可以直接报panic了。
+		if cap &lt; old.cap {
+			panic(errorString(&#34;growslice: cap out of range&#34;))
+		}
+
+		// 如果当前切片的大小为0，还调用了扩容方法，那么就新生成一个新的容量的切片返回。
+		return slice{unsafe.Pointer(&amp;zerobase), old.len, cap}
+	}
+
+    // 这里就是扩容的策略
+	newcap := old.cap
+	doublecap := newcap + newcap
+	if cap &gt; doublecap {
+		newcap = cap
+	} else {
+		if old.len &lt; 1024 {
+			newcap = doublecap
+		} else {
+			// Check 0 &lt; newcap to detect overflow
+			// and prevent an infinite loop.
+			for 0 &lt; newcap &amp;&amp; newcap &lt; cap {
+				newcap += newcap / 4
+			}
+			// Set newcap to the requested cap when
+			// the newcap calculation overflowed.
+			if newcap &lt;= 0 {
+				newcap = cap
+			}
+		}
+	}
+
+	// 计算新的切片的容量，长度。
+	var lenmem, newlenmem, capmem uintptr
+	const ptrSize = unsafe.Sizeof((*byte)(nil))
+	switch et.size {
+	case 1:
+		lenmem = uintptr(old.len)
+		newlenmem = uintptr(cap)
+		capmem = roundupsize(uintptr(newcap))
+		newcap = int(capmem)
+	case ptrSize:
+		lenmem = uintptr(old.len) * ptrSize
+		newlenmem = uintptr(cap) * ptrSize
+		capmem = roundupsize(uintptr(newcap) * ptrSize)
+		newcap = int(capmem / ptrSize)
+	default:
+		lenmem = uintptr(old.len) * et.size
+		newlenmem = uintptr(cap) * et.size
+		capmem = roundupsize(uintptr(newcap) * et.size)
+		newcap = int(capmem / et.size)
+	}
+
+	// 判断非法的值，保证容量是在增加，并且容量不超过最大容量
+	if cap &lt; old.cap || uintptr(newcap) &gt; maxSliceCap(et.size) {
+		panic(errorString(&#34;growslice: cap out of range&#34;))
+	}
+
+	var p unsafe.Pointer
+	if et.kind&amp;kindNoPointers != 0 {
+		// 在老的切片后面继续扩充容量
+		p = mallocgc(capmem, nil, false)
+		// 将 lenmem 这个多个 bytes 从 old.array地址 拷贝到 p 的地址处
+		memmove(p, old.array, lenmem)
+		// 先将 P 地址加上新的容量得到新切片容量的地址，然后将新切片容量地址后面的 capmem-newlenmem 个 bytes 这块内存初始化。为之后继续 append() 操作腾出空间。
+		memclrNoHeapPointers(add(p, newlenmem), capmem-newlenmem)
+	} else {
+		// 重新申请新的数组给新切片
+		// 重新申请 capmen 这个大的内存地址，并且初始化为0值
+		p = mallocgc(capmem, et, true)
+		if !writeBarrier.enabled {
+			// 如果还不能打开写锁，那么只能把 lenmem 大小的 bytes 字节从 old.array 拷贝到 p 的地址处
+			memmove(p, old.array, lenmem)
+		} else {
+			// 循环拷贝老的切片的值
+			for i := uintptr(0); i &lt; lenmem; i += et.size {
+				typedmemmove(et, add(p, i), add(old.array, i))
+			}
+		}
+	}
+	// 返回最终新切片，容量更新为最新扩容之后的容量
+	return slice{p, old.len, newcap}
+}
+</code></pre><h2 id="扩容策略">扩容策略 <a href="#%e6%89%a9%e5%ae%b9%e7%ad%96%e7%95%a5" class="anchor">🔗</a></h2><pre tabindex="0"><code>func main() {
+	slice := []int{10, 20, 30, 40}
+	newSlice := append(slice, 50)
+	fmt.Printf(&#34;Before slice = %v, Pointer = %p, len = %d, cap = %d\n&#34;, slice, &amp;slice, len(slice), cap(slice))
+	fmt.Printf(&#34;Before newSlice = %v, Pointer = %p, len = %d, cap = %d\n&#34;, newSlice, &amp;newSlice, len(newSlice), cap(newSlice))
+	newSlice[1] += 10
+	fmt.Printf(&#34;After slice = %v, Pointer = %p, len = %d, cap = %d\n&#34;, slice, &amp;slice, len(slice), cap(slice))
+	fmt.Printf(&#34;After newSlice = %v, Pointer = %p, len = %d, cap = %d\n&#34;, newSlice, &amp;newSlice, len(newSlice), cap(newSlice))
+}
+//输出结果
+Before slice = [10 20 30 40], Pointer = 0xc4200b0140, len = 4, cap = 4
+Before newSlice = [10 20 30 40 50], Pointer = 0xc4200b0180, len = 5, cap = 8
+After slice = [10 20 30 40], Pointer = 0xc4200b0140, len = 4, cap = 4
+After newSlice = [10 30 30 40 50], Pointer = 0xc4200b0180, len = 5, cap = 8
+</code></pre><p>用图表示</p>
+<p><img src="/img/go-s8.jpeg" alt=""></p>
+<p>从图上我们可以很容易的看出，新的切片和之前的切片已经不同了，因为新的切片更改了一个值，并没有影响到原来的数组，新切片指向的数组是一个全新的数组。并且 cap 容量也发生了变化。这之间究竟发生了什么呢？</p>
+<p>Go 中切片扩容的策略是这样的：</p>
+<ul>
+<li>首先判断，如果新申请容量（cap）大于2倍的旧容量（old.cap），最终容量（newcap）就是新申请的容量（cap）</li>
+<li>否则判断，如果旧切片的长度小于1024，则最终容量(newcap)就是旧容量(old.cap)的两倍，即（newcap=doublecap）</li>
+<li>否则判断，如果旧切片长度大于等于1024，则最终容量（newcap）从旧容量（old.cap）开始循环增加原来的 1/4，即（newcap=old.cap,for {newcap += newcap/4}）直到最终容量（newcap）大于等于新申请的容量(cap)，即（newcap &gt;= cap）</li>
+<li>如果最终容量（cap）计算值溢出，则最终容量（cap）就是新申请容量（cap）</li>
+</ul>
+<p><strong>注意：扩容扩大的容量都是针对原来的容量而言的，而不是针对原来数组的长度而言的。</strong></p>
+<h2 id="新数组-or-老数组-">新数组 or 老数组 ？ <a href="#%e6%96%b0%e6%95%b0%e7%bb%84-or-%e8%80%81%e6%95%b0%e7%bb%84-" class="anchor">🔗</a></h2><p>再谈谈扩容之后的数组一定是新的么？这个不一定，分两种情况。</p>
+<p>情况一：</p>
+<pre tabindex="0"><code>func main() {
+	array := [4]int{10, 20, 30, 40}
+	slice := array[0:2]
+	newSlice := append(slice, 50)
+	fmt.Printf(&#34;Before slice = %v, Pointer = %p, len = %d, cap = %d\n&#34;, slice, &amp;slice, len(slice), cap(slice))
+	fmt.Printf(&#34;Before newSlice = %v, Pointer = %p, len = %d, cap = %d\n&#34;, newSlice, &amp;newSlice, len(newSlice), cap(newSlice))
+	newSlice[1] += 10
+	fmt.Printf(&#34;After slice = %v, Pointer = %p, len = %d, cap = %d\n&#34;, slice, &amp;slice, len(slice), cap(slice))
+	fmt.Printf(&#34;After newSlice = %v, Pointer = %p, len = %d, cap = %d\n&#34;, newSlice, &amp;newSlice, len(newSlice), cap(newSlice))
+	fmt.Printf(&#34;After array = %v\n&#34;, array)
+}
+
+//输出
+Before slice = [10 20], Pointer = 0xc4200c0040, len = 2, cap = 4
+Before newSlice = [10 20 50], Pointer = 0xc4200c0060, len = 3, cap = 4
+After slice = [10 30], Pointer = 0xc4200c0040, len = 2, cap = 4
+After newSlice = [10 30 50], Pointer = 0xc4200c0060, len = 3, cap = 4
+After array = [10 30 50 40]
+</code></pre><p>把上述过程用图表示出来，如下图。
+<img src="/img/go-s9.jpeg" alt=""></p>
+<p>通过打印的结果，我们可以看到，在这种情况下，扩容以后并没有新建一个新的数组，扩容前后的数组都是同一个，这也就导致了新的切片修改了一个值，也影响到了老的切片了。并且 append() 操作也改变了原来数组里面的值。一个 append() 操作影响了这么多地方，如果原数组上有多个切片，那么这些切片都会被影响！无意间就产生了莫名的 bug！</p>
+<p>这种情况，由于原数组还有容量可以扩容，所以执行 append() 操作以后，会在原数组上直接操作，所以这种情况下，扩容以后的数组还是指向原来的数组。</p>
+<p>这种情况也极容易出现在字面量创建切片时候，第三个参数 cap 传值的时候，如果用字面量创建切片，cap 并不等于指向数组的总容量，那么这种情况就会发生。</p>
+<pre tabindex="0"><code>slice := array[1:2:3]
+</code></pre><p><strong>上面这种情况非常危险，极度容易产生 bug 。</strong>
+建议用字面量创建切片的时候，cap 的值一定要保持清醒，避免共享原数组导致的 bug。</p>
+<p>情况二：</p>
+<p>情况二其实就是在扩容策略里面举的例子，在那个例子中之所以生成了新的切片，是因为原来数组的容量已经达到了最大值，再想扩容， Go 默认会先开一片内存区域，把原来的值拷贝过来，然后再执行 append() 操作。这种情况丝毫不影响原数组。</p>
+<p>所以建议尽量避免情况一，尽量使用情况二，避免 bug 产生。
+举例：</p>
+<pre tabindex="0"><code>func main() {
+
+    s1 := []int{1, 2, 3}
+    s2 := s1[1:]
+    s2[1] = 4
+    fmt.Println(s1)
+    s2 = append(s2, 5, 6, 7)
+    fmt.Println(s1)
+}
+//output 
+[1 2 4]
+[1 2 4]
+</code></pre><h1 id="切片拷贝">切片拷贝 <a href="#%e5%88%87%e7%89%87%e6%8b%b7%e8%b4%9d" class="anchor">🔗</a></h1><p>Slice 中拷贝方法有2个。</p>
+<pre tabindex="0"><code>func slicecopy(to, fm slice, width uintptr) int {
+	// 如果源切片或者目标切片有一个长度为0，那么就不需要拷贝，直接 return 
+	if fm.len == 0 || to.len == 0 {
+		return 0
+	}
+	// n 记录下源切片或者目标切片较短的那一个的长度
+	n := fm.len
+	if to.len &lt; n {
+		n = to.len
+	}
+	// 如果入参 width = 0，也不需要拷贝了，返回较短的切片的长度
+	if width == 0 {
+		return n
+	}
+	// 如果开启了竞争检测
+	if raceenabled {
+		callerpc := getcallerpc(unsafe.Pointer(&amp;to))
+		pc := funcPC(slicecopy)
+		racewriterangepc(to.array, uintptr(n*int(width)), callerpc, pc)
+		racereadrangepc(fm.array, uintptr(n*int(width)), callerpc, pc)
+	}
+	// 如果开启了 The memory sanitizer (msan)
+	if msanenabled {
+		msanwrite(to.array, uintptr(n*int(width)))
+		msanread(fm.array, uintptr(n*int(width)))
+	}
+
+	size := uintptr(n) * width
+	if size == 1 { 
+		// TODO: is this still worth it with new memmove impl?
+		// 如果只有一个元素，那么指针直接转换即可
+		*(*byte)(to.array) = *(*byte)(fm.array) // known to be a byte pointer
+	} else {
+		// 如果不止一个元素，那么就把 size 个 bytes 从 fm.array 地址开始，拷贝到 to.array 地址之后
+		memmove(to.array, fm.array, size)
+	}
+	return n
+}
+</code></pre><p>在这个方法中，slicecopy 方法会把源切片值(即 fm Slice )中的元素复制到目标切片(即 to Slice )中，并返回被复制的元素个数，copy 的两个类型必须一致。slicecopy 方法最终的复制结果取决于较短的那个切片，当较短的切片复制完成，整个复制过程就全部完成了。
+<img src="/img/go-s10.jpeg" alt=""></p>
+<p>说到拷贝，切片中有一个需要注意的问题。</p>
+<pre tabindex="0"><code>func main() {
+	slice := []int{10, 20, 30, 40}
+	for index, value := range slice {
+		fmt.Printf(&#34;value = %d , value-addr = %x , slice-addr = %x\n&#34;, value, &amp;value, &amp;slice[index])
+	}
+}
+//输出
+value = 10 , value-addr = c4200aedf8 , slice-addr = c4200b0320
+value = 20 , value-addr = c4200aedf8 , slice-addr = c4200b0328
+value = 30 , value-addr = c4200aedf8 , slice-addr = c4200b0330
+value = 40 , value-addr = c4200aedf8 , slice-addr = c4200b0338
+</code></pre><p><img src="/img/go-s11.jpeg" alt=""></p>
+<p>由于 Value 是值拷贝的，并非引用传递，所以直接改 Value 是达不到更改原切片值的目的的，需要通过 &amp;slice[index] 获取真实的地址。</p>
+
+    </div>
+
+    
+</section>
+
+
+            </div>
+            <div class="side">
+                <div class="side-categories">
+    <h2>Categories</h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/categories/ai">ai(3)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/go">go(23)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E4%BB%A3%E7%A0%81">代码(2)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E5%B7%A5%E5%85%B7">工具(8)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E9%80%86%E5%90%91">逆向(3)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E9%9D%A2%E8%AF%95">面试(5)</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/note/">Recent Note</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/note/%E6%9E%B6%E6%9E%84%E8%80%83%E7%82%B9/">场景总结</a>
+            </li>
+        
+            <li>
+                <a href="/note/rdis-%E7%BC%93%E5%AD%98%E7%A9%BF%E9%80%8F%E9%9B%AA%E5%B4%A9%E5%87%BB%E7%A9%BF%E7%9A%84%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95/">缓存穿透、雪崩、击穿的解决方法</a>
+            </li>
+        
+            <li>
+                <a href="/note/redis-%E5%8D%95%E7%BA%BF%E7%A8%8B%E7%9A%84redis%E4%B8%BA%E4%BB%80%E4%B9%88%E5%BF%AB/">单线程的redis为什么快</a>
+            </li>
+        
+            <li>
+                <a href="/note/redis-%E6%80%BB%E7%BB%93/">redis总结</a>
+            </li>
+        
+            <li>
+                <a href="/note/mysql-%E6%80%BB%E7%BB%93/">mysql总结</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/android/">Recent Android</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/android/redroid%E4%BD%BF%E7%94%A8/">Redroid安卓容器</a>
+            </li>
+        
+            <li>
+                <a href="/android/%E5%85%A5%E9%97%A8/">逆向环境-杂</a>
+            </li>
+        
+            <li>
+                <a href="/android/frida%E6%95%99%E7%A8%8B/">frida教程</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/tool/">Recent Tool</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/tool/linux-almalinux%E4%BC%98%E5%8C%96/">AlmaLinux10</a>
+            </li>
+        
+            <li>
+                <a href="/tool/almalinux-k8s/">AlmaLinux-k8s安装</a>
+            </li>
+        
+            <li>
+                <a href="/tool/vscode%E6%8A%98%E8%85%BE/">vscode折腾</a>
+            </li>
+        
+            <li>
+                <a href="/tool/linux-ubuntu%E4%BC%98%E5%8C%96/">Ubuntu开机优化</a>
+            </li>
+        
+            <li>
+                <a href="/tool/shell-ssh_script/">ssh常用脚本</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/llm/">Recent Llm</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/llm/transformers-%E5%85%A5%E9%97%A8%E7%AF%87/">Transformers-入门篇</a>
+            </li>
+        
+            <li>
+                <a href="/llm/%E6%A8%A1%E5%9E%8Bvllm%E9%83%A8%E7%BD%B2/">AI模型VLLM部署</a>
+            </li>
+        
+            <li>
+                <a href="/llm/%E6%A8%A1%E5%9E%8B%E5%BE%AE%E8%B0%83/">AI模型微调</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/go/">Recent Go</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/go/go%E4%B8%89%E8%89%B2%E6%A0%87%E8%AE%B0%E6%B7%B7%E5%90%88%E5%86%99%E5%B1%8F%E9%9A%9Cgc%E6%A8%A1%E5%BC%8F%E5%85%A8%E6%80%BB%E7%BB%93/">Go三色标记混合写屏障GC模式全总结</a>
+            </li>
+        
+            <li>
+                <a href="/go/go%E4%B8%ADmake%E4%B8%8Enew%E5%8C%BA%E5%88%AB/">Go中make与new区别</a>
+            </li>
+        
+            <li>
+                <a href="/go/go%E5%B8%B8%E7%94%A8bug%E5%92%8C%E6%80%A7%E8%83%BD%E9%97%AE%E9%A2%98%E7%9A%84%E5%AE%9E%E8%B7%B5%E6%96%B9%E6%B3%95/">Go常用bug和性能问题的实践方法</a>
+            </li>
+        
+            <li>
+                <a href="/go/grpc%E6%80%BB%E7%BB%93/">GRPC笔记</a>
+            </li>
+        
+            <li>
+                <a href="/go/go%E7%9A%84defer%E6%80%BB%E7%BB%93/">Go的defer总结</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+            </div>
+        </main>
+        <footer class="footer">
+    <div class="footer-row">
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/note/index.xml">
+                    Feed of Note
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/android/index.xml">
+                    Feed of Android
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/tool/index.xml">
+                    Feed of Tool
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/llm/index.xml">
+                    Feed of Llm
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/go/index.xml">
+                    Feed of Go
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+
+        
+            
+            
+        
+    </div>
+
+    
+</footer>
+
+    </body>
+</html>

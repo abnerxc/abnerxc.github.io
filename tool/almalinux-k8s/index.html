@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+<meta name="viewport" content="width=device-width,minimum-scale=1">
+
+
+
+
+<title>AlmaLinux-k8s安装 | Abner的博客</title>
+<link rel="canonical" href="https://abnerxc.github.io/tool/almalinux-k8s/">
+<meta property="og:type" content="article" />
+<meta property="og:title" content="AlmaLinux-k8s安装 | Abner的博客" />
+<meta property="og:url" content="https://abnerxc.github.io/tool/almalinux-k8s/" />
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/icofont/icofont.min.css" />
+<link rel="stylesheet" href="/css/syntax.css" />
+<link rel="stylesheet" href="/css/style.css" />
+<link rel="stylesheet" href="/css/custom.css" />
+<script src="/js/copy-code-block.js"></script>
+<link rel="shortcut icon" href="/images/favicon.ico" type="image/x-icon" />
+
+    </head>
+
+    <body>
+        <header class="header-wrapper">
+    <div class="header">
+        <a class="site-title" href="https://abnerxc.github.io/">Abner的博客</a>
+
+        <nav class="menu">
+            
+        </nav>
+    </div>
+</header>
+
+        <main class="main-wrapper">
+            <div class="main">
+                
+
+<section class="single">
+    <h1 class="title">AlmaLinux-k8s安装</h1>
+
+    <div class="tip">
+        <time datetime="2025-07-21 18:35:11 &#43;0800 CST">2025/07/21</time>
+        <span class="split">·</span>
+        <span> 650 words </span>
+        <span class="split">·</span>
+        <span>
+            4 minutes to read
+        </span>
+    </div>
+
+    <div class="taxonomies">
+        
+        <div>
+            Categories:
+            
+                <a href="/categories/%E5%B7%A5%E5%85%B7">工具</a>
+            
+        </div>
+        
+
+        
+    </div>
+
+    
+    
+    <div class="post-toc">
+        <h3>目录</h3>
+        <nav id="TableOfContents">
+  <ul>
+    <li><a href="#环境准备所有节点执行">环境准备（所有节点执行）</a></li>
+    <li><a href="#初始化-master-节点-仅在-k8s-master-执行">初始化 Master 节点 (仅在 k8s-master 执行)</a></li>
+    <li><a href="#添加-worker-节点-在-k8s-node1-和-k8s-node2-执行">添加 Worker 节点 (在 k8s-node1 和 k8s-node2 执行)</a></li>
+    <li><a href="#安装-calico-网络插件-仅在-k8s-master-执行">安装 Calico 网络插件 (仅在 k8s-master 执行)</a></li>
+    <li><a href="#集群验证">集群验证</a></li>
+  </ul>
+</nav>
+    </div>
+    
+
+    <hr />
+
+    <div class="content">
+        <blockquote>
+<p><a href="https://juejin.cn/post/7369865018764984354">https://juejin.cn/post/7369865018764984354</a>
+<a href="https://developer.aliyun.com/article/1463360">https://developer.aliyun.com/article/1463360</a></p>
+</blockquote>
+<h1 id="环境准备所有节点执行">环境准备（所有节点执行） <a href="#%e7%8e%af%e5%a2%83%e5%87%86%e5%a4%87%e6%89%80%e6%9c%89%e8%8a%82%e7%82%b9%e6%89%a7%e8%a1%8c" class="anchor">🔗</a></h1><h2 id="网络配置">网络配置 <a href="#%e7%bd%91%e7%bb%9c%e9%85%8d%e7%bd%ae" class="anchor">🔗</a></h2><p>master=192.168.122.10,node=192.168.122.11,192.168.122.12</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span><span style="color:#75715e">#进入网络配置文件目录</span>
+</span></span><span style="display:flex;"><span>vi /etc/NetworkManager/system-connections/enp1s0.nmconnection
+</span></span><span style="display:flex;"><span>将<span style="color:#f92672">[</span>ipv4<span style="color:#f92672">]</span>的method<span style="color:#f92672">=</span>auto改为method<span style="color:#f92672">=</span>manual，即改为配置静态ip
+</span></span><span style="display:flex;"><span><span style="color:#f92672">[</span>ipv4<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>method<span style="color:#f92672">=</span>manual
+</span></span><span style="display:flex;"><span>address1<span style="color:#f92672">=</span>192.168.122.10  
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#address2=192.168.122.10</span>
+</span></span><span style="display:flex;"><span>gateway<span style="color:#f92672">=</span>192.168.122.1
+</span></span><span style="display:flex;"><span>route1<span style="color:#f92672">=</span>192.168.100.1
+</span></span><span style="display:flex;"><span>dns<span style="color:#f92672">=</span>114.114.114.114;8.8.8.8
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#重启网络</span>
+</span></span><span style="display:flex;"><span>systemctl restart NetworkManager
+</span></span></code></pre></div><h2 id="替换源">替换源 <a href="#%e6%9b%bf%e6%8d%a2%e6%ba%90" class="anchor">🔗</a></h2><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span><span style="color:#75715e"># 1. 配置</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 注意：“# baseurl” 中间有个空格（AlmaLinux 专有）</span>
+</span></span><span style="display:flex;"><span>sed -e <span style="color:#e6db74">&#39;s|^mirrorlist=|#mirrorlist=|g&#39;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>    -e <span style="color:#e6db74">&#39;s|^# baseurl=https://repo.almalinux.org|baseurl=https://mirrors.aliyun.com|g&#39;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>    -i.bak <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>    /etc/yum.repos.d/almalinux*.repo
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 恢复 (sysin)</span>
+</span></span><span style="display:flex;"><span>sed -e <span style="color:#e6db74">&#39;s|^#mirrorlist=|mirrorlist=|g&#39;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>    -e <span style="color:#e6db74">&#39;s|^baseurl=https://mirrors.aliyun.com|# baseurl=https://repo.almalinux.org|g&#39;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>    -i.bak <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>    /etc/yum.repos.d/almalinux*.repo
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 2. 清理缓存并重建</span>
+</span></span><span style="display:flex;"><span>dnf clean all
+</span></span><span style="display:flex;"><span>dnf makecache
+</span></span></code></pre></div><h2 id="关闭防火墙和-selinux">关闭防火墙和 SELinux <a href="#%e5%85%b3%e9%97%ad%e9%98%b2%e7%81%ab%e5%a2%99%e5%92%8c-selinux" class="anchor">🔗</a></h2><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span><span style="color:#75715e"># 关闭防火墙</span>
+</span></span><span style="display:flex;"><span>systemctl stop firewalld <span style="color:#f92672">&amp;&amp;</span> systemctl disable firewalld
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 关闭 SELinux</span>
+</span></span><span style="display:flex;"><span>setenforce <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>sed -i <span style="color:#e6db74">&#39;s/^SELINUX=enforcing$/SELINUX=permissive/&#39;</span> /etc/selinux/config
+</span></span></code></pre></div><h2 id="配置时间同步">配置时间同步 <a href="#%e9%85%8d%e7%bd%ae%e6%97%b6%e9%97%b4%e5%90%8c%e6%ad%a5" class="anchor">🔗</a></h2><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span><span style="color:#75715e"># 安装 chrony</span>
+</span></span><span style="display:flex;"><span>dnf install -y chrony
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 启动并设置开机自启</span>
+</span></span><span style="display:flex;"><span>systemctl enable --now chronyd
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 查看时间同步状态</span>
+</span></span><span style="display:flex;"><span>chronyc sources
+</span></span></code></pre></div><h2 id="设置主机名">设置主机名 <a href="#%e8%ae%be%e7%bd%ae%e4%b8%bb%e6%9c%ba%e5%90%8d" class="anchor">🔗</a></h2><p>k8s-master,k8s-node1,k8s-node2</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>hostnamectl set-hostname k8s-master
+</span></span></code></pre></div><h2 id="配置主机名和-etchosts">配置主机名和 /etc/hosts <a href="#%e9%85%8d%e7%bd%ae%e4%b8%bb%e6%9c%ba%e5%90%8d%e5%92%8c-etchosts" class="anchor">🔗</a></h2><p>在所有三个节点上，执行以下命令，添加 hosts 解析</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>cat &gt;&gt; /etc/hosts <span style="color:#e6db74">&lt;&lt;EOF
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">192.168.122.10 k8s-master
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">192.168.122.11 k8s-node1
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">192.168.122.12 k8s-node2
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">EOF</span>
+</span></span></code></pre></div><h2 id="k8s关闭swap">k8s关闭swap <a href="#k8s%e5%85%b3%e9%97%adswap" class="anchor">🔗</a></h2><p>Kubernetes 要求禁用 Swap，以保证 kubelet 的性能和稳定性。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>swapoff -a
+</span></span><span style="display:flex;"><span>sed -ri <span style="color:#e6db74">&#39;s/.*swap.*/#&amp;/&#39;</span> /etc/fstab
+</span></span></code></pre></div><h2 id="配置内核参数">配置内核参数 <a href="#%e9%85%8d%e7%bd%ae%e5%86%85%e6%a0%b8%e5%8f%82%e6%95%b0" class="anchor">🔗</a></h2><p>加载必要的内核模块并配置网络参数，让 iptables 能够正确地处理桥接流量。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span><span style="color:#75715e"># 安装额外的内核模块包</span>
+</span></span><span style="display:flex;"><span>dnf install -y kernel-modules-extra
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 添加 br_netfilter modules</span>
+</span></span><span style="display:flex;"><span>cat &gt; /etc/modules-load.d/k8s.conf <span style="color:#e6db74">&lt;&lt;EOF
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">overlay
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">br_netfilter
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">EOF</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 添加 iptables 配置</span>
+</span></span><span style="display:flex;"><span>cat &gt; /etc/sysctl.d/k8s.conf <span style="color:#e6db74">&lt;&lt; EOF
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">net.bridge.bridge-nf-call-ip6tables = 1
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">net.bridge.bridge-nf-call-iptables = 1
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">net.ipv4.ip_forward = 1
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">vm.swappiness = 0
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">EOF</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 应用配置</span>
+</span></span><span style="display:flex;"><span>sysctl --system
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#重启机器</span>
+</span></span><span style="display:flex;"><span>reboot
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 查看网桥过滤模块是否加载成功</span>
+</span></span><span style="display:flex;"><span>lsmod | grep -e br_netfilter -e overlay
+</span></span></code></pre></div><h2 id="安装-containerd">安装 containerd <a href="#%e5%ae%89%e8%a3%85-containerd" class="anchor">🔗</a></h2><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span><span style="color:#75715e"># 安装 dnf-plugins-core</span>
+</span></span><span style="display:flex;"><span>dnf install -y dnf-plugins-core
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 添加 Docker CE 仓库 (阿里云源)</span>
+</span></span><span style="display:flex;"><span>dnf config-manager --add-repo<span style="color:#f92672">=</span>https://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 安装 containerd</span>
+</span></span><span style="display:flex;"><span>dnf install -y containerd.io
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 创建默认配置文件</span>
+</span></span><span style="display:flex;"><span>mkdir -p /etc/containerd
+</span></span><span style="display:flex;"><span>containerd config default | tee /etc/containerd/config.toml
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 修改配置文件</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 1. 使用 systemd cgroup 驱动</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 2. 配置阿里云镜像仓库加速器</span>
+</span></span><span style="display:flex;"><span>sed -i <span style="color:#e6db74">&#39;s/SystemdCgroup = false/SystemdCgroup = true/&#39;</span> /etc/containerd/config.toml
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#在配置文件的最后添加以下内容</span>
+</span></span><span style="display:flex;"><span>vi /etc/containerd/config.toml
+</span></span><span style="display:flex;"><span>查找pause镜像 ，将<span style="color:#f92672">[</span>registry.k8s.io<span style="color:#f92672">]</span>替换为<span style="color:#f92672">[</span>registry.aliyuncs.com/google_containers<span style="color:#f92672">]</span>，并修改版本3.9，因为kubeadm config images list 获取的版本是3.19
+</span></span><span style="display:flex;"><span>查找io.containerd.grpc.v1.cri，在里面添加以下内容，注意缩进2个空格
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">[</span>plugins.<span style="color:#e6db74">&#34;io.containerd.grpc.v1.cri&#34;</span>.registry<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">[</span>plugins.<span style="color:#e6db74">&#34;io.containerd.grpc.v1.cri&#34;</span>.registry.mirrors<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">[</span>plugins.<span style="color:#e6db74">&#34;io.containerd.grpc.v1.cri&#34;</span>.registry.mirrors.<span style="color:#e6db74">&#34;docker.io&#34;</span><span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>        endpoint <span style="color:#f92672">=</span> <span style="color:#f92672">[</span><span style="color:#e6db74">&#34;https://registry.aliyuncs.com&#34;</span><span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 启动并设置 containerd 开机自启</span>
+</span></span><span style="display:flex;"><span>systemctl enable --now containerd
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 检查 containerd 状态</span>
+</span></span><span style="display:flex;"><span>systemctl status containerd
+</span></span></code></pre></div><h2 id="kubernetes镜像">Kubernetes镜像 <a href="#kubernetes%e9%95%9c%e5%83%8f" class="anchor">🔗</a></h2><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span><span style="color:#75715e">#添加 Kubernetes Yum 仓库 (阿里云源),镜像会落后官网版本</span>
+</span></span><span style="display:flex;"><span>cat &gt; /etc/yum.repos.d/kubernetes.repo <span style="color:#e6db74">&lt;&lt;EOF
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">[kubernetes]
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">name=Kubernetes
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">baseurl=https://mirrors.aliyun.com/kubernetes/yum/repos/kubernetes-el7-x86_64/
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">enabled=1
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">gpgcheck=0
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">repo_gpgcheck=0
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">gpgkey=https://mirrors.aliyun.com/kubernetes/yum/doc/yum-key.gpg https://mirrors.aliyun.com/kubernetes/yum/doc/rpm-package-key.gpg
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">EOF</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 官网版本(如果要求新版本可以选这个)</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">[</span>kubernetes<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>name<span style="color:#f92672">=</span>Kubernetes
+</span></span><span style="display:flex;"><span>baseurl<span style="color:#f92672">=</span>https://pkgs.k8s.io/core:/stable:/v1.30/rpm/
+</span></span><span style="display:flex;"><span>enabled<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>gpgcheck<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>gpgkey<span style="color:#f92672">=</span>https://pkgs.k8s.io/core:/stable:/v1.30/rpm/repodata/repomd.xml.key
+</span></span><span style="display:flex;"><span>exclude<span style="color:#f92672">=</span>kubelet kubeadm kubectl cri-tools kubernetes-cni
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 清理旧的缓存</span>
+</span></span><span style="display:flex;"><span>dnf clean all
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 重建缓存</span>
+</span></span><span style="display:flex;"><span>dnf makecache
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 再次验证可用版本</span>
+</span></span><span style="display:flex;"><span>dnf list --showduplicates kubeadm --disableexcludes<span style="color:#f92672">=</span>kubernetes
+</span></span></code></pre></div><h2 id="安装-kubernetes">安装 Kubernetes <a href="#%e5%ae%89%e8%a3%85-kubernetes" class="anchor">🔗</a></h2><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span><span style="color:#75715e">#排除kubernetes的升级安装</span>
+</span></span><span style="display:flex;"><span>dnf install -y kubelet-1.28.2-0 kubeadm-1.28.2-0 kubectl-1.28.2-0 --disableexcludes<span style="color:#f92672">=</span>kubernetes
+</span></span><span style="display:flex;"><span>systemctl enable --now kubelet
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#重启机器</span>
+</span></span><span style="display:flex;"><span>reboot
+</span></span></code></pre></div><p>&mdash;&mdash;&mdash;&mdash;&mdash;&ndash;克隆节点&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&ndash;</p>
+<h1 id="初始化-master-节点-仅在-k8s-master-执行">初始化 Master 节点 (仅在 k8s-master 执行) <a href="#%e5%88%9d%e5%a7%8b%e5%8c%96-master-%e8%8a%82%e7%82%b9-%e4%bb%85%e5%9c%a8-k8s-master-%e6%89%a7%e8%a1%8c" class="anchor">🔗</a></h1><h2 id="使用-kubeadm-初始化">使用 kubeadm 初始化 <a href="#%e4%bd%bf%e7%94%a8-kubeadm-%e5%88%9d%e5%a7%8b%e5%8c%96" class="anchor">🔗</a></h2><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>kubeadm reset -f
+</span></span><span style="display:flex;"><span>systemctl restart kubelet
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 查看版本</span>
+</span></span><span style="display:flex;"><span>kubeadm config images list
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 可以先拉取集群所需要的images</span>
+</span></span><span style="display:flex;"><span>kubeadm config images pull --image-repository<span style="color:#f92672">=</span>registry.aliyuncs.com/google_containers
+</span></span><span style="display:flex;"><span>如果提示缺少镜像，请执行类似如下命令
+</span></span><span style="display:flex;"><span>crictl pull registry.aliyuncs.com/google_containers/pause:3.9
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 初始化Kubeadm</span>
+</span></span><span style="display:flex;"><span>kubeadm init <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --apiserver-advertise-address<span style="color:#f92672">=</span>192.168.122.10 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --control-plane-endpoint<span style="color:#f92672">=</span>192.168.122.10 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --kubernetes-version<span style="color:#f92672">=</span>v1.28.2 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --service-cidr<span style="color:#f92672">=</span>10.96.0.0/12 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --pod-network-cidr<span style="color:#f92672">=</span>10.244.0.0/16 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --image-repository<span style="color:#f92672">=</span>registry.aliyuncs.com/google_containers
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 初始化报错查看</span>
+</span></span><span style="display:flex;"><span>journalctl -xeu kubelet -f
+</span></span></code></pre></div><h2 id="配置-kubectl">配置 kubectl <a href="#%e9%85%8d%e7%bd%ae-kubectl" class="anchor">🔗</a></h2><p>为了在Master节点上能方便地使用kubectl命令，执行以下操作：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span><span style="color:#75715e"># 针对 root 用户</span>
+</span></span><span style="display:flex;"><span>export KUBECONFIG<span style="color:#f92672">=</span>/etc/kubernetes/admin.conf
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;export KUBECONFIG=/etc/kubernetes/admin.conf&#34;</span> &gt;&gt; /etc/bashrc
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 或者针对普通用户 (推荐)</span>
+</span></span><span style="display:flex;"><span>mkdir -p $HOME/.kube
+</span></span><span style="display:flex;"><span>cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+</span></span><span style="display:flex;"><span>chown <span style="color:#66d9ef">$(</span>id -u<span style="color:#66d9ef">)</span>:<span style="color:#66d9ef">$(</span>id -g<span style="color:#66d9ef">)</span> $HOME/.kube/config
+</span></span></code></pre></div><h1 id="添加-worker-节点-在-k8s-node1-和-k8s-node2-执行">添加 Worker 节点 (在 k8s-node1 和 k8s-node2 执行) <a href="#%e6%b7%bb%e5%8a%a0-worker-%e8%8a%82%e7%82%b9-%e5%9c%a8-k8s-node1-%e5%92%8c-k8s-node2-%e6%89%a7%e8%a1%8c" class="anchor">🔗</a></h1><p>分别在k8s-node1和k8s-node2上执行</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>添加master节点（多个master执行，单个不需要执行）
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>kubeadm join 192.168.122.10:6443 --token lk9wh5.cu3batvd0axv4622 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--discovery-token-ca-cert-hash sha256:50d0019950338860872fd3ea1acd0bb92f1174c8520fdfda5d539de3036a2c4d <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--control-plane  
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>添加node1节点
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>kubeadm join 192.168.122.10:6443 --token lk9wh5.cu3batvd0axv4622 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--discovery-token-ca-cert-hash sha256:50d0019950338860872fd3ea1acd0bb92f1174c8520fdfda5d539de3036a2c4d
+</span></span></code></pre></div><h1 id="安装-calico-网络插件-仅在-k8s-master-执行">安装 Calico 网络插件 (仅在 k8s-master 执行) <a href="#%e5%ae%89%e8%a3%85-calico-%e7%bd%91%e7%bb%9c%e6%8f%92%e4%bb%b6-%e4%bb%85%e5%9c%a8-k8s-master-%e6%89%a7%e8%a1%8c" class="anchor">🔗</a></h1><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span><span style="color:#75715e"># 下载文件(偶尔会下载不了，多试几次)</span>
+</span></span><span style="display:flex;"><span>curl https://docs.tigera.io/archive/v3.25/manifests/calico.yaml -O
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 修改docker.io地址</span>
+</span></span><span style="display:flex;"><span>sed -i <span style="color:#e6db74">&#39;s#docker.io/#m.daocloud.io/docker.io/#g&#39;</span> calico.yaml
+</span></span><span style="display:flex;"><span>或者
+</span></span><span style="display:flex;"><span>sed -i <span style="color:#e6db74">&#39;s#docker.io/#docker.1ms.run/#g&#39;</span> calico.yaml
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 修改IP_AUTODETECTION_METHOD,注意enp1s0 需要是你自己网卡的名称</span>
+</span></span><span style="display:flex;"><span>sed -i <span style="color:#e6db74">&#39;/value: &#34;autodetect&#34;/a\\            - name: IP_AUTODETECTION_METHOD\n              value: &#34;interface=enp1s0&#34;&#39;</span> calico.yaml
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 应用配置</span>
+</span></span><span style="display:flex;"><span>kubectl apply -f calico.yaml
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 验证</span>
+</span></span><span style="display:flex;"><span>kubectl get pods -n kube-system | grep calico
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 报错处理完成后删除配置重新操作：</span>
+</span></span><span style="display:flex;"><span>kubectl delete -f calico.yaml
+</span></span></code></pre></div><h2 id="token和hash丢失过期处理">token和hash丢失过期处理 <a href="#token%e5%92%8chash%e4%b8%a2%e5%a4%b1%e8%bf%87%e6%9c%9f%e5%a4%84%e7%90%86" class="anchor">🔗</a></h2><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>kubeadm token list
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#当前的token值，如果为空表示前集群中没有有效的token值</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#重新申请token值</span>
+</span></span><span style="display:flex;"><span>kubeadm token create
+</span></span><span style="display:flex;"><span>kubeadm token list
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#根据实际情况来删除当前有效的token值</span>
+</span></span><span style="display:flex;"><span>kubeadm token delete xpcpuh.mxbspj5lyyskofu1
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>-discovery-token-ca-cert-hash 值被保存到 Kubemetes 集群的根证书文件中，默认情况下，根证书位于 /etc/kubemetes/pki/ca.cr
+</span></span><span style="display:flex;"><span>下，可通过如下命令获取，但需要在得到的hash值前面拼接上 sha256:才算完整。
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#使用0penSSL工具计算证书文件的SHA256哈希值</span>
+</span></span><span style="display:flex;"><span>openssl x509 -pubkey -in /etc/kubernetes/pki/ca.crt | <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>openssl rsa -pubin -outform der 2&gt;/dev/null | <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>openssl dgst -sha256 -hex | sed <span style="color:#e6db74">&#39;s/^.* //&#39;</span>
+</span></span></code></pre></div><h1 id="集群验证">集群验证 <a href="#%e9%9b%86%e7%be%a4%e9%aa%8c%e8%af%81" class="anchor">🔗</a></h1><h2 id="在-master-节点验证">在 Master 节点验证 <a href="#%e5%9c%a8-master-%e8%8a%82%e7%82%b9%e9%aa%8c%e8%af%81" class="anchor">🔗</a></h2><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>回到k8s-master节点，执行以下命令查看新加入的节点。
+</span></span><span style="display:flex;"><span>kubectl get nodes
+</span></span><span style="display:flex;"><span>稍等片刻（等待kubelet在node上拉取flannel镜像并启动CNI），你会看到所有节点的状态都变为 Ready。
+</span></span><span style="display:flex;"><span>NAME         STATUS     ROLES           AGE     VERSION
+</span></span><span style="display:flex;"><span>k8s-master   NotReady   control-plane   2m40s   v1.28.2
+</span></span><span style="display:flex;"><span>k8s-node1    NotReady   &lt;none&gt;          15s     v1.28.2 
+</span></span><span style="display:flex;"><span>k8s-node2    NotReady   &lt;none&gt;          7s      v1.28.2
+</span></span></code></pre></div><h2 id="集群功能验证">集群功能验证 <a href="#%e9%9b%86%e7%be%a4%e5%8a%9f%e8%83%bd%e9%aa%8c%e8%af%81" class="anchor">🔗</a></h2><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span><span style="color:#75715e">#部署 Nginx</span>
+</span></span><span style="display:flex;"><span>kubectl create deployment nginx --image<span style="color:#f92672">=</span>registry.cn-guangzhou.aliyuncs.com/xuchen/proxy:nginx-1.27.1
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#暴露端口</span>
+</span></span><span style="display:flex;"><span>kubectl expose deployment nginx --port<span style="color:#f92672">=</span><span style="color:#ae81ff">80</span> --type<span style="color:#f92672">=</span>NodePort
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#检查状态</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 查看 Pod</span>
+</span></span><span style="display:flex;"><span>kubectl get pods -o wide
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 查看 Service</span>
+</span></span><span style="display:flex;"><span>kubectl get svc nginx
+</span></span><span style="display:flex;"><span>kubectl get svc nginx 的输出会显示一个 NodePort 类型的服务，例如 80:31234/TCP。这意味着你可以通过任意一个节点的IP + 31234端口来访问Nginx。
+</span></span></code></pre></div><h2 id="访问测试">访问测试 <a href="#%e8%ae%bf%e9%97%ae%e6%b5%8b%e8%af%95" class="anchor">🔗</a></h2><p>在Master节点或任何能访问集群网络的地方，使用curl测试。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span><span style="color:#75715e"># 访问 Master 节点</span>
+</span></span><span style="display:flex;"><span>curl http://192.168.122.10:30963
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 访问 Node1 节点</span>
+</span></span><span style="display:flex;"><span>curl http://192.168.122.11:30963
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 访问 Node2 节点</span>
+</span></span><span style="display:flex;"><span>curl http://192.168.122.12:31234
+</span></span></code></pre></div>
+    </div>
+
+    
+</section>
+
+
+            </div>
+            <div class="side">
+                <div class="side-categories">
+    <h2>Categories</h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/categories/ai">ai(3)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/go">go(23)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E4%BB%A3%E7%A0%81">代码(2)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E5%B7%A5%E5%85%B7">工具(8)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E9%80%86%E5%90%91">逆向(3)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E9%9D%A2%E8%AF%95">面试(5)</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/note/">Recent Note</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/note/%E6%9E%B6%E6%9E%84%E8%80%83%E7%82%B9/">场景总结</a>
+            </li>
+        
+            <li>
+                <a href="/note/rdis-%E7%BC%93%E5%AD%98%E7%A9%BF%E9%80%8F%E9%9B%AA%E5%B4%A9%E5%87%BB%E7%A9%BF%E7%9A%84%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95/">缓存穿透、雪崩、击穿的解决方法</a>
+            </li>
+        
+            <li>
+                <a href="/note/redis-%E5%8D%95%E7%BA%BF%E7%A8%8B%E7%9A%84redis%E4%B8%BA%E4%BB%80%E4%B9%88%E5%BF%AB/">单线程的redis为什么快</a>
+            </li>
+        
+            <li>
+                <a href="/note/redis-%E6%80%BB%E7%BB%93/">redis总结</a>
+            </li>
+        
+            <li>
+                <a href="/note/mysql-%E6%80%BB%E7%BB%93/">mysql总结</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/android/">Recent Android</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/android/redroid%E4%BD%BF%E7%94%A8/">Redroid安卓容器</a>
+            </li>
+        
+            <li>
+                <a href="/android/%E5%85%A5%E9%97%A8/">逆向环境-杂</a>
+            </li>
+        
+            <li>
+                <a href="/android/frida%E6%95%99%E7%A8%8B/">frida教程</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/tool/">Recent Tool</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/tool/linux-almalinux%E4%BC%98%E5%8C%96/">AlmaLinux10</a>
+            </li>
+        
+            <li>
+                <a href="/tool/almalinux-k8s/">AlmaLinux-k8s安装</a>
+            </li>
+        
+            <li>
+                <a href="/tool/vscode%E6%8A%98%E8%85%BE/">vscode折腾</a>
+            </li>
+        
+            <li>
+                <a href="/tool/linux-ubuntu%E4%BC%98%E5%8C%96/">Ubuntu开机优化</a>
+            </li>
+        
+            <li>
+                <a href="/tool/shell-ssh_script/">ssh常用脚本</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/llm/">Recent Llm</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/llm/transformers-%E5%85%A5%E9%97%A8%E7%AF%87/">Transformers-入门篇</a>
+            </li>
+        
+            <li>
+                <a href="/llm/%E6%A8%A1%E5%9E%8Bvllm%E9%83%A8%E7%BD%B2/">AI模型VLLM部署</a>
+            </li>
+        
+            <li>
+                <a href="/llm/%E6%A8%A1%E5%9E%8B%E5%BE%AE%E8%B0%83/">AI模型微调</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/go/">Recent Go</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/go/go%E4%B8%89%E8%89%B2%E6%A0%87%E8%AE%B0%E6%B7%B7%E5%90%88%E5%86%99%E5%B1%8F%E9%9A%9Cgc%E6%A8%A1%E5%BC%8F%E5%85%A8%E6%80%BB%E7%BB%93/">Go三色标记混合写屏障GC模式全总结</a>
+            </li>
+        
+            <li>
+                <a href="/go/go%E4%B8%ADmake%E4%B8%8Enew%E5%8C%BA%E5%88%AB/">Go中make与new区别</a>
+            </li>
+        
+            <li>
+                <a href="/go/go%E5%B8%B8%E7%94%A8bug%E5%92%8C%E6%80%A7%E8%83%BD%E9%97%AE%E9%A2%98%E7%9A%84%E5%AE%9E%E8%B7%B5%E6%96%B9%E6%B3%95/">Go常用bug和性能问题的实践方法</a>
+            </li>
+        
+            <li>
+                <a href="/go/grpc%E6%80%BB%E7%BB%93/">GRPC笔记</a>
+            </li>
+        
+            <li>
+                <a href="/go/go%E7%9A%84defer%E6%80%BB%E7%BB%93/">Go的defer总结</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+            </div>
+        </main>
+        <footer class="footer">
+    <div class="footer-row">
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/note/index.xml">
+                    Feed of Note
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/android/index.xml">
+                    Feed of Android
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/tool/index.xml">
+                    Feed of Tool
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/llm/index.xml">
+                    Feed of Llm
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/go/index.xml">
+                    Feed of Go
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+
+        
+            
+            
+        
+    </div>
+
+    
+</footer>
+
+    </body>
+</html>

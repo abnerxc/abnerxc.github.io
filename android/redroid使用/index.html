@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+<meta name="viewport" content="width=device-width,minimum-scale=1">
+
+
+
+
+<title>Redroid安卓容器 | Abner的博客</title>
+<link rel="canonical" href="https://abnerxc.github.io/android/redroid%E4%BD%BF%E7%94%A8/">
+<meta property="og:type" content="article" />
+<meta property="og:title" content="Redroid安卓容器 | Abner的博客" />
+<meta property="og:url" content="https://abnerxc.github.io/android/redroid%E4%BD%BF%E7%94%A8/" />
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/icofont/icofont.min.css" />
+<link rel="stylesheet" href="/css/syntax.css" />
+<link rel="stylesheet" href="/css/style.css" />
+<link rel="stylesheet" href="/css/custom.css" />
+<script src="/js/copy-code-block.js"></script>
+<link rel="shortcut icon" href="/images/favicon.ico" type="image/x-icon" />
+
+    </head>
+
+    <body>
+        <header class="header-wrapper">
+    <div class="header">
+        <a class="site-title" href="https://abnerxc.github.io/">Abner的博客</a>
+
+        <nav class="menu">
+            
+        </nav>
+    </div>
+</header>
+
+        <main class="main-wrapper">
+            <div class="main">
+                
+
+<section class="single">
+    <h1 class="title">Redroid安卓容器</h1>
+
+    <div class="tip">
+        <time datetime="2025-07-25 20:07:58 &#43;0800 CST">2025/07/25</time>
+        <span class="split">·</span>
+        <span> 159 words </span>
+        <span class="split">·</span>
+        <span>
+            1 minutes to read
+        </span>
+    </div>
+
+    <div class="taxonomies">
+        
+        <div>
+            Categories:
+            
+                <a href="/categories/%E9%80%86%E5%90%91">逆向</a>
+            
+        </div>
+        
+
+        
+    </div>
+
+    
+    
+    <div class="post-toc">
+        <h3>目录</h3>
+        <nav id="TableOfContents">
+  <ul>
+    <li><a href="#ubuntu-2204安装">Ubuntu 22.04安装</a></li>
+    <li><a href="#docker运行">docker运行</a></li>
+    <li><a href="#redroid参数查看">redroid参数查看</a></li>
+    <li><a href="#qtscrcpy">QtScrcpy</a></li>
+    <li><a href="#qtscrcpy问题">QtScrcpy问题</a></li>
+    <li><a href="#qtscrcpy-键盘映射">QtScrcpy 键盘映射</a></li>
+  </ul>
+</nav>
+    </div>
+    
+
+    <hr />
+
+    <div class="content">
+        <blockquote>
+<p>文档地址：https://github.com/remote-android/redroid-doc/tree/master</p>
+</blockquote>
+<h1 id="ubuntu-2204安装">Ubuntu 22.04安装 <a href="#ubuntu-2204%e5%ae%89%e8%a3%85" class="anchor">🔗</a></h1><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>sudo apt install linux-modules-extra-<span style="color:#e6db74">`</span>uname -r<span style="color:#e6db74">`</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 用于加载 Linux 内核中的 binder_linux 模块,该模块为 Android 的 Binder 通信机制提供支持</span>
+</span></span><span style="display:flex;"><span>sudo modprobe binder_linux devices<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;binder,hwbinder,vndbinder&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#添加开机启动(可选)</span>
+</span></span><span style="display:flex;"><span>sudo echo <span style="color:#e6db74">&#34;binder_linux&#34;</span> | sudo tee -a /etc/modules
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#  (可选)</span>
+</span></span><span style="display:flex;"><span>sudo modprobe ashmem_linux
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>docker run -itd --rm --privileged <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>    --pull always <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>    -v ~/data11:/data <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>    -p 5555:5555 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>    --name redroid11 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>    redroid/redroid:12.0.0_64only-latest
+</span></span></code></pre></div><h1 id="docker运行">docker运行 <a href="#docker%e8%bf%90%e8%a1%8c" class="anchor">🔗</a></h1><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>version: <span style="color:#e6db74">&#39;3.0&#39;</span>
+</span></span><span style="display:flex;"><span>services:
+</span></span><span style="display:flex;"><span>  redroid:
+</span></span><span style="display:flex;"><span>    image: registry.cn-guangzhou.aliyuncs.com/xuchen/proxy:redroid-12.0.0_64only-latest
+</span></span><span style="display:flex;"><span>    container_name: redroid-12
+</span></span><span style="display:flex;"><span>    stdin_open: true
+</span></span><span style="display:flex;"><span>    tty: true
+</span></span><span style="display:flex;"><span>    privileged: true
+</span></span><span style="display:flex;"><span>    ports:
+</span></span><span style="display:flex;"><span>      - 5555:5555
+</span></span><span style="display:flex;"><span>    volumes:
+</span></span><span style="display:flex;"><span>      - /home/abner/Document/redroid:/data:rw
+</span></span><span style="display:flex;"><span>      -v /dev/dri:/dev/dri  <span style="color:#75715e">#GPU硬件加速需挂载设备：-v /dev/dri:/dev/dri 并设置redroid.gpu.mode=host。</span>
+</span></span><span style="display:flex;"><span>    command:
+</span></span><span style="display:flex;"><span>      - androidboot.redroid_width<span style="color:#f92672">=</span><span style="color:#ae81ff">1080</span>
+</span></span><span style="display:flex;"><span>      - androidboot.redroid_height<span style="color:#f92672">=</span><span style="color:#ae81ff">1920</span>
+</span></span><span style="display:flex;"><span>      - androidboot.redroid_dpi<span style="color:#f92672">=</span><span style="color:#ae81ff">480</span>
+</span></span><span style="display:flex;"><span>      - androidboot.redroid_fps<span style="color:#f92672">=</span><span style="color:#ae81ff">60</span>
+</span></span><span style="display:flex;"><span>      - androidboot.redroid_gpu_mode<span style="color:#f92672">=</span>host <span style="color:#75715e">#auto, host(使用GPU), guest(软件模拟)</span>
+</span></span><span style="display:flex;"><span>      - androidboot.redroid_net_ndns<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span> <span style="color:#75715e">#dns</span>
+</span></span><span style="display:flex;"><span>      - androidboot.redroid_net_dns1<span style="color:#f92672">=</span>114.114.114.114
+</span></span><span style="display:flex;"><span>      - androidboot.hardware<span style="color:#f92672">=</span>mt6891 <span style="color:#75715e">#cpu</span>
+</span></span><span style="display:flex;"><span>      - androidboot.serialno<span style="color:#f92672">=</span><span style="color:#ae81ff">861503068361145</span> <span style="color:#75715e">#设置设备序列号，用于ADB识别</span>
+</span></span><span style="display:flex;"><span>      - androidboot.verifiedbootstate<span style="color:#f92672">=</span>orange <span style="color:#75715e">#系统验证状态：green（官方锁定）、orange（已解锁Bootloader）</span>
+</span></span><span style="display:flex;"><span>      - androidboot.selinux<span style="color:#f92672">=</span>permissive      <span style="color:#75715e">#enforcing, permissive 强制模式或宽容模式</span>
+</span></span><span style="display:flex;"><span>      - ro.secure<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>                         <span style="color:#75715e">#0允许root shell，1限制为普通用户</span>
+</span></span><span style="display:flex;"><span>      - ro.build.product<span style="color:#f92672">=</span>chopin             <span style="color:#75715e">#设备型号标识</span>
+</span></span><span style="display:flex;"><span>      - ro.product.manufacturer<span style="color:#f92672">=</span>Xiaomi      <span style="color:#75715e">#设备制造商信息</span>
+</span></span></code></pre></div><h1 id="redroid参数查看">redroid参数查看 <a href="#redroid%e5%8f%82%e6%95%b0%e6%9f%a5%e7%9c%8b" class="anchor">🔗</a></h1><ul>
+<li>redroid: 容器专属参数</li>
+<li>androidboot:内核启动参数,通过U-Boot设置bootargs → 内核设备树（DTB）的/chosen/bootargs节点 → 系统启动后通过/proc/cmdline查看</li>
+<li>ro:只读系统属性,运行 <code>adb shell getprop | grep &quot;ro\.&quot;</code> 可查看所有只读属性</li>
+</ul>
+<h1 id="qtscrcpy">QtScrcpy <a href="#qtscrcpy" class="anchor">🔗</a></h1><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span><span style="color:#75715e">#报错解决</span>
+</span></span><span style="display:flex;"><span>sudo apt-get update
+</span></span><span style="display:flex;"><span>sudo apt-get install libqt5multimedia5
+</span></span></code></pre></div><h1 id="qtscrcpy问题">QtScrcpy问题 <a href="#qtscrcpy%e9%97%ae%e9%a2%98" class="anchor">🔗</a></h1><ul>
+<li>讯飞输入支持键盘,其他不好使</li>
+<li>QtScrcpy 键盘映射 在软件keymap目录下，目前不好使</li>
+</ul>
+<h1 id="qtscrcpy-键盘映射">QtScrcpy 键盘映射 <a href="#qtscrcpy-%e9%94%ae%e7%9b%98%e6%98%a0%e5%b0%84" class="anchor">🔗</a></h1><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>在线调试地址：https://github.com/barry-ran/QtScrcpy/blob/dev/docs/KeyMapDes.md
+</span></span></code></pre></div>
+    </div>
+
+    
+</section>
+
+
+            </div>
+            <div class="side">
+                <div class="side-categories">
+    <h2>Categories</h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/categories/ai">ai(3)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/go">go(23)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E4%BB%A3%E7%A0%81">代码(2)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E5%B7%A5%E5%85%B7">工具(8)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E9%80%86%E5%90%91">逆向(3)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E9%9D%A2%E8%AF%95">面试(5)</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/note/">Recent Note</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/note/%E6%9E%B6%E6%9E%84%E8%80%83%E7%82%B9/">场景总结</a>
+            </li>
+        
+            <li>
+                <a href="/note/rdis-%E7%BC%93%E5%AD%98%E7%A9%BF%E9%80%8F%E9%9B%AA%E5%B4%A9%E5%87%BB%E7%A9%BF%E7%9A%84%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95/">缓存穿透、雪崩、击穿的解决方法</a>
+            </li>
+        
+            <li>
+                <a href="/note/redis-%E5%8D%95%E7%BA%BF%E7%A8%8B%E7%9A%84redis%E4%B8%BA%E4%BB%80%E4%B9%88%E5%BF%AB/">单线程的redis为什么快</a>
+            </li>
+        
+            <li>
+                <a href="/note/redis-%E6%80%BB%E7%BB%93/">redis总结</a>
+            </li>
+        
+            <li>
+                <a href="/note/mysql-%E6%80%BB%E7%BB%93/">mysql总结</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/android/">Recent Android</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/android/redroid%E4%BD%BF%E7%94%A8/">Redroid安卓容器</a>
+            </li>
+        
+            <li>
+                <a href="/android/%E5%85%A5%E9%97%A8/">逆向环境-杂</a>
+            </li>
+        
+            <li>
+                <a href="/android/frida%E6%95%99%E7%A8%8B/">frida教程</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/tool/">Recent Tool</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/tool/linux-almalinux%E4%BC%98%E5%8C%96/">AlmaLinux10</a>
+            </li>
+        
+            <li>
+                <a href="/tool/almalinux-k8s/">AlmaLinux-k8s安装</a>
+            </li>
+        
+            <li>
+                <a href="/tool/vscode%E6%8A%98%E8%85%BE/">vscode折腾</a>
+            </li>
+        
+            <li>
+                <a href="/tool/linux-ubuntu%E4%BC%98%E5%8C%96/">Ubuntu开机优化</a>
+            </li>
+        
+            <li>
+                <a href="/tool/shell-ssh_script/">ssh常用脚本</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/llm/">Recent Llm</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/llm/transformers-%E5%85%A5%E9%97%A8%E7%AF%87/">Transformers-入门篇</a>
+            </li>
+        
+            <li>
+                <a href="/llm/%E6%A8%A1%E5%9E%8Bvllm%E9%83%A8%E7%BD%B2/">AI模型VLLM部署</a>
+            </li>
+        
+            <li>
+                <a href="/llm/%E6%A8%A1%E5%9E%8B%E5%BE%AE%E8%B0%83/">AI模型微调</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/go/">Recent Go</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/go/go%E4%B8%89%E8%89%B2%E6%A0%87%E8%AE%B0%E6%B7%B7%E5%90%88%E5%86%99%E5%B1%8F%E9%9A%9Cgc%E6%A8%A1%E5%BC%8F%E5%85%A8%E6%80%BB%E7%BB%93/">Go三色标记混合写屏障GC模式全总结</a>
+            </li>
+        
+            <li>
+                <a href="/go/go%E4%B8%ADmake%E4%B8%8Enew%E5%8C%BA%E5%88%AB/">Go中make与new区别</a>
+            </li>
+        
+            <li>
+                <a href="/go/go%E5%B8%B8%E7%94%A8bug%E5%92%8C%E6%80%A7%E8%83%BD%E9%97%AE%E9%A2%98%E7%9A%84%E5%AE%9E%E8%B7%B5%E6%96%B9%E6%B3%95/">Go常用bug和性能问题的实践方法</a>
+            </li>
+        
+            <li>
+                <a href="/go/grpc%E6%80%BB%E7%BB%93/">GRPC笔记</a>
+            </li>
+        
+            <li>
+                <a href="/go/go%E7%9A%84defer%E6%80%BB%E7%BB%93/">Go的defer总结</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+            </div>
+        </main>
+        <footer class="footer">
+    <div class="footer-row">
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/note/index.xml">
+                    Feed of Note
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/android/index.xml">
+                    Feed of Android
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/tool/index.xml">
+                    Feed of Tool
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/llm/index.xml">
+                    Feed of Llm
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/go/index.xml">
+                    Feed of Go
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+
+        
+            
+            
+        
+    </div>
+
+    
+</footer>
+
+    </body>
+</html>

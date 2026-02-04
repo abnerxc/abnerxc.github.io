@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+<meta name="viewport" content="width=device-width,minimum-scale=1">
+
+
+
+
+<title>ssh常用脚本 | Abner的博客</title>
+<link rel="canonical" href="https://abnerxc.github.io/tool/shell-ssh_script/">
+<meta property="og:type" content="article" />
+<meta property="og:title" content="ssh常用脚本 | Abner的博客" />
+<meta property="og:url" content="https://abnerxc.github.io/tool/shell-ssh_script/" />
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/icofont/icofont.min.css" />
+<link rel="stylesheet" href="/css/syntax.css" />
+<link rel="stylesheet" href="/css/style.css" />
+<link rel="stylesheet" href="/css/custom.css" />
+<script src="/js/copy-code-block.js"></script>
+<link rel="shortcut icon" href="/images/favicon.ico" type="image/x-icon" />
+
+    </head>
+
+    <body>
+        <header class="header-wrapper">
+    <div class="header">
+        <a class="site-title" href="https://abnerxc.github.io/">Abner的博客</a>
+
+        <nav class="menu">
+            
+        </nav>
+    </div>
+</header>
+
+        <main class="main-wrapper">
+            <div class="main">
+                
+
+<section class="single">
+    <h1 class="title">ssh常用脚本</h1>
+
+    <div class="tip">
+        <time datetime="2022-07-21 18:35:11 &#43;0800 CST">2022/07/21</time>
+        <span class="split">·</span>
+        <span> 664 words </span>
+        <span class="split">·</span>
+        <span>
+            4 minutes to read
+        </span>
+    </div>
+
+    <div class="taxonomies">
+        
+        <div>
+            Categories:
+            
+                <a href="/categories/%E5%B7%A5%E5%85%B7">工具</a>
+            
+        </div>
+        
+
+        
+    </div>
+
+    
+    
+    <div class="post-toc">
+        <h3>目录</h3>
+        <nav id="TableOfContents">
+  <ul>
+    <li><a href="#ssh登陆脚本">ssh登陆脚本</a></li>
+  </ul>
+</nav>
+    </div>
+    
+
+    <hr />
+
+    <div class="content">
+        <h1 id="ssh登陆脚本">ssh登陆脚本 <a href="#ssh%e7%99%bb%e9%99%86%e8%84%9a%e6%9c%ac" class="anchor">🔗</a></h1><h2 id="1mainsh">1.main.sh <a href="#1mainsh" class="anchor">🔗</a></h2><pre tabindex="0"><code class="language-config" data-lang="config">#!/bin/bash
+# 获取脚本绝对路径
+SOURCE=&#34;${BASH_SOURCE[0]}&#34;
+while [ -h &#34;$SOURCE&#34; ]; do # resolve $SOURCE until the file is no longer a symlink
+  DIR=&#34;$(cd -P &#34;$(dirname &#34;$SOURCE&#34;)&#34; &amp;&amp; pwd)&#34;
+  SOURCE=&#34;$(readlink &#34;$SOURCE&#34;)&#34;
+  [[ $SOURCE != /* ]] &amp;&amp; SOURCE=&#34;$DIR/$SOURCE&#34; # if relative, re resolve it
+done
+direc=&#34;$(cd -P &#34;$(dirname &#34;$SOURCE&#34;)&#34; &amp;&amp; pwd)&#34;
+
+# 颜色输出函数
+function color(){
+    blue=&#34;\033[0;36m&#34;
+    red=&#34;\033[0;31m&#34;
+    green=&#34;\033[0;32m&#34;
+    close=&#34;\033[m&#34;
+    case $1 in
+        blue)
+            echo -e &#34;$blue $2 $close&#34;
+        ;;
+        red)
+            echo -e &#34;$red $2 $close&#34;
+        ;;
+        green)
+            echo -e &#34;$green $2 $close&#34;
+        ;;
+        *)
+            echo &#34;Input color error!!&#34;
+        ;;
+    esac
+}
+
+# 版权信息
+function copyright(){
+    echo &#34;#####################&#34;
+    color blue &#34;   SSH Login Platform   &#34;
+    echo &#34;#####################&#34;
+    echo
+}
+
+# 下划线分隔符
+function underline(){
+    echo &#34;-----------------------------------------&#34;
+}
+
+# 获取服务器配置
+function get_server_config() {
+    local id=&#34;$1&#34;
+    awk -v server_id=&#34;server$id&#34; -F &#39;=&#39; &#39;
+    BEGIN {
+        current_section = &#34;&#34;
+        ip = port = username = login_type = credential = label = &#34;&#34;
+    }
+    /^\[/ {
+        current_section = substr($0, 2, length($0)-2)
+        if(current_section == server_id) in_section=1
+        else in_section=0
+    }
+    in_section &amp;&amp; NF&gt;0 {
+        gsub(/^[ \t]+|[ \t]+$/, &#34;&#34;, $1)
+        gsub(/^[ \t]+|[ \t]+$/, &#34;&#34;, $2)
+        
+        if ($1 == &#34;ip&#34;) ip = $2
+        if ($1 == &#34;port&#34;) port = $2
+        if ($1 == &#34;username&#34;) username = $2
+        if ($1 == &#34;login_type&#34;) login_type = $2
+        if ($1 == &#34;credential&#34;) credential = $2
+        if ($1 == &#34;label&#34;) label = $2
+    }
+    END {
+        if (ip != &#34;&#34;) {
+            printf &#34;%s:%s:%s:%s:%s:%s&#34;, ip, port, username, login_type, credential, label
+        }
+    }
+    &#39; &#34;$direc/config.ini&#34;
+}
+
+# 列出所有服务器
+function list_servers() {
+    awk -F &#39;=&#39; &#39;
+    BEGIN {
+        print &#34;序号 |       主机      | 登录方式 | 说明&#34;
+    }
+    /^\[server/ {
+        match($0, /server[0-9]+/)
+        server_id = substr($0, RSTART+6, RLENGTH-6)
+        ip = login_type = label = &#34;&#34;
+    }
+    !/^\[/ &amp;&amp; $1 ~ /[[:space:]]*ip/ {
+        gsub(/^[ \t]+|[ \t]+$/, &#34;&#34;, $2)
+        ip = $2
+    }
+    !/^\[/ &amp;&amp; $1 ~ /[[:space:]]*login_type/ {
+        gsub(/^[ \t]+|[ \t]+$/, &#34;&#34;, $2)
+        login_type = $2
+    }
+    !/^\[/ &amp;&amp; $1 ~ /[[:space:]]*label/ {
+        gsub(/^[ \t]+|[ \t]+$/, &#34;&#34;, $2)
+        label = $2
+    }
+    ip != &#34;&#34; &amp;&amp; login_type != &#34;&#34; &amp;&amp; label != &#34;&#34; {
+        printf &#34;\033[0;31m% 3s \033[m | %15s | %8s | %s\n&#34;, server_id, ip, login_type, label
+        server_id = ip = login_type = label = &#34;&#34;
+    }
+    &#39; &#34;$direc/config.ini&#34;
+}
+
+# 主函数
+function main(){
+    while true; do
+        clear
+        copyright
+        
+        echo &#34;序号 |       主机      | 登录方式 | 说明&#34;
+        underline
+        list_servers
+        underline
+        
+        read -p &#39;[*] 选择主机: &#39; number
+        
+        if [[ &#34;$number&#34; == &#34;q&#34; || &#34;$number&#34; == &#34;quit&#34; ]]; then
+            exit
+        fi
+        
+        config=$(get_server_config &#34;$number&#34;)
+        
+        if [ -z &#34;$config&#34; ]; then
+            color red &#34;[!] 无效的主机序号: $number&#34;
+            sleep 1
+            continue
+        fi
+        
+        IFS=&#39;:&#39; read -r ipaddr port username login_type credential label &lt;&lt;&lt; &#34;$config&#34;
+        
+        # 显示调试信息
+        color blue &#34;[*] 解析配置：&#34;
+        echo &#34;路径前缀: $direc&#34;
+        echo &#34;IP地址: $ipaddr&#34;
+        echo &#34;端口: $port&#34;
+        echo &#34;用户名: $username&#34;
+        echo &#34;登录类型: $login_type&#34;
+        echo &#34;证书文件: $credential&#34;
+        
+        if [[ &#34;$login_type&#34; == &#34;pem&#34; ]]; then
+            pem_path=&#34;$direc/keys/$credential&#34;
+            color green &#34;[*] 使用证书: $credential&#34;
+            echo &#34;证书路径: $pem_path&#34;
+            
+            if [ ! -f &#34;$pem_path&#34; ]; then
+                color red &#34;[!] 证书文件不存在: $pem_path&#34;
+                sleep 2
+                continue
+            elif [ ! -r &#34;$pem_path&#34; ]; then
+                color red &#34;[!] 无权限读取证书文件&#34;
+                sleep 2
+                continue
+            fi
+            
+            ssh -i &#34;$pem_path&#34; &#34;$username@$ipaddr&#34; -p &#34;$port&#34;
+            
+        elif [[ &#34;$login_type&#34; == &#34;pwd&#34; ]]; then
+            exp_path=&#34;$direc/login.exp&#34;
+            
+            if [ ! -f &#34;$exp_path&#34; ]; then
+                color red &#34;[!] expect脚本不存在: $exp_path&#34;
+                sleep 2
+                continue
+            elif [ ! -x &#34;$exp_path&#34; ]; then
+                color red &#34;[!] expect脚本不可执行&#34;
+                sleep 2
+                continue
+            fi
+            
+            expect -f &#34;$exp_path&#34; &#34;$ipaddr&#34; &#34;$username&#34; &#34;$credential&#34; &#34;$port&#34;
+        else
+            color red &#34;[!] 未知的登录类型: $login_type&#34;
+            sleep 2
+        fi
+    done
+}
+
+main
+</code></pre><h2 id="2loginexp">2.login.exp <a href="#2loginexp" class="anchor">🔗</a></h2><pre tabindex="0"><code class="language-config" data-lang="config">#!/usr/bin/expect -f
+proc abort {msg} {
+    puts stderr $msg
+    exit 1
+}
+
+if {$argc != 4} {
+    abort &#34;Usage: $argv0 host user password port&#34;
+}
+
+set TARGET [lindex $argv 0]
+set USER [lindex $argv 1]
+set PASSWD [lindex $argv 2]
+set PORT [lindex $argv 3]
+set timeout 10
+
+spawn ssh -o StrictHostKeyChecking=no -p $PORT $USER@$TARGET
+match_max 100000
+
+expect {
+    &#34;*yes/no&#34; {
+        send &#34;yes\r&#34;
+        exp_continue
+    }
+    &#34;*assword:&#34; {
+        send &#34;$PASSWD\r&#34;
+        exp_continue
+    }
+    eof {
+        puts &#34;Connection closed.&#34;
+    }
+    timeout {
+        abort &#34;Connection timeout&#34;
+    }
+}
+
+interact
+</code></pre><h2 id="3configini">3.config.ini <a href="#3configini" class="anchor">🔗</a></h2><pre tabindex="0"><code class="language-config" data-lang="config">[server1] 
+ip=127.0.0.1
+port=22
+username=root
+login_type=pwd
+credential=123456
+label=本地test
+
+[server2] 
+ip=127.0.0.1
+port=22
+username=root
+login_type=pwd
+credential=123456
+label=本地test
+</code></pre><h2 id="4在mainsh目录下新建keys文件夹将证书文件放在keys文件夹下证书权限为600">4.在main.sh目录下新建keys文件夹，将证书文件放在keys文件夹下,证书权限为600 <a href="#4%e5%9c%a8mainsh%e7%9b%ae%e5%bd%95%e4%b8%8b%e6%96%b0%e5%bb%bakeys%e6%96%87%e4%bb%b6%e5%a4%b9%e5%b0%86%e8%af%81%e4%b9%a6%e6%96%87%e4%bb%b6%e6%94%be%e5%9c%a8keys%e6%96%87%e4%bb%b6%e5%a4%b9%e4%b8%8b%e8%af%81%e4%b9%a6%e6%9d%83%e9%99%90%e4%b8%ba600" class="anchor">🔗</a></h2><pre tabindex="0"><code class="language-config" data-lang="config">chmod 600 a.pem
+</code></pre>
+    </div>
+
+    
+</section>
+
+
+            </div>
+            <div class="side">
+                <div class="side-categories">
+    <h2>Categories</h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/categories/ai">ai(3)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/go">go(23)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E4%BB%A3%E7%A0%81">代码(2)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E5%B7%A5%E5%85%B7">工具(8)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E9%80%86%E5%90%91">逆向(3)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E9%9D%A2%E8%AF%95">面试(5)</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/note/">Recent Note</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/note/%E6%9E%B6%E6%9E%84%E8%80%83%E7%82%B9/">场景总结</a>
+            </li>
+        
+            <li>
+                <a href="/note/rdis-%E7%BC%93%E5%AD%98%E7%A9%BF%E9%80%8F%E9%9B%AA%E5%B4%A9%E5%87%BB%E7%A9%BF%E7%9A%84%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95/">缓存穿透、雪崩、击穿的解决方法</a>
+            </li>
+        
+            <li>
+                <a href="/note/redis-%E5%8D%95%E7%BA%BF%E7%A8%8B%E7%9A%84redis%E4%B8%BA%E4%BB%80%E4%B9%88%E5%BF%AB/">单线程的redis为什么快</a>
+            </li>
+        
+            <li>
+                <a href="/note/redis-%E6%80%BB%E7%BB%93/">redis总结</a>
+            </li>
+        
+            <li>
+                <a href="/note/mysql-%E6%80%BB%E7%BB%93/">mysql总结</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/android/">Recent Android</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/android/redroid%E4%BD%BF%E7%94%A8/">Redroid安卓容器</a>
+            </li>
+        
+            <li>
+                <a href="/android/%E5%85%A5%E9%97%A8/">逆向环境-杂</a>
+            </li>
+        
+            <li>
+                <a href="/android/frida%E6%95%99%E7%A8%8B/">frida教程</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/tool/">Recent Tool</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/tool/linux-almalinux%E4%BC%98%E5%8C%96/">AlmaLinux10</a>
+            </li>
+        
+            <li>
+                <a href="/tool/almalinux-k8s/">AlmaLinux-k8s安装</a>
+            </li>
+        
+            <li>
+                <a href="/tool/vscode%E6%8A%98%E8%85%BE/">vscode折腾</a>
+            </li>
+        
+            <li>
+                <a href="/tool/linux-ubuntu%E4%BC%98%E5%8C%96/">Ubuntu开机优化</a>
+            </li>
+        
+            <li>
+                <a href="/tool/shell-ssh_script/">ssh常用脚本</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/llm/">Recent Llm</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/llm/transformers-%E5%85%A5%E9%97%A8%E7%AF%87/">Transformers-入门篇</a>
+            </li>
+        
+            <li>
+                <a href="/llm/%E6%A8%A1%E5%9E%8Bvllm%E9%83%A8%E7%BD%B2/">AI模型VLLM部署</a>
+            </li>
+        
+            <li>
+                <a href="/llm/%E6%A8%A1%E5%9E%8B%E5%BE%AE%E8%B0%83/">AI模型微调</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/go/">Recent Go</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/go/go%E4%B8%89%E8%89%B2%E6%A0%87%E8%AE%B0%E6%B7%B7%E5%90%88%E5%86%99%E5%B1%8F%E9%9A%9Cgc%E6%A8%A1%E5%BC%8F%E5%85%A8%E6%80%BB%E7%BB%93/">Go三色标记混合写屏障GC模式全总结</a>
+            </li>
+        
+            <li>
+                <a href="/go/go%E4%B8%ADmake%E4%B8%8Enew%E5%8C%BA%E5%88%AB/">Go中make与new区别</a>
+            </li>
+        
+            <li>
+                <a href="/go/go%E5%B8%B8%E7%94%A8bug%E5%92%8C%E6%80%A7%E8%83%BD%E9%97%AE%E9%A2%98%E7%9A%84%E5%AE%9E%E8%B7%B5%E6%96%B9%E6%B3%95/">Go常用bug和性能问题的实践方法</a>
+            </li>
+        
+            <li>
+                <a href="/go/grpc%E6%80%BB%E7%BB%93/">GRPC笔记</a>
+            </li>
+        
+            <li>
+                <a href="/go/go%E7%9A%84defer%E6%80%BB%E7%BB%93/">Go的defer总结</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+            </div>
+        </main>
+        <footer class="footer">
+    <div class="footer-row">
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/note/index.xml">
+                    Feed of Note
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/android/index.xml">
+                    Feed of Android
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/tool/index.xml">
+                    Feed of Tool
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/llm/index.xml">
+                    Feed of Llm
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/go/index.xml">
+                    Feed of Go
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+
+        
+            
+            
+        
+    </div>
+
+    
+</footer>
+
+    </body>
+</html>
