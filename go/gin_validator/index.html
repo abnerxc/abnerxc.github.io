@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+<meta name="viewport" content="width=device-width,minimum-scale=1">
+
+
+
+
+<title>gin_validator | Abner的博客</title>
+<link rel="canonical" href="https://abnerxc.github.io/go/gin_validator/">
+<meta property="og:type" content="article" />
+<meta property="og:title" content="gin_validator | Abner的博客" />
+<meta property="og:url" content="https://abnerxc.github.io/go/gin_validator/" />
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/icofont/icofont.min.css" />
+<link rel="stylesheet" href="/css/syntax.css" />
+<link rel="stylesheet" href="/css/style.css" />
+<link rel="stylesheet" href="/css/custom.css" />
+<script src="/js/copy-code-block.js"></script>
+<link rel="shortcut icon" href="/images/favicon.ico" type="image/x-icon" />
+
+    </head>
+
+    <body>
+        <header class="header-wrapper">
+    <div class="header">
+        <a class="site-title" href="https://abnerxc.github.io/">Abner的博客</a>
+
+        <nav class="menu">
+            
+        </nav>
+    </div>
+</header>
+
+        <main class="main-wrapper">
+            <div class="main">
+                
+
+<section class="single">
+    <h1 class="title">gin_validator</h1>
+
+    <div class="tip">
+        <time datetime="2021-06-13 18:35:11 &#43;0800 CST">2021/06/13</time>
+        <span class="split">·</span>
+        <span> 713 words </span>
+        <span class="split">·</span>
+        <span>
+            4 minutes to read
+        </span>
+    </div>
+
+    <div class="taxonomies">
+        
+        <div>
+            Categories:
+            
+                <a href="/categories/go">Go</a>
+            
+        </div>
+        
+
+        
+    </div>
+
+    
+    
+    <div class="post-toc">
+        <h3>目录</h3>
+        <nav id="TableOfContents">
+  <ul>
+    <li><a href="#概述">概述</a></li>
+    <li><a href="#操作符说明">操作符说明</a></li>
+    <li><a href="#常用标记说明">常用标记说明</a></li>
+    <li><a href="#使用示例">使用示例</a></li>
+    <li><a href="#gin框架中使用验证器">gin框架中使用验证器</a></li>
+  </ul>
+</nav>
+    </div>
+    
+
+    <hr />
+
+    <div class="content">
+        <h1 id="概述">概述 <a href="#%e6%a6%82%e8%bf%b0" class="anchor">🔗</a></h1><p>在接口开发经常会遇到一个问题是后端需要写大量的繁琐代码进行数据校验，所以就想着有没有像前端校验一样写规则进行匹配校验，然后就发现了validator包，一个比较强大的校验工具包下面是一些学习总结，详细内容可以查看<a href="https://github.com/go-playground/validator">validator</a>
+包下载：go get github.com/go-playground/validator/v10</p>
+<h1 id="操作符说明">操作符说明 <a href="#%e6%93%8d%e4%bd%9c%e7%ac%a6%e8%af%b4%e6%98%8e" class="anchor">🔗</a></h1><table>
+  <thead>
+      <tr>
+          <th>标记</th>
+          <th>标记说明</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>,</td>
+          <td>多操作符分割</td>
+      </tr>
+      <tr>
+          <td>|</td>
+          <td>或操作符</td>
+      </tr>
+      <tr>
+          <td>-</td>
+          <td>跳过验证字段</td>
+      </tr>
+  </tbody>
+</table>
+<h1 id="常用标记说明">常用标记说明 <a href="#%e5%b8%b8%e7%94%a8%e6%a0%87%e8%ae%b0%e8%af%b4%e6%98%8e" class="anchor">🔗</a></h1><table>
+  <thead>
+      <tr>
+          <th>标记</th>
+          <th>标记说明</th>
+          <th>例</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>required</td>
+          <td>必填</td>
+          <td>Field或Structvalidate:&ldquo;required&rdquo;,如果int,0作为特殊可通过*int判断</td>
+      </tr>
+      <tr>
+          <td>omitempty</td>
+          <td>空时忽略</td>
+          <td>Field或Structvalidate:&ldquo;omitempty&rdquo;</td>
+      </tr>
+      <tr>
+          <td>len</td>
+          <td>长度</td>
+          <td>Fieldvalidate:&ldquo;len=0&rdquo;</td>
+      </tr>
+      <tr>
+          <td>eq</td>
+          <td>等于</td>
+          <td>Fieldvalidate:&ldquo;eq=0&rdquo;</td>
+      </tr>
+      <tr>
+          <td>gt</td>
+          <td>大于</td>
+          <td>Fieldvalidate:&ldquo;gt=0&rdquo;</td>
+      </tr>
+      <tr>
+          <td>gte</td>
+          <td>大于等于</td>
+          <td>Fieldvalidate:&ldquo;gte=0&rdquo;</td>
+      </tr>
+      <tr>
+          <td>lt</td>
+          <td>小于</td>
+          <td>Fieldvalidate:&ldquo;lt=0&rdquo;</td>
+      </tr>
+      <tr>
+          <td>lte</td>
+          <td>小于等于</td>
+          <td>Fieldvalidate:&ldquo;lte=0&rdquo;</td>
+      </tr>
+      <tr>
+          <td>eqfield</td>
+          <td>同一结构体字段相等</td>
+          <td>Fieldvalidate:&ldquo;eqfield=Field2&rdquo;</td>
+      </tr>
+      <tr>
+          <td>nefield</td>
+          <td>同一结构体字段不相等</td>
+          <td>Fieldvalidate:&ldquo;nefield=Field2&rdquo;</td>
+      </tr>
+      <tr>
+          <td>gtfield</td>
+          <td>大于同一结构体字段</td>
+          <td>Fieldvalidate:&ldquo;gtfield=Field2&rdquo;</td>
+      </tr>
+      <tr>
+          <td>gtefield</td>
+          <td>大于等于同一结构体字段</td>
+          <td>Fieldvalidate:&ldquo;gtefield=Field2&rdquo;</td>
+      </tr>
+      <tr>
+          <td>ltfield</td>
+          <td>小于同一结构体字段</td>
+          <td>Fieldvalidate:&ldquo;ltfield=Field2&rdquo;</td>
+      </tr>
+      <tr>
+          <td>ltefield</td>
+          <td>小于等于同一结构体字段</td>
+          <td>Fieldvalidate:&ldquo;ltefield=Field2&rdquo;</td>
+      </tr>
+      <tr>
+          <td>eqcsfield</td>
+          <td>跨不同结构体字段相等</td>
+          <td>Struct1.Fieldvalidate:&ldquo;eqcsfield=Struct2.Field2&rdquo;</td>
+      </tr>
+      <tr>
+          <td>necsfield</td>
+          <td>跨不同结构体字段不相等</td>
+          <td>Struct1.Fieldvalidate:&ldquo;necsfield=Struct2.Field2&rdquo;</td>
+      </tr>
+      <tr>
+          <td>gtcsfield</td>
+          <td>大于跨不同结构体字段</td>
+          <td>Struct1.Fieldvalidate:&ldquo;gtcsfield=Struct2.Field2&rdquo;</td>
+      </tr>
+      <tr>
+          <td>gtecsfield</td>
+          <td>大于等于跨不同结构体字段</td>
+          <td>Struct1.Fieldvalidate:&ldquo;gtecsfield=Struct2.Field2&rdquo;</td>
+      </tr>
+      <tr>
+          <td>ltcsfield</td>
+          <td>小于跨不同结构体字段</td>
+          <td>Struct1.Fieldvalidate:&ldquo;ltcsfield=Struct2.Field2&rdquo;</td>
+      </tr>
+      <tr>
+          <td>ltecsfield</td>
+          <td>小于等于跨不同结构体字段</td>
+          <td>Struct1.Fieldvalidate:&ldquo;ltecsfield=Struct2.Field2&rdquo;</td>
+      </tr>
+      <tr>
+          <td>min</td>
+          <td>最大值</td>
+          <td>Fieldvalidate:&ldquo;min=1&rdquo;</td>
+      </tr>
+      <tr>
+          <td>max</td>
+          <td>最小值</td>
+          <td>Fieldvalidate:&ldquo;max=2&rdquo;</td>
+      </tr>
+      <tr>
+          <td>structonly</td>
+          <td>仅验证结构体，不验证任何结构体字段</td>
+          <td>Structvalidate:&ldquo;structonly&rdquo;</td>
+      </tr>
+      <tr>
+          <td>nostructlevel</td>
+          <td>不运行任何结构级别的验证</td>
+          <td>Structvalidate:&ldquo;nostructlevel&rdquo;</td>
+      </tr>
+      <tr>
+          <td>dive</td>
+          <td>向下延伸验证，多层向下需要多个dive标记</td>
+          <td>[][]stringvalidate:&ldquo;gt=0,dive,len=1,dive,required&rdquo;</td>
+      </tr>
+      <tr>
+          <td>diveKeys&amp;EndKeys</td>
+          <td>与dive同时使用，用于对map对象的键的和值的验证，keys为键，endkeys为值</td>
+          <td>map[string]stringvalidate:&ldquo;gt=0,dive,keys,eq=1|eq=2,endkeys,required&rdquo;</td>
+      </tr>
+      <tr>
+          <td>required_with</td>
+          <td>其他字段其中一个不为空且当前字段不为空</td>
+          <td>Fieldvalidate:&ldquo;required_with=Field1Field2&rdquo;</td>
+      </tr>
+      <tr>
+          <td>required_with_all</td>
+          <td>其他所有字段不为空且当前字段不为空</td>
+          <td>Fieldvalidate:&ldquo;required_with_all=Field1Field2&rdquo;</td>
+      </tr>
+      <tr>
+          <td>required_without</td>
+          <td>其他字段其中一个为空且当前字段不为空</td>
+          <td>Field`validate:&ldquo;required_without=Field1Field2&rdquo;</td>
+      </tr>
+      <tr>
+          <td>required_without_all</td>
+          <td>其他所有字段为空且当前字段不为空</td>
+          <td>Fieldvalidate:&ldquo;required_without_all=Field1Field2&rdquo;</td>
+      </tr>
+      <tr>
+          <td>isdefault</td>
+          <td>是默认值</td>
+          <td>Fieldvalidate:&ldquo;isdefault=0&rdquo;</td>
+      </tr>
+      <tr>
+          <td>oneof</td>
+          <td>其中之一</td>
+          <td>Fieldvalidate:&ldquo;oneof=579&rdquo;</td>
+      </tr>
+      <tr>
+          <td>containsfield</td>
+          <td>字段包含另一个字段</td>
+          <td>Fieldvalidate:&ldquo;containsfield=Field2&rdquo;</td>
+      </tr>
+      <tr>
+          <td>excludesfield</td>
+          <td>字段不包含另一个字段</td>
+          <td>Fieldvalidate:&ldquo;excludesfield=Field2&rdquo;</td>
+      </tr>
+      <tr>
+          <td>unique</td>
+          <td>是否唯一，通常用于切片或结构体</td>
+          <td>Fieldvalidate:&ldquo;unique&rdquo;</td>
+      </tr>
+      <tr>
+          <td>alphanum</td>
+          <td>字符串值是否只包含ASCII字母数字字符</td>
+          <td>Fieldvalidate:&ldquo;alphanum&rdquo;</td>
+      </tr>
+      <tr>
+          <td>alphaunicode</td>
+          <td>字符串值是否只包含unicode字符</td>
+          <td>Fieldvalidate:&ldquo;alphaunicode&rdquo;</td>
+      </tr>
+      <tr>
+          <td>alphanumunicode</td>
+          <td>字符串值是否只包含unicode字母数字字符</td>
+          <td>Fieldvalidate:&ldquo;alphanumunicode&rdquo;</td>
+      </tr>
+      <tr>
+          <td>numeric</td>
+          <td>字符串值是否包含基本的数值</td>
+          <td>Fieldvalidate:&ldquo;numeric&rdquo;</td>
+      </tr>
+      <tr>
+          <td>hexadecimal</td>
+          <td>字符串值是否包含有效的十六进制</td>
+          <td>Fieldvalidate:&ldquo;hexadecimal&rdquo;</td>
+      </tr>
+      <tr>
+          <td>hexcolor</td>
+          <td>字符串值是否包含有效的十六进制颜色</td>
+          <td>Fieldvalidate:&ldquo;hexcolor&rdquo;</td>
+      </tr>
+      <tr>
+          <td>lowercase</td>
+          <td>符串值是否只包含小写字符</td>
+          <td>Fieldvalidate:&ldquo;lowercase&rdquo;</td>
+      </tr>
+      <tr>
+          <td>uppercase</td>
+          <td>符串值是否只包含大写字符</td>
+          <td>Fieldvalidate:&ldquo;uppercase&rdquo;</td>
+      </tr>
+      <tr>
+          <td>email</td>
+          <td>字符串值包含一个有效的电子邮件</td>
+          <td>Fieldvalidate:&ldquo;email&rdquo;</td>
+      </tr>
+      <tr>
+          <td>json</td>
+          <td>字符串值是否为有效的JSON</td>
+          <td>Fieldvalidate:&ldquo;json&rdquo;</td>
+      </tr>
+      <tr>
+          <td>file</td>
+          <td>符串值是否包含有效的文件路径，以及该文件是否存在于计算机上</td>
+          <td>Fieldvalidate:&ldquo;file&rdquo;</td>
+      </tr>
+      <tr>
+          <td>url</td>
+          <td>符串值是否包含有效的url</td>
+          <td>Fieldvalidate:&ldquo;url&rdquo;</td>
+      </tr>
+      <tr>
+          <td>uri</td>
+          <td>符串值是否包含有效的uri</td>
+          <td>Fieldvalidate:&ldquo;uri&rdquo;</td>
+      </tr>
+      <tr>
+          <td>base64</td>
+          <td>字符串值是否包含有效的base64值</td>
+          <td>Fieldvalidate:&ldquo;base64&rdquo;</td>
+      </tr>
+      <tr>
+          <td>contains</td>
+          <td>字符串值包含子字符串值</td>
+          <td>Fieldvalidate:&ldquo;contains=@&rdquo;</td>
+      </tr>
+      <tr>
+          <td>containsany</td>
+          <td>字符串值包含子字符串值中的任何字符</td>
+          <td>Fieldvalidate:&ldquo;containsany=abc&rdquo;</td>
+      </tr>
+      <tr>
+          <td>containsrune</td>
+          <td>字符串值包含提供的特殊符号值</td>
+          <td>Fieldvalidate:&ldquo;containsrune=☢&rdquo;</td>
+      </tr>
+      <tr>
+          <td>excludes</td>
+          <td>字符串值不包含子字符串值</td>
+          <td>Fieldvalidate:&ldquo;excludes=@&rdquo;</td>
+      </tr>
+      <tr>
+          <td>excludesall</td>
+          <td>字符串值不包含任何子字符串值</td>
+          <td>Fieldvalidate:&ldquo;excludesall=abc&rdquo;</td>
+      </tr>
+      <tr>
+          <td>excludesrune</td>
+          <td>字符串值不包含提供的特殊符号值</td>
+          <td>Fieldvalidate:&ldquo;containsrune=☢&rdquo;</td>
+      </tr>
+      <tr>
+          <td>startswith</td>
+          <td>字符串以提供的字符串值开始</td>
+          <td>Fieldvalidate:&ldquo;startswith=abc&rdquo;</td>
+      </tr>
+      <tr>
+          <td>endswith</td>
+          <td>字符串以提供的字符串值结束</td>
+          <td>Fieldvalidate:&ldquo;endswith=abc&rdquo;</td>
+      </tr>
+      <tr>
+          <td>ip</td>
+          <td>字符串值是否包含有效的IP地址</td>
+          <td>Fieldvalidate:&ldquo;ip&rdquo;</td>
+      </tr>
+      <tr>
+          <td>ipv4</td>
+          <td>字符串值是否包含有效的ipv4地址</td>
+          <td>Fieldvalidate:&ldquo;ipv4&rdquo;</td>
+      </tr>
+      <tr>
+          <td>datetime</td>
+          <td>字符串值是否包含有效的日期</td>
+          <td>Fieldvalidate:&ldquo;datetime&rdquo;</td>
+      </tr>
+  </tbody>
+</table>
+<h1 id="使用示例">使用示例 <a href="#%e4%bd%bf%e7%94%a8%e7%a4%ba%e4%be%8b" class="anchor">🔗</a></h1><h2 id="使用注意">使用注意 <a href="#%e4%bd%bf%e7%94%a8%e6%b3%a8%e6%84%8f" class="anchor">🔗</a></h2><ol>
+<li>当搜索条件与特殊标记冲突时,如：逗号（,），或操作（|），中横线（-）等则需要使用 UTF-8十六进制表示形式</li>
+</ol>
+<pre tabindex="0"><code>type Test struct {
+   Field1 string  `validate:&#34;excludesall=|&#34;`    // 错误
+   Field2 string `validate:&#34;excludesall=0x7C&#34;` // 正确.
+}
+</code></pre><ol start="2">
+<li>可通过validationErrors := errs.(validator.ValidationErrors)获取错误对象自定义返回响应错误</li>
+<li>自定义校验结果翻译</li>
+</ol>
+<pre tabindex="0"><code>// 初始化翻译器
+func validateInit() {
+	zh_ch := zh.New()
+	uni := ut.New(zh_ch)               // 万能翻译器，保存所有的语言环境和翻译数据
+	Trans, _ = uni.GetTranslator(&#34;zh&#34;) // 翻译器
+	Validate = validator.New()
+	_ = zh_translations.RegisterDefaultTranslations(Validate, Trans)
+	// 添加额外翻译
+	_ = Validate.RegisterTranslation(&#34;required_without&#34;, Trans, func(ut ut.Translator) error {
+		return ut.Add(&#34;required_without&#34;, &#34;{0} 为必填字段!&#34;, true)
+	}, func(ut ut.Translator, fe validator.FieldError) string {
+		t, _ := ut.T(&#34;required_without&#34;, fe.Field())
+		return t
+	})
+}
+</code></pre><h2 id="使用示例-1">使用示例 <a href="#%e4%bd%bf%e7%94%a8%e7%a4%ba%e4%be%8b-1" class="anchor">🔗</a></h2><pre tabindex="0"><code>package main
+import (
+   &#34;fmt&#34;
+   &#34;github.com/go-playground/validator/v10&#34;
+)
+// 实例化验证对象
+var validate = validator.New()
+func main() {
+   // 结构体验证
+   type Inner struct {
+      String string `validate:&#34;contains=111&#34;`
+   }
+   inner := &amp;Inner{String: &#34;11@&#34;}
+   errs := validate.Struct(inner)
+   if errs != nil {
+      fmt.Println(errs.Error())
+   }
+   // 变量验证
+   m := map[string]string{&#34;&#34;: &#34;&#34;, &#34;val3&#34;: &#34;val3&#34;}
+   errs = validate.Var(m, &#34;required,dive,keys,required,endkeys,required&#34;)
+   if errs != nil {
+      fmt.Println(errs.Error())
+   }
+}
+</code></pre><h1 id="gin框架中使用验证器">gin框架中使用验证器 <a href="#gin%e6%a1%86%e6%9e%b6%e4%b8%ad%e4%bd%bf%e7%94%a8%e9%aa%8c%e8%af%81%e5%99%a8" class="anchor">🔗</a></h1><h2 id="定义错误翻译器">定义错误翻译器 <a href="#%e5%ae%9a%e4%b9%89%e9%94%99%e8%af%af%e7%bf%bb%e8%af%91%e5%99%a8" class="anchor">🔗</a></h2><pre tabindex="0"><code>package xcore
+
+import (
+	&#34;fmt&#34;
+	&#34;github.com/gin-gonic/gin/binding&#34;
+	&#34;reflect&#34;
+	&#34;strings&#34;
+	//gin表单验证
+	&#34;github.com/go-playground/locales/en&#34;
+	&#34;github.com/go-playground/locales/zh&#34;
+	&#34;github.com/go-playground/universal-translator&#34;
+	&#34;github.com/go-playground/validator/v10&#34;
+	enTranslations &#34;github.com/go-playground/validator/v10/translations/en&#34;
+	zhTranslations &#34;github.com/go-playground/validator/v10/translations/zh&#34;
+)
+
+// 定义一个全局翻译器
+var trans ut.Translator
+
+// InitTrans 初始化翻译器
+func InitTrans(locale string) (err error) {
+	//修改gin框架中的Validator属性，实现自定制
+	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
+		// 注册一个获取json tag的自定义方法
+		v.RegisterTagNameFunc(func(fld reflect.StructField) string {
+			name := strings.SplitN(fld.Tag.Get(&#34;json&#34;), &#34;,&#34;, 2)[0]
+			if name == &#34;-&#34; {
+				return &#34;&#34;
+			}
+			return name
+		})
+
+		zhT := zh.New() //中文翻译器
+		enT := en.New() //英文翻译器
+
+		// 第一个参数是备用（fallback）的语言环境
+		// 后面的参数是应该支持的语言环境（支持多个）
+		// uni := ut.New(zhT, zhT) 也是可以的
+		uni := ut.New(enT, zhT, enT)
+
+		// locale 通常取决于 http 请求头的 &#39;Accept-Language&#39;
+		var ok bool
+		// 也可以使用 uni.FindTranslator(...) 传入多个locale进行查找
+		trans, ok = uni.GetTranslator(locale)
+		if !ok {
+			return fmt.Errorf(&#34;uni.GetTranslator(%s) failed&#34;, locale)
+		}
+
+		// 添加额外翻译
+		_ = v.RegisterTranslation(&#34;required_with&#34;, trans, func(ut ut.Translator) error {
+			return ut.Add(&#34;required_with&#34;, &#34;{0} 为必填字段!&#34;, true)
+		}, func(ut ut.Translator, fe validator.FieldError) string {
+			t, _ := ut.T(&#34;required_with&#34;, fe.Field())
+			return t
+		})
+		_ = v.RegisterTranslation(&#34;required_without&#34;, trans, func(ut ut.Translator) error {
+			return ut.Add(&#34;required_without&#34;, &#34;{0} 为必填字段!&#34;, true)
+		}, func(ut ut.Translator, fe validator.FieldError) string {
+			t, _ := ut.T(&#34;required_without&#34;, fe.Field())
+			return t
+		})
+		_ = v.RegisterTranslation(&#34;required_without_all&#34;, trans, func(ut ut.Translator) error {
+			return ut.Add(&#34;required_without_all&#34;, &#34;{0} 为必填字段!&#34;, true)
+		}, func(ut ut.Translator, fe validator.FieldError) string {
+			t, _ := ut.T(&#34;required_without_all&#34;, fe.Field())
+			return t
+		})
+
+		// 注册翻译器
+		switch locale {
+		case &#34;en&#34;:
+			err = enTranslations.RegisterDefaultTranslations(v, trans)
+		case &#34;zh&#34;:
+			err = zhTranslations.RegisterDefaultTranslations(v, trans)
+		default:
+			err = enTranslations.RegisterDefaultTranslations(v, trans)
+		}
+		return
+	}
+	return
+}
+
+func addValueToMap(fields map[string]string) map[string]interface{} {
+	res := make(map[string]interface{})
+	for field, err := range fields {
+		fieldArr := strings.SplitN(field, &#34;.&#34;, 2)
+		if len(fieldArr) &gt; 1 {
+			NewFields := map[string]string{fieldArr[1]: err}
+			returnMap := addValueToMap(NewFields)
+			if res[fieldArr[0]] != nil {
+				for k, v := range returnMap {
+					res[fieldArr[0]].(map[string]interface{})[k] = v
+				}
+			} else {
+				res[fieldArr[0]] = returnMap
+			}
+			continue
+		} else {
+			res[field] = err
+			continue
+		}
+	}
+	return res
+}
+
+// 去掉结构体名称前缀
+func removeTopStruct(fields map[string]string) map[string]interface{} {
+	lowerMap := map[string]string{}
+	for field, err := range fields {
+		fieldArr := strings.SplitN(field, &#34;.&#34;, 2)
+		lowerMap[fieldArr[1]] = err
+	}
+	res := addValueToMap(lowerMap)
+	return res
+}
+
+//handler中调用的错误翻译方法
+func ValidatorError(err error) map[string]interface{} {
+	errs, ok := err.(validator.ValidationErrors)
+	if ok {
+		return removeTopStruct(errs.Translate(trans))
+	}
+	return nil
+}
+</code></pre><h2 id="使用">使用 <a href="#%e4%bd%bf%e7%94%a8" class="anchor">🔗</a></h2><pre tabindex="0"><code>func (c *IndexController) Validator(ctx *gin.Context) {
+	req := requests.AdminReq{}
+	if err := ctx.ShouldBindJSON(&amp;req); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{&#34;error&#34;: xcore.ValidatorError(err)})
+		return
+	}
+	ctx.JSON(http.StatusNotFound, &#34;ok&#34;)
+}
+</code></pre>
+    </div>
+
+    
+</section>
+
+
+            </div>
+            <div class="side">
+                <div class="side-categories">
+    <h2>Categories</h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/categories/ai">ai(3)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/go">go(23)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E4%BB%A3%E7%A0%81">代码(2)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E5%B7%A5%E5%85%B7">工具(8)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E9%80%86%E5%90%91">逆向(3)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E9%9D%A2%E8%AF%95">面试(5)</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/note/">Recent Note</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/note/%E6%9E%B6%E6%9E%84%E8%80%83%E7%82%B9/">场景总结</a>
+            </li>
+        
+            <li>
+                <a href="/note/rdis-%E7%BC%93%E5%AD%98%E7%A9%BF%E9%80%8F%E9%9B%AA%E5%B4%A9%E5%87%BB%E7%A9%BF%E7%9A%84%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95/">缓存穿透、雪崩、击穿的解决方法</a>
+            </li>
+        
+            <li>
+                <a href="/note/redis-%E5%8D%95%E7%BA%BF%E7%A8%8B%E7%9A%84redis%E4%B8%BA%E4%BB%80%E4%B9%88%E5%BF%AB/">单线程的redis为什么快</a>
+            </li>
+        
+            <li>
+                <a href="/note/redis-%E6%80%BB%E7%BB%93/">redis总结</a>
+            </li>
+        
+            <li>
+                <a href="/note/mysql-%E6%80%BB%E7%BB%93/">mysql总结</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/android/">Recent Android</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/android/redroid%E4%BD%BF%E7%94%A8/">Redroid安卓容器</a>
+            </li>
+        
+            <li>
+                <a href="/android/%E5%85%A5%E9%97%A8/">逆向环境-杂</a>
+            </li>
+        
+            <li>
+                <a href="/android/frida%E6%95%99%E7%A8%8B/">frida教程</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/tool/">Recent Tool</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/tool/linux-almalinux%E4%BC%98%E5%8C%96/">AlmaLinux10</a>
+            </li>
+        
+            <li>
+                <a href="/tool/almalinux-k8s/">AlmaLinux-k8s安装</a>
+            </li>
+        
+            <li>
+                <a href="/tool/vscode%E6%8A%98%E8%85%BE/">vscode折腾</a>
+            </li>
+        
+            <li>
+                <a href="/tool/linux-ubuntu%E4%BC%98%E5%8C%96/">Ubuntu开机优化</a>
+            </li>
+        
+            <li>
+                <a href="/tool/shell-ssh_script/">ssh常用脚本</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/llm/">Recent Llm</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/llm/transformers-%E5%85%A5%E9%97%A8%E7%AF%87/">Transformers-入门篇</a>
+            </li>
+        
+            <li>
+                <a href="/llm/%E6%A8%A1%E5%9E%8Bvllm%E9%83%A8%E7%BD%B2/">AI模型VLLM部署</a>
+            </li>
+        
+            <li>
+                <a href="/llm/%E6%A8%A1%E5%9E%8B%E5%BE%AE%E8%B0%83/">AI模型微调</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/go/">Recent Go</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/go/go%E4%B8%89%E8%89%B2%E6%A0%87%E8%AE%B0%E6%B7%B7%E5%90%88%E5%86%99%E5%B1%8F%E9%9A%9Cgc%E6%A8%A1%E5%BC%8F%E5%85%A8%E6%80%BB%E7%BB%93/">Go三色标记混合写屏障GC模式全总结</a>
+            </li>
+        
+            <li>
+                <a href="/go/go%E4%B8%ADmake%E4%B8%8Enew%E5%8C%BA%E5%88%AB/">Go中make与new区别</a>
+            </li>
+        
+            <li>
+                <a href="/go/go%E5%B8%B8%E7%94%A8bug%E5%92%8C%E6%80%A7%E8%83%BD%E9%97%AE%E9%A2%98%E7%9A%84%E5%AE%9E%E8%B7%B5%E6%96%B9%E6%B3%95/">Go常用bug和性能问题的实践方法</a>
+            </li>
+        
+            <li>
+                <a href="/go/grpc%E6%80%BB%E7%BB%93/">GRPC笔记</a>
+            </li>
+        
+            <li>
+                <a href="/go/go%E7%9A%84defer%E6%80%BB%E7%BB%93/">Go的defer总结</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+            </div>
+        </main>
+        <footer class="footer">
+    <div class="footer-row">
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/note/index.xml">
+                    Feed of Note
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/android/index.xml">
+                    Feed of Android
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/tool/index.xml">
+                    Feed of Tool
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/llm/index.xml">
+                    Feed of Llm
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/go/index.xml">
+                    Feed of Go
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+
+        
+            
+            
+        
+    </div>
+
+    
+</footer>
+
+    </body>
+</html>

@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+<meta name="viewport" content="width=device-width,minimum-scale=1">
+
+
+
+
+<title>Go相对路径问题 | Abner的博客</title>
+<link rel="canonical" href="https://abnerxc.github.io/go/%E7%9B%B8%E5%AF%B9%E8%B7%AF%E5%BE%84%E9%97%AE%E9%A2%98/">
+<meta property="og:type" content="article" />
+<meta property="og:title" content="Go相对路径问题 | Abner的博客" />
+<meta property="og:url" content="https://abnerxc.github.io/go/%E7%9B%B8%E5%AF%B9%E8%B7%AF%E5%BE%84%E9%97%AE%E9%A2%98/" />
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/icofont/icofont.min.css" />
+<link rel="stylesheet" href="/css/syntax.css" />
+<link rel="stylesheet" href="/css/style.css" />
+<link rel="stylesheet" href="/css/custom.css" />
+<script src="/js/copy-code-block.js"></script>
+<link rel="shortcut icon" href="/images/favicon.ico" type="image/x-icon" />
+
+    </head>
+
+    <body>
+        <header class="header-wrapper">
+    <div class="header">
+        <a class="site-title" href="https://abnerxc.github.io/">Abner的博客</a>
+
+        <nav class="menu">
+            
+        </nav>
+    </div>
+</header>
+
+        <main class="main-wrapper">
+            <div class="main">
+                
+
+<section class="single">
+    <h1 class="title">Go相对路径问题</h1>
+
+    <div class="tip">
+        <time datetime="2022-05-03 18:35:11 &#43;0800 CST">2022/05/03</time>
+        <span class="split">·</span>
+        <span> 183 words </span>
+        <span class="split">·</span>
+        <span>
+            1 minutes to read
+        </span>
+    </div>
+
+    <div class="taxonomies">
+        
+        <div>
+            Categories:
+            
+                <a href="/categories/go">Go</a>
+            
+        </div>
+        
+
+        
+    </div>
+
+    
+    
+    <div class="post-toc">
+        <h3>目录</h3>
+        <nav id="TableOfContents">
+  <ul>
+    <li></li>
+  </ul>
+</nav>
+    </div>
+    
+
+    <hr />
+
+    <div class="content">
+        <h2 id="问题">问题 <a href="#%e9%97%ae%e9%a2%98" class="anchor">🔗</a></h2><p>1、 go run 我们上移目录层级，到 $GOPATH/src 下，执行 go run gin-blog/main.go</p>
+<pre tabindex="0"><code>[$]# go run gin-blog/main.go
+Fail to parse &#39;conf/app.yam&#39;: open conf/app.ini: no such file or directory
+exit status 1
+</code></pre><p>2、 go build，执行 ./gin-blog/main</p>
+<pre tabindex="0"><code>[$]# ./gin-blog/main
+ Fail to parse &#39;conf/app.ini&#39;: open conf/app.ini: no such file or directory
+</code></pre><h2 id="测试">测试 <a href="#%e6%b5%8b%e8%af%95" class="anchor">🔗</a></h2><p>编写获取当前路径的方法</p>
+<pre tabindex="0"><code>import (
+	&#34;path/filepath&#34;
+	&#34;os&#34;
+	&#34;os/exec&#34;
+	&#34;string&#34;
+)
+
+func GetAppPath() string {
+    file, _ := exec.LookPath(os.Args[0])
+    path, _ := filepath.Abs(file)
+    index := strings.LastIndex(path, string(os.PathSeparator))
+
+    return path[:index]
+}
+</code></pre><p>执行<code>go run</code> 得到</p>
+<pre tabindex="0"><code>$ go run main.go
+C:\Users\abner（~1\AppData\Local\Temp\go-build536365654\b001\exe
+</code></pre><h2 id="剖析">剖析 <a href="#%e5%89%96%e6%9e%90" class="anchor">🔗</a></h2><p>我们聚焦在 <code>go run</code> 的输出结果上，发现它是一个临时文件的地址，这是为什么呢？</p>
+<p>在go help run中，我们可以看到</p>
+<pre tabindex="0"><code>A Go source file is defined to be a file ending in a literal &#34;.go&#34; suffix.
+也就是 go run 执行时会将文件放到 /tmp/go-build... 目录下，编译并运行
+</code></pre><p>因此<code>go run main.go</code>出现/tmp/go-build536365654/b001/exe结果也不奇怪了，因为它已经跑到临时目录下去执行可执行文件了</p>
+<p>这就已经很清楚了，那么我们想想，会出现哪些问题呢</p>
+<ul>
+<li>依赖相对路径的文件，出现路径出错的问题</li>
+<li><code>go run</code> 和 <code>go build</code> 不一样，一个到临时目录下执行，一个可手动在编译后的目录下执行，路径的处理方式会不同</li>
+<li>不断go run，不断产生新的临时文件
+这其实就是根本原因了，因为 go run 和 go build 的编译文件执行路径并不同，执行的层级也有可能不一样，自然而然就出现各种读取不到的奇怪问题了</li>
+</ul>
+<h2 id="解决方案">解决方案 <a href="#%e8%a7%a3%e5%86%b3%e6%96%b9%e6%a1%88" class="anchor">🔗</a></h2><p>一、获取编译后可执行文件路径
+1.	将配置文件的相对路径与GetAppPath()的结果相拼接，可解决go build main.go的可执行文件跨目录执行的问题（如：./src/gin-blog/main）
+2.	通过传递参数指定绝对路径，可解决go run的问题
+二、增加os.Getwd()进行多层判断
+参见 <a href="https://github.com/astaxie/beego/blob/develop/config/config.go">beego</a> 读取 app.conf 的代码</p>
+<p>该写法可兼容 go build 和在项目根目录执行 <code>go run</code> ，但是若跨目录执行 <code>go run</code> 就不行
+三、配置全局系统变量
+我们可以通过os.Getenv来获取系统全局变量，然后与相对路径进行拼接</p>
+<p>1、 设置项目工作区</p>
+<p>简单来说，就是设置项目（应用）的工作路径，然后与配置文件、日志文件等相对路径进行拼接，达到相对的绝对路径来保证路径一致</p>
+<p>参见 gogs 读取GOGS_WORK_DIR进行拼接的代码</p>
+<p>2、 利用系统自带变量</p>
+<p>简单来说就是通过系统自带的全局变量，例如$HOME等，将配置文件存放在$HOME/conf或/etc/conf下</p>
+<p>这样子就能更加固定的存放配置文件，不需要额外去设置一个环境变量</p>
+<h2 id="拓展">拓展 <a href="#%e6%8b%93%e5%b1%95" class="anchor">🔗</a></h2><p><code>go test</code> 在一些场景下也会遇到路径问题，因为<code>go test</code>只能够在当前目录执行，所以在执行测试用例的时候，你的执行目录已经是测试目录了</p>
+<p>需要注意的是，如果采用获取外部参数的办法，用 os.args 时，go test -args 和 go run、go build 会有命令行参数位置的不一致问题</p>
+
+    </div>
+
+    
+</section>
+
+
+            </div>
+            <div class="side">
+                <div class="side-categories">
+    <h2>Categories</h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/categories/ai">ai(3)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/go">go(23)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E4%BB%A3%E7%A0%81">代码(2)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E5%B7%A5%E5%85%B7">工具(8)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E9%80%86%E5%90%91">逆向(3)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E9%9D%A2%E8%AF%95">面试(5)</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/note/">Recent Note</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/note/%E6%9E%B6%E6%9E%84%E8%80%83%E7%82%B9/">场景总结</a>
+            </li>
+        
+            <li>
+                <a href="/note/rdis-%E7%BC%93%E5%AD%98%E7%A9%BF%E9%80%8F%E9%9B%AA%E5%B4%A9%E5%87%BB%E7%A9%BF%E7%9A%84%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95/">缓存穿透、雪崩、击穿的解决方法</a>
+            </li>
+        
+            <li>
+                <a href="/note/redis-%E5%8D%95%E7%BA%BF%E7%A8%8B%E7%9A%84redis%E4%B8%BA%E4%BB%80%E4%B9%88%E5%BF%AB/">单线程的redis为什么快</a>
+            </li>
+        
+            <li>
+                <a href="/note/redis-%E6%80%BB%E7%BB%93/">redis总结</a>
+            </li>
+        
+            <li>
+                <a href="/note/mysql-%E6%80%BB%E7%BB%93/">mysql总结</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/android/">Recent Android</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/android/redroid%E4%BD%BF%E7%94%A8/">Redroid安卓容器</a>
+            </li>
+        
+            <li>
+                <a href="/android/%E5%85%A5%E9%97%A8/">逆向环境-杂</a>
+            </li>
+        
+            <li>
+                <a href="/android/frida%E6%95%99%E7%A8%8B/">frida教程</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/tool/">Recent Tool</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/tool/linux-almalinux%E4%BC%98%E5%8C%96/">AlmaLinux10</a>
+            </li>
+        
+            <li>
+                <a href="/tool/almalinux-k8s/">AlmaLinux-k8s安装</a>
+            </li>
+        
+            <li>
+                <a href="/tool/vscode%E6%8A%98%E8%85%BE/">vscode折腾</a>
+            </li>
+        
+            <li>
+                <a href="/tool/linux-ubuntu%E4%BC%98%E5%8C%96/">Ubuntu开机优化</a>
+            </li>
+        
+            <li>
+                <a href="/tool/shell-ssh_script/">ssh常用脚本</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/llm/">Recent Llm</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/llm/transformers-%E5%85%A5%E9%97%A8%E7%AF%87/">Transformers-入门篇</a>
+            </li>
+        
+            <li>
+                <a href="/llm/%E6%A8%A1%E5%9E%8Bvllm%E9%83%A8%E7%BD%B2/">AI模型VLLM部署</a>
+            </li>
+        
+            <li>
+                <a href="/llm/%E6%A8%A1%E5%9E%8B%E5%BE%AE%E8%B0%83/">AI模型微调</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/go/">Recent Go</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/go/go%E4%B8%89%E8%89%B2%E6%A0%87%E8%AE%B0%E6%B7%B7%E5%90%88%E5%86%99%E5%B1%8F%E9%9A%9Cgc%E6%A8%A1%E5%BC%8F%E5%85%A8%E6%80%BB%E7%BB%93/">Go三色标记混合写屏障GC模式全总结</a>
+            </li>
+        
+            <li>
+                <a href="/go/go%E4%B8%ADmake%E4%B8%8Enew%E5%8C%BA%E5%88%AB/">Go中make与new区别</a>
+            </li>
+        
+            <li>
+                <a href="/go/go%E5%B8%B8%E7%94%A8bug%E5%92%8C%E6%80%A7%E8%83%BD%E9%97%AE%E9%A2%98%E7%9A%84%E5%AE%9E%E8%B7%B5%E6%96%B9%E6%B3%95/">Go常用bug和性能问题的实践方法</a>
+            </li>
+        
+            <li>
+                <a href="/go/grpc%E6%80%BB%E7%BB%93/">GRPC笔记</a>
+            </li>
+        
+            <li>
+                <a href="/go/go%E7%9A%84defer%E6%80%BB%E7%BB%93/">Go的defer总结</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+            </div>
+        </main>
+        <footer class="footer">
+    <div class="footer-row">
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/note/index.xml">
+                    Feed of Note
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/android/index.xml">
+                    Feed of Android
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/tool/index.xml">
+                    Feed of Tool
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/llm/index.xml">
+                    Feed of Llm
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/go/index.xml">
+                    Feed of Go
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+
+        
+            
+            
+        
+    </div>
+
+    
+</footer>
+
+    </body>
+</html>

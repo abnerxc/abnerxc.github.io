@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+<meta name="viewport" content="width=device-width,minimum-scale=1">
+
+
+
+
+<title>Go的pprof使用技巧 | Abner的博客</title>
+<link rel="canonical" href="https://abnerxc.github.io/go/pprof/">
+<meta property="og:type" content="article" />
+<meta property="og:title" content="Go的pprof使用技巧 | Abner的博客" />
+<meta property="og:url" content="https://abnerxc.github.io/go/pprof/" />
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/icofont/icofont.min.css" />
+<link rel="stylesheet" href="/css/syntax.css" />
+<link rel="stylesheet" href="/css/style.css" />
+<link rel="stylesheet" href="/css/custom.css" />
+<script src="/js/copy-code-block.js"></script>
+<link rel="shortcut icon" href="/images/favicon.ico" type="image/x-icon" />
+
+    </head>
+
+    <body>
+        <header class="header-wrapper">
+    <div class="header">
+        <a class="site-title" href="https://abnerxc.github.io/">Abner的博客</a>
+
+        <nav class="menu">
+            
+        </nav>
+    </div>
+</header>
+
+        <main class="main-wrapper">
+            <div class="main">
+                
+
+<section class="single">
+    <h1 class="title">Go的pprof使用技巧</h1>
+
+    <div class="tip">
+        <time datetime="2019-01-15 18:35:11 &#43;0800 CST">2019/01/15</time>
+        <span class="split">·</span>
+        <span> 238 words </span>
+        <span class="split">·</span>
+        <span>
+            2 minutes to read
+        </span>
+    </div>
+
+    <div class="taxonomies">
+        
+        <div>
+            Categories:
+            
+                <a href="/categories/go">Go</a>
+            
+        </div>
+        
+
+        
+    </div>
+
+    
+    
+    <div class="post-toc">
+        <h3>目录</h3>
+        <nav id="TableOfContents">
+  <ul>
+    <li><a href="#1安装易用的pprof">1.安装易用的pprof</a></li>
+    <li><a href="#2安装graphviz">2.安装graphviz</a></li>
+    <li><a href="#3修改main函数">3.修改main函数</a></li>
+    <li><a href="#4编译运行你的函数">4.编译运行你的函数</a></li>
+    <li><a href="#5可视化prof">5.可视化prof</a></li>
+    <li><a href="#6获取内存ppfo">6.获取内存ppfo</a></li>
+  </ul>
+</nav>
+    </div>
+    
+
+    <hr />
+
+    <div class="content">
+        <h1 id="1安装易用的pprof">1.安装易用的pprof <a href="#1%e5%ae%89%e8%a3%85%e6%98%93%e7%94%a8%e7%9a%84pprof" class="anchor">🔗</a></h1><p>golang自带的prof包是runtime/pprof，这个是低级别的，需要你手动做一些设置等等周边工作，不利于我们快速上手，利用pprof帮助我们解决实际的问题。这里推荐davecheney封装的pprof，它可以1行代码，让你用上pprof，专心解决自己的代码问题，下载：</p>
+<pre tabindex="0"><code>go get github.com/pkg/profile
+</code></pre><h1 id="2安装graphviz">2.安装graphviz <a href="#2%e5%ae%89%e8%a3%85graphviz" class="anchor">🔗</a></h1><p>pprof生成的prof文件时二进制的，需要把这个二进制的文件转换为我们人类可读的，graphviz可以帮助我们把二进制的prof文件转换为图像。Mac安装：</p>
+<pre tabindex="0"><code>brew install graphviz
+</code></pre><h1 id="3修改main函数">3.修改main函数 <a href="#3%e4%bf%ae%e6%94%b9main%e5%87%bd%e6%95%b0" class="anchor">🔗</a></h1><p>只需要为hi.go增加这一行，defer profile.Start().Stop()，程序运行时，默认就会记录cpu数据</p>
+<h1 id="4编译运行你的函数">4.编译运行你的函数 <a href="#4%e7%bc%96%e8%af%91%e8%bf%90%e8%a1%8c%e4%bd%a0%e7%9a%84%e5%87%bd%e6%95%b0" class="anchor">🔗</a></h1><pre tabindex="0"><code>package main
+
+import (
+	&#34;fmt&#34;
+	&#34;github.com/pkg/profile&#34;
+)
+
+func main() {
+	defer profile.Start().Stop()
+	sl:=makeSlice()
+	fmt.Printf(&#34;sum=%d\n&#34;,sumSlice(sl))
+}
+
+func makeSlice() []int {
+	sl := make([]int, 10000000)
+	for idx := range sl {
+		sl[idx] = idx
+	}
+	return sl
+}
+
+func sumSlice(sl []int) int {
+	sum := 0
+	for _, x := range sl {
+		sum += x
+	}
+	return sum
+}
+</code></pre><p>运行代码</p>
+<pre tabindex="0"><code>go build hi.go
+./hi
+</code></pre><p>应当看到类似的结果，它输出了生成的cpu.pprof的路径：</p>
+<pre tabindex="0"><code>2019/02/26 23:24:22 profile: cpu profiling enabled, /var/folders/zy/d8yskqjj09q21y7jnc0vbsqh0000gn/T/profile152894194/cpu.pprof  
+sum=49999995000000  
+2019/02/26 23:24:22 profile: cpu profiling disabled, /var/folders/zy/d8yskqjj09q21y7jnc0vbsqh0000gn/T/profile152894194/cpu.pprof  
+</code></pre><h1 id="5可视化prof">5.可视化prof <a href="#5%e5%8f%af%e8%a7%86%e5%8c%96prof" class="anchor">🔗</a></h1><p>可视化有多种方式，可以转换为text、pdf、svg等等。text命令是</p>
+<pre tabindex="0"><code>go tool pprof --text /path/to/yourbinary /var/path/to/cpu.pprof
+</code></pre><pre tabindex="0"><code>go tool pprof --text ./hi /var/folders/zy/d8yskqjj09q21y7jnc0vbsqh0000gn/T/profile626723859/cpu.pprof
+File: hi
+Type: cpu
+Time: Feb 26, 2019 at 11:29pm (CST)
+Duration: 203.53ms, Total samples = 100ms (49.13%)
+Showing nodes accounting for 100ms, 100% of 100ms total
+      flat  flat%   sum%        cum   cum%
+      60ms 60.00% 60.00%       60ms 60.00%  runtime.usleep
+      30ms 30.00% 90.00%       30ms 30.00%  main.makeSlice
+      10ms 10.00%   100%       10ms 10.00%  runtime.nanotime
+         0     0%   100%       30ms 30.00%  main.main
+         0     0%   100%       10ms 10.00%  runtime.gcBgMarkWorker
+         0     0%   100%       70ms 70.00%  runtime.gcBgMarkWorker.func2
+         0     0%   100%       70ms 70.00%  runtime.gcDrain
+         0     0%   100%       30ms 30.00%  runtime.main
+         0     0%   100%       70ms 70.00%  runtime.markroot
+         0     0%   100%       70ms 70.00%  runtime.markroot.func1
+         0     0%   100%       60ms 60.00%  runtime.mstart
+         0     0%   100%       60ms 60.00%  runtime.osyield
+         0     0%   100%       70ms 70.00%  runtime.scang
+         0     0%   100%       70ms 70.00%  runtime.systemstack
+</code></pre><p>生成pdf图</p>
+<pre tabindex="0"><code> go tool pprof --pdf ./hi /var/folders/zy/d8yskqjj09q21y7jnc0vbsqh0000gn/T/profile626723859/cpu.pprof &gt; cpu.pdf
+</code></pre><h1 id="6获取内存ppfo">6.获取内存ppfo <a href="#6%e8%8e%b7%e5%8f%96%e5%86%85%e5%ad%98ppfo" class="anchor">🔗</a></h1><p>如果你掌握了cpu pprof，mem pprof轻而易举就能拿下，只需要改1行代码：</p>
+<pre tabindex="0"><code>defer profile.Start(profile.MemProfile).Stop()
+</code></pre>
+    </div>
+
+    
+</section>
+
+
+            </div>
+            <div class="side">
+                <div class="side-categories">
+    <h2>Categories</h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/categories/ai">ai(3)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/go">go(23)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E4%BB%A3%E7%A0%81">代码(2)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E5%B7%A5%E5%85%B7">工具(8)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E9%80%86%E5%90%91">逆向(3)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E9%9D%A2%E8%AF%95">面试(5)</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/note/">Recent Note</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/note/%E6%9E%B6%E6%9E%84%E8%80%83%E7%82%B9/">场景总结</a>
+            </li>
+        
+            <li>
+                <a href="/note/rdis-%E7%BC%93%E5%AD%98%E7%A9%BF%E9%80%8F%E9%9B%AA%E5%B4%A9%E5%87%BB%E7%A9%BF%E7%9A%84%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95/">缓存穿透、雪崩、击穿的解决方法</a>
+            </li>
+        
+            <li>
+                <a href="/note/redis-%E5%8D%95%E7%BA%BF%E7%A8%8B%E7%9A%84redis%E4%B8%BA%E4%BB%80%E4%B9%88%E5%BF%AB/">单线程的redis为什么快</a>
+            </li>
+        
+            <li>
+                <a href="/note/redis-%E6%80%BB%E7%BB%93/">redis总结</a>
+            </li>
+        
+            <li>
+                <a href="/note/mysql-%E6%80%BB%E7%BB%93/">mysql总结</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/android/">Recent Android</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/android/redroid%E4%BD%BF%E7%94%A8/">Redroid安卓容器</a>
+            </li>
+        
+            <li>
+                <a href="/android/%E5%85%A5%E9%97%A8/">逆向环境-杂</a>
+            </li>
+        
+            <li>
+                <a href="/android/frida%E6%95%99%E7%A8%8B/">frida教程</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/tool/">Recent Tool</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/tool/linux-almalinux%E4%BC%98%E5%8C%96/">AlmaLinux10</a>
+            </li>
+        
+            <li>
+                <a href="/tool/almalinux-k8s/">AlmaLinux-k8s安装</a>
+            </li>
+        
+            <li>
+                <a href="/tool/vscode%E6%8A%98%E8%85%BE/">vscode折腾</a>
+            </li>
+        
+            <li>
+                <a href="/tool/linux-ubuntu%E4%BC%98%E5%8C%96/">Ubuntu开机优化</a>
+            </li>
+        
+            <li>
+                <a href="/tool/shell-ssh_script/">ssh常用脚本</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/llm/">Recent Llm</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/llm/transformers-%E5%85%A5%E9%97%A8%E7%AF%87/">Transformers-入门篇</a>
+            </li>
+        
+            <li>
+                <a href="/llm/%E6%A8%A1%E5%9E%8Bvllm%E9%83%A8%E7%BD%B2/">AI模型VLLM部署</a>
+            </li>
+        
+            <li>
+                <a href="/llm/%E6%A8%A1%E5%9E%8B%E5%BE%AE%E8%B0%83/">AI模型微调</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/go/">Recent Go</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/go/go%E4%B8%89%E8%89%B2%E6%A0%87%E8%AE%B0%E6%B7%B7%E5%90%88%E5%86%99%E5%B1%8F%E9%9A%9Cgc%E6%A8%A1%E5%BC%8F%E5%85%A8%E6%80%BB%E7%BB%93/">Go三色标记混合写屏障GC模式全总结</a>
+            </li>
+        
+            <li>
+                <a href="/go/go%E4%B8%ADmake%E4%B8%8Enew%E5%8C%BA%E5%88%AB/">Go中make与new区别</a>
+            </li>
+        
+            <li>
+                <a href="/go/go%E5%B8%B8%E7%94%A8bug%E5%92%8C%E6%80%A7%E8%83%BD%E9%97%AE%E9%A2%98%E7%9A%84%E5%AE%9E%E8%B7%B5%E6%96%B9%E6%B3%95/">Go常用bug和性能问题的实践方法</a>
+            </li>
+        
+            <li>
+                <a href="/go/grpc%E6%80%BB%E7%BB%93/">GRPC笔记</a>
+            </li>
+        
+            <li>
+                <a href="/go/go%E7%9A%84defer%E6%80%BB%E7%BB%93/">Go的defer总结</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+            </div>
+        </main>
+        <footer class="footer">
+    <div class="footer-row">
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/note/index.xml">
+                    Feed of Note
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/android/index.xml">
+                    Feed of Android
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/tool/index.xml">
+                    Feed of Tool
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/llm/index.xml">
+                    Feed of Llm
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/go/index.xml">
+                    Feed of Go
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+
+        
+            
+            
+        
+    </div>
+
+    
+</footer>
+
+    </body>
+</html>

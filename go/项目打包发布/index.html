@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+<meta name="viewport" content="width=device-width,minimum-scale=1">
+
+
+
+
+<title>基于Scratch创建最小且安全的golang docker镜像 | Abner的博客</title>
+<link rel="canonical" href="https://abnerxc.github.io/go/%E9%A1%B9%E7%9B%AE%E6%89%93%E5%8C%85%E5%8F%91%E5%B8%83/">
+<meta property="og:type" content="article" />
+<meta property="og:title" content="基于Scratch创建最小且安全的golang docker镜像 | Abner的博客" />
+<meta property="og:url" content="https://abnerxc.github.io/go/%E9%A1%B9%E7%9B%AE%E6%89%93%E5%8C%85%E5%8F%91%E5%B8%83/" />
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/icofont/icofont.min.css" />
+<link rel="stylesheet" href="/css/syntax.css" />
+<link rel="stylesheet" href="/css/style.css" />
+<link rel="stylesheet" href="/css/custom.css" />
+<script src="/js/copy-code-block.js"></script>
+<link rel="shortcut icon" href="/images/favicon.ico" type="image/x-icon" />
+
+    </head>
+
+    <body>
+        <header class="header-wrapper">
+    <div class="header">
+        <a class="site-title" href="https://abnerxc.github.io/">Abner的博客</a>
+
+        <nav class="menu">
+            
+        </nav>
+    </div>
+</header>
+
+        <main class="main-wrapper">
+            <div class="main">
+                
+
+<section class="single">
+    <h1 class="title">基于Scratch创建最小且安全的golang docker镜像</h1>
+
+    <div class="tip">
+        <time datetime="2022-09-12 18:35:11 &#43;0800 CST">2022/09/12</time>
+        <span class="split">·</span>
+        <span> 244 words </span>
+        <span class="split">·</span>
+        <span>
+            2 minutes to read
+        </span>
+    </div>
+
+    <div class="taxonomies">
+        
+        <div>
+            Categories:
+            
+                <a href="/categories/go">Go</a>
+            
+        </div>
+        
+
+        
+    </div>
+
+    
+    
+    <div class="post-toc">
+        <h3>目录</h3>
+        <nav id="TableOfContents">
+  <ul>
+    <li><a href="#golang打包镜像对比">golang打包镜像对比</a></li>
+    <li><a href="#docker的multi-stage-builds">docker的Multi-stage builds</a></li>
+  </ul>
+</nav>
+    </div>
+    
+
+    <hr />
+
+    <div class="content">
+        <h1 id="golang打包镜像对比">golang打包镜像对比 <a href="#golang%e6%89%93%e5%8c%85%e9%95%9c%e5%83%8f%e5%af%b9%e6%af%94" class="anchor">🔗</a></h1><p>从docker官方下载了镜像以后，发现一个运行go的环境需要779M,我得项目才3~4M，这是不可以接受的</p>
+<pre tabindex="0"><code>$ docker image list
+golang    latest       1c1309ff8e0d        10 days ago         779MB
+</code></pre><p>就算使用alpine镜像也有269M</p>
+<pre tabindex="0"><code>$ docker image list
+golang     alpine      bbab7aea1231        7 weeks ago         269MB
+</code></pre><p>于是打算自己构建golang运行的最小镜像.</p>
+<h1 id="docker的multi-stage-builds">docker的Multi-stage builds <a href="#docker%e7%9a%84multi-stage-builds" class="anchor">🔗</a></h1><p>多阶段构建是需要Docker 17.05或更高版本的新功能。在此之前，我们将看到docker scratch image，Zero Bytes Image。非常适合嵌入我们的静态二进制文件。</p>
+<p>先上代码,例子说明</p>
+<pre tabindex="0"><code>FROM        golang:alpine AS builder
+MAINTAINER  Chen Xu &lt;abner510@126.com&gt;
+RUN         apk update &amp;&amp; apk add --no-cache git ca-certificates tzdata &amp;&amp; update-ca-certificates &amp;&amp; adduser -D -g &#39;&#39; appuser
+ENV         GOPROXY https://mirrors.aliyun.com/goproxy/
+ENV         GO111MODULE on
+WORKDIR     /go/cache
+ADD         go.mod .
+ADD         go.sum .
+RUN         go mod download
+WORKDIR     /go/src/ginx
+ADD        . /go/src/ginx
+RUN         CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -installsuffix cgo -ldflags=&#34;-w -s&#34; -o server
+
+#容器构建
+FROM        scratch AS prod
+COPY        --from=builder /etc/passwd /etc/passwd
+COPY        --from=builder /usr/share/zoneinfo /usr/share/zoneinfo
+COPY        --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+COPY        --from=builder /go/src/ginx/config /app/config
+COPY        --from=builder /go/src/ginx/server /app
+USER        appuser
+EXPOSE      9000
+CMD         [&#34;/app/server&#34;, &#34;-e=prod&#34;]
+</code></pre><h2 id="代码示例说明">代码示例说明 <a href="#%e4%bb%a3%e7%a0%81%e7%a4%ba%e4%be%8b%e8%af%b4%e6%98%8e" class="anchor">🔗</a></h2><h3 id="添加ssl证书支持https和时区">添加SSL证书支持HTTPS和时区 <a href="#%e6%b7%bb%e5%8a%a0ssl%e8%af%81%e4%b9%a6%e6%94%af%e6%8c%81https%e5%92%8c%e6%97%b6%e5%8c%ba" class="anchor">🔗</a></h3><pre tabindex="0"><code>apk add --no-cache git ca-certificates tzdata &amp;&amp; update-ca-certificates
+</code></pre><h3 id="添加运行golang的用户">添加运行golang的用户 <a href="#%e6%b7%bb%e5%8a%a0%e8%bf%90%e8%a1%8cgolang%e7%9a%84%e7%94%a8%e6%88%b7" class="anchor">🔗</a></h3><pre tabindex="0"><code>adduser -D -g &#39;&#39; appuser
+</code></pre><h3 id="go-mod模式项目包管理加快构建速度">go mod模式项目包管理，加快构建速度 <a href="#go-mod%e6%a8%a1%e5%bc%8f%e9%a1%b9%e7%9b%ae%e5%8c%85%e7%ae%a1%e7%90%86%e5%8a%a0%e5%bf%ab%e6%9e%84%e5%bb%ba%e9%80%9f%e5%ba%a6" class="anchor">🔗</a></h3><pre tabindex="0"><code>ENV         GOPROXY https://goproxy.io   #设置代理，国内的墙你懂的
+ENV         GO111MODULE on  #开启go mod 模式  ，老版本GO111MODULE=auto 默认是自动
+WORKDIR     /go/cache  # 设置包的下载目录
+ADD         go.mod .
+ADD         go.sum .
+RUN         go mod download
+</code></pre><p><img src="/img/go-alilog.jpeg" alt=""></p>
+<h3 id="cgo编译使用">CGO编译使用 <a href="#cgo%e7%bc%96%e8%af%91%e4%bd%bf%e7%94%a8" class="anchor">🔗</a></h3><p>由于scratch是空镜像，</p>
+<pre tabindex="0"><code>CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -installsuffix cgo -ldflags=&#34;-w -s&#34; -o server
+</code></pre><ul>
+<li><code>CGO_ENABLED=0</code> ，CGO_ENABLED 是因为 交叉编译不支持 CGO，我们这里禁用它</li>
+<li><code>-a -installsuffix cgo</code> , <code>-a</code>:强制重新编译，简单来说，就是不利用缓存或已编译好的部分文件，直接所有包都是最新的代码重新编译和关联; <code>installsuffix</code>:在软件包安装的目录中增加后缀标识，以保持输出与默认版本分开</li>
+</ul>
+<h3 id="制作golang运行的容器">制作golang运行的容器 <a href="#%e5%88%b6%e4%bd%9cgolang%e8%bf%90%e8%a1%8c%e7%9a%84%e5%ae%b9%e5%99%a8" class="anchor">🔗</a></h3><pre tabindex="0"><code>FROM        scratch AS prod #镜像版本
+COPY        --from=builder /etc/passwd /etc/passwd  #这里需要使用appuer账号信息
+COPY        --from=builder /usr/share/zoneinfo /usr/share/zoneinfo #时区
+COPY        --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ #SSL证书文件
+COPY        --from=builder /go/src/ginx/config /app/config #应用配置文件
+COPY        --from=builder /go/src/ginx/server /app #应用二进制文件
+USER        appuser #运行用户
+EXPOSE      9000 #暴露端口
+CMD         [&#34;/app/server&#34;, &#34;-e=prod&#34;] #运行应用，传入运行参数
+</code></pre><h3 id="阿里云加速翻墙速度">阿里云加速翻墙速度 <a href="#%e9%98%bf%e9%87%8c%e4%ba%91%e5%8a%a0%e9%80%9f%e7%bf%bb%e5%a2%99%e9%80%9f%e5%ba%a6" class="anchor">🔗</a></h3><p>1、创建镜像仓库
+<img src="/img/go-aliset1.jpeg" alt="">
+2、选择仓库<code>管理</code>，进行配置仓库
+3、选择git仓库版本，这里本人是放在github上，所以选择github，进行授权，选择自己的仓库和项目，配置如下具体dockerfile文件根据自己仓库路径配置
+<img src="/img/go-aliset2.jpeg" alt="">
+4、选择构建即可</p>
+
+    </div>
+
+    
+</section>
+
+
+            </div>
+            <div class="side">
+                <div class="side-categories">
+    <h2>Categories</h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/categories/ai">ai(3)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/go">go(23)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E4%BB%A3%E7%A0%81">代码(2)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E5%B7%A5%E5%85%B7">工具(8)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E9%80%86%E5%90%91">逆向(3)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E9%9D%A2%E8%AF%95">面试(5)</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/note/">Recent Note</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/note/%E6%9E%B6%E6%9E%84%E8%80%83%E7%82%B9/">场景总结</a>
+            </li>
+        
+            <li>
+                <a href="/note/rdis-%E7%BC%93%E5%AD%98%E7%A9%BF%E9%80%8F%E9%9B%AA%E5%B4%A9%E5%87%BB%E7%A9%BF%E7%9A%84%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95/">缓存穿透、雪崩、击穿的解决方法</a>
+            </li>
+        
+            <li>
+                <a href="/note/redis-%E5%8D%95%E7%BA%BF%E7%A8%8B%E7%9A%84redis%E4%B8%BA%E4%BB%80%E4%B9%88%E5%BF%AB/">单线程的redis为什么快</a>
+            </li>
+        
+            <li>
+                <a href="/note/redis-%E6%80%BB%E7%BB%93/">redis总结</a>
+            </li>
+        
+            <li>
+                <a href="/note/mysql-%E6%80%BB%E7%BB%93/">mysql总结</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/android/">Recent Android</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/android/redroid%E4%BD%BF%E7%94%A8/">Redroid安卓容器</a>
+            </li>
+        
+            <li>
+                <a href="/android/%E5%85%A5%E9%97%A8/">逆向环境-杂</a>
+            </li>
+        
+            <li>
+                <a href="/android/frida%E6%95%99%E7%A8%8B/">frida教程</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/tool/">Recent Tool</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/tool/linux-almalinux%E4%BC%98%E5%8C%96/">AlmaLinux10</a>
+            </li>
+        
+            <li>
+                <a href="/tool/almalinux-k8s/">AlmaLinux-k8s安装</a>
+            </li>
+        
+            <li>
+                <a href="/tool/vscode%E6%8A%98%E8%85%BE/">vscode折腾</a>
+            </li>
+        
+            <li>
+                <a href="/tool/linux-ubuntu%E4%BC%98%E5%8C%96/">Ubuntu开机优化</a>
+            </li>
+        
+            <li>
+                <a href="/tool/shell-ssh_script/">ssh常用脚本</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/llm/">Recent Llm</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/llm/transformers-%E5%85%A5%E9%97%A8%E7%AF%87/">Transformers-入门篇</a>
+            </li>
+        
+            <li>
+                <a href="/llm/%E6%A8%A1%E5%9E%8Bvllm%E9%83%A8%E7%BD%B2/">AI模型VLLM部署</a>
+            </li>
+        
+            <li>
+                <a href="/llm/%E6%A8%A1%E5%9E%8B%E5%BE%AE%E8%B0%83/">AI模型微调</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/go/">Recent Go</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/go/go%E4%B8%89%E8%89%B2%E6%A0%87%E8%AE%B0%E6%B7%B7%E5%90%88%E5%86%99%E5%B1%8F%E9%9A%9Cgc%E6%A8%A1%E5%BC%8F%E5%85%A8%E6%80%BB%E7%BB%93/">Go三色标记混合写屏障GC模式全总结</a>
+            </li>
+        
+            <li>
+                <a href="/go/go%E4%B8%ADmake%E4%B8%8Enew%E5%8C%BA%E5%88%AB/">Go中make与new区别</a>
+            </li>
+        
+            <li>
+                <a href="/go/go%E5%B8%B8%E7%94%A8bug%E5%92%8C%E6%80%A7%E8%83%BD%E9%97%AE%E9%A2%98%E7%9A%84%E5%AE%9E%E8%B7%B5%E6%96%B9%E6%B3%95/">Go常用bug和性能问题的实践方法</a>
+            </li>
+        
+            <li>
+                <a href="/go/grpc%E6%80%BB%E7%BB%93/">GRPC笔记</a>
+            </li>
+        
+            <li>
+                <a href="/go/go%E7%9A%84defer%E6%80%BB%E7%BB%93/">Go的defer总结</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+            </div>
+        </main>
+        <footer class="footer">
+    <div class="footer-row">
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/note/index.xml">
+                    Feed of Note
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/android/index.xml">
+                    Feed of Android
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/tool/index.xml">
+                    Feed of Tool
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/llm/index.xml">
+                    Feed of Llm
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/go/index.xml">
+                    Feed of Go
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+
+        
+            
+            
+        
+    </div>
+
+    
+</footer>
+
+    </body>
+</html>

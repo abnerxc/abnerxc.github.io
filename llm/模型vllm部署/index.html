@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+<meta name="viewport" content="width=device-width,minimum-scale=1">
+
+
+
+
+<title>AI模型VLLM部署 | Abner的博客</title>
+<link rel="canonical" href="https://abnerxc.github.io/llm/%E6%A8%A1%E5%9E%8Bvllm%E9%83%A8%E7%BD%B2/">
+<meta property="og:type" content="article" />
+<meta property="og:title" content="AI模型VLLM部署 | Abner的博客" />
+<meta property="og:url" content="https://abnerxc.github.io/llm/%E6%A8%A1%E5%9E%8Bvllm%E9%83%A8%E7%BD%B2/" />
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/icofont/icofont.min.css" />
+<link rel="stylesheet" href="/css/syntax.css" />
+<link rel="stylesheet" href="/css/style.css" />
+<link rel="stylesheet" href="/css/custom.css" />
+<script src="/js/copy-code-block.js"></script>
+<link rel="shortcut icon" href="/images/favicon.ico" type="image/x-icon" />
+
+    </head>
+
+    <body>
+        <header class="header-wrapper">
+    <div class="header">
+        <a class="site-title" href="https://abnerxc.github.io/">Abner的博客</a>
+
+        <nav class="menu">
+            
+        </nav>
+    </div>
+</header>
+
+        <main class="main-wrapper">
+            <div class="main">
+                
+
+<section class="single">
+    <h1 class="title">AI模型VLLM部署</h1>
+
+    <div class="tip">
+        <time datetime="2025-03-05 18:07:58 &#43;0800 CST">2025/03/05</time>
+        <span class="split">·</span>
+        <span> 404 words </span>
+        <span class="split">·</span>
+        <span>
+            2 minutes to read
+        </span>
+    </div>
+
+    <div class="taxonomies">
+        
+        <div>
+            Categories:
+            
+                <a href="/categories/ai">AI</a>
+            
+        </div>
+        
+
+        
+    </div>
+
+    
+    
+    <div class="post-toc">
+        <h3>目录</h3>
+        <nav id="TableOfContents">
+  <ul>
+    <li><a href="#环境说明">环境说明</a></li>
+    <li><a href="#软件安装">软件安装</a></li>
+    <li><a href="#vllm运行">vllm运行</a></li>
+    <li><a href="#模型调用">模型调用</a></li>
+  </ul>
+</nav>
+    </div>
+    
+
+    <hr />
+
+    <div class="content">
+        <h1 id="环境说明">环境说明 <a href="#%e7%8e%af%e5%a2%83%e8%af%b4%e6%98%8e" class="anchor">🔗</a></h1><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>OS: Ubuntu 22.04
+</span></span><span style="display:flex;"><span>GPU: A10显卡 24G
+</span></span><span style="display:flex;"><span>CPU: 12核
+</span></span><span style="display:flex;"><span>vLLM: 0.7.X
+</span></span><span style="display:flex;"><span>Python: 3.10
+</span></span><span style="display:flex;"><span>MiniConda3: lastest version
+</span></span><span style="display:flex;"><span>Nvidia Driver: 12.4
+</span></span><span style="display:flex;"><span>CUDA: 12.4
+</span></span></code></pre></div><h1 id="软件安装">软件安装 <a href="#%e8%bd%af%e4%bb%b6%e5%ae%89%e8%a3%85" class="anchor">🔗</a></h1><h2 id="conda-安装">conda 安装 <a href="#conda-%e5%ae%89%e8%a3%85" class="anchor">🔗</a></h2><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>mkdir -p ~/miniconda3
+</span></span><span style="display:flex;"><span>wget https://mirrors.tuna.tsinghua.edu.cn/anaconda/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda3/miniconda.sh
+</span></span><span style="display:flex;"><span>bash ~/miniconda3/miniconda.sh -b -u -p ~/miniconda3
+</span></span><span style="display:flex;"><span>rm -rf ~/miniconda3/miniconda.sh
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 初始化conda</span>
+</span></span><span style="display:flex;"><span>~/miniconda3/bin/conda init bash  
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#配置清华源</span>
+</span></span><span style="display:flex;"><span>~/miniconda3/bin/conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/main/
+</span></span><span style="display:flex;"><span>~/miniconda3/bin/conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/free/
+</span></span><span style="display:flex;"><span>~/miniconda3/bin/conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/conda-forge/
+</span></span><span style="display:flex;"><span>~/miniconda3/bin/conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/msys2/
+</span></span><span style="display:flex;"><span>~/miniconda3/bin/conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/bioconda/
+</span></span><span style="display:flex;"><span>~/miniconda3/bin/conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/menpo/
+</span></span><span style="display:flex;"><span>~/miniconda3/bin/conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/pytorch/
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#显示检索路径，每次安装包时会将包源路径显示出来</span>
+</span></span><span style="display:flex;"><span>~/miniconda3/bin/conda config --set show_channel_urls yes
+</span></span><span style="display:flex;"><span>~/miniconda3/bin/conda config --set always_yes True
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#执行以下命令清除索引缓存，保证用的是镜像站提供的索引</span>
+</span></span><span style="display:flex;"><span>~/miniconda3/bin/conda clean -i
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 显示所有镜像通道路径命令</span>
+</span></span><span style="display:flex;"><span>~/miniconda3/bin/conda config --show channels
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#不显示base环境</span>
+</span></span><span style="display:flex;"><span>~/miniconda3/bin/conda config --set auto_activate_base false
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 使配置生效</span>
+</span></span><span style="display:flex;"><span>source ~/.bashrc 
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#虚拟环境创建 </span>
+</span></span><span style="display:flex;"><span>conda create --name<span style="color:#f92672">=</span>vllm python<span style="color:#f92672">=</span>3.10
+</span></span><span style="display:flex;"><span>conda activate vllm
+</span></span></code></pre></div><h2 id="nvidia驱动安装">nvidia驱动安装 <a href="#nvidia%e9%a9%b1%e5%8a%a8%e5%ae%89%e8%a3%85" class="anchor">🔗</a></h2><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span><span style="color:#75715e"># 安装nvidia驱动</span>
+</span></span><span style="display:flex;"><span>sudo apt-get update <span style="color:#f92672">&amp;&amp;</span> sudo apt-get upgrade -y
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 必要依赖</span>
+</span></span><span style="display:flex;"><span>sudo apt-get install -y dkms build-essential <span style="color:#75715e"># 执行完成重启</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># linux禁用Nouvau（如果没有需要执行下面命令）</span>
+</span></span><span style="display:flex;"><span>sudo bash -c <span style="color:#e6db74">&#39;echo &#34;blacklist nouveau&#34; &gt;&gt; /etc/modprobe.d/blacklist.conf&#39;</span>
+</span></span><span style="display:flex;"><span>sudo bash -c <span style="color:#e6db74">&#39;echo &#34;blacklist lbm-nouveau&#34; &gt;&gt; /etc/modprobe.d/blacklist.conf&#39;</span>
+</span></span><span style="display:flex;"><span>sudo bash -c <span style="color:#e6db74">&#39;echo &#34;options nouveau modeset=0&#34; &gt;&gt; /etc/modprobe.d/blacklist.conf&#39;</span>
+</span></span><span style="display:flex;"><span>sudo update-initramfs -u <span style="color:#75715e"># 执行完成重启</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 安装驱动  https://www.nvidia.cn/drivers 自行查找对应显卡驱动和系统版本</span>
+</span></span><span style="display:flex;"><span>mkdir ~/Downloads  <span style="color:#f92672">&amp;&amp;</span> cd ~/Downloads 
+</span></span><span style="display:flex;"><span>sudo dpkg -i nvidia-driver-local-repo-ubuntu2204-550.144.03_1.0-1_amd64.deb
+</span></span><span style="display:flex;"><span>sudo apt-get update <span style="color:#f92672">&amp;&amp;</span> sudo apt-get upgrade -y
+</span></span><span style="display:flex;"><span>sudo apt-get install -y cuda-drivers
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 重启服务器</span>
+</span></span></code></pre></div><h2 id="cuda工具包安装">cuda工具包安装 <a href="#cuda%e5%b7%a5%e5%85%b7%e5%8c%85%e5%ae%89%e8%a3%85" class="anchor">🔗</a></h2><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span><span style="color:#75715e">#下载地址：https://developer.nvidia.com/cuda-toolkit-archive，找到12.4.0版本</span>
+</span></span><span style="display:flex;"><span>cd ~/Downloads 
+</span></span><span style="display:flex;"><span>wget https://developer.download.nvidia.com/compute/cuda/12.4.0/local_installers/cuda_12.4.0_550.54.14_linux.run
+</span></span><span style="display:flex;"><span>sudo chmod a+x cuda_12.4.0_550.54.14_linux.run 
+</span></span><span style="display:flex;"><span>sudo sh cuda_12.4.0_550.54.14_linux.run
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#设置环境变量</span>
+</span></span><span style="display:flex;"><span>vim ~/.bashrc  
+</span></span><span style="display:flex;"><span>export LD_LIBRARY_PATH<span style="color:#f92672">=</span>$LD_LIBRARY_PATH:/usr/local/cuda-12.4/lib64
+</span></span><span style="display:flex;"><span>export PATH<span style="color:#f92672">=</span>$PATH:/usr/local/cuda-12.4/bin
+</span></span><span style="display:flex;"><span>export CUDA_HOME<span style="color:#f92672">=</span>$CUDA_HOME:/usr/local/cuda-12.4
+</span></span><span style="display:flex;"><span>source ~/.bashrc
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#查看安装</span>
+</span></span><span style="display:flex;"><span>nvcc --version
+</span></span></code></pre></div><h2 id="pytorch和vllm安装">pytorch和vllm安装 <a href="#pytorch%e5%92%8cvllm%e5%ae%89%e8%a3%85" class="anchor">🔗</a></h2><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span><span style="color:#75715e"># 安装pytorch https://download.pytorch.org/whl/torch</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># torch-2.4.0+cu124-cp310-cp310-linux_x86_64.whl ，其中cu124表示cuda-12.4.0 cp310表示python-3.10</span>
+</span></span><span style="display:flex;"><span>cd ~/Downloads
+</span></span><span style="display:flex;"><span>wget https://download.pytorch.org/whl/cu124/torch-2.4.0%2Bcu124-cp310-cp310-linux_x86_64.whl#sha256<span style="color:#f92672">=</span>2cb28155635e3d3d0be198e3f3e7457a1d7b99e8c2eedc73fe22fab574d11a4c
+</span></span><span style="display:flex;"><span>conda activate vllm
+</span></span><span style="display:flex;"><span>pip install torch-2.4.0+cu124-cp310-cp310-linux_x86_64.whl
+</span></span><span style="display:flex;"><span>pip install vLLM
+</span></span></code></pre></div><h1 id="vllm运行">vllm运行 <a href="#vllm%e8%bf%90%e8%a1%8c" class="anchor">🔗</a></h1><h2 id="魔搭社区方式下载">魔搭社区方式下载 <a href="#%e9%ad%94%e6%90%ad%e7%a4%be%e5%8c%ba%e6%96%b9%e5%bc%8f%e4%b8%8b%e8%bd%bd" class="anchor">🔗</a></h2><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span><span style="color:#75715e">#优先使用阿里推出的魔搭下载，模型没有huggingface全面，教程地址：https://modelscope.cn/docs/home</span>
+</span></span><span style="display:flex;"><span>modelscope download --model <span style="color:#e6db74">&#39;unsloth/DeepSeek-R1-Distill-Llama-8B&#39;</span> --local_dir <span style="color:#e6db74">&#39;/home/ubuntu/data/DeepSeek-R1-Distill-Llama-8B&#39;</span>
+</span></span></code></pre></div><h2 id="huggingface方式模型下载备选">huggingface方式模型下载（备选） <a href="#huggingface%e6%96%b9%e5%bc%8f%e6%a8%a1%e5%9e%8b%e4%b8%8b%e8%bd%bd%e5%a4%87%e9%80%89" class="anchor">🔗</a></h2><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#f92672">from</span> huggingface_hub <span style="color:#f92672">import</span> snapshot_download
+</span></span><span style="display:flex;"><span>model_name<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;unsloth/DeepSeek-R1-Distill-Llama-8B&#34;</span>
+</span></span><span style="display:flex;"><span>local_dir<span style="color:#f92672">=</span><span style="color:#e6db74">r</span><span style="color:#e6db74">&#34;/home/ubuntu/data/DeepSeek-R1-Distill-Llama-8B&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># repo_id 模型id</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># local_dir 下载地址</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># endpoint 镜像地址</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># resume_download (中断后)继续下载</span>
+</span></span><span style="display:flex;"><span>snapshot_download(repo_id<span style="color:#f92672">=</span>model_name, local_dir<span style="color:#f92672">=</span>local_dir,
+</span></span><span style="display:flex;"><span>                  revision<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;main&#34;</span>,
+</span></span><span style="display:flex;"><span>                  endpoint<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;https://hf-mirror.com&#39;</span>,  <span style="color:#75715e">#镜像地址会限流,不建议使用较大参数模型</span>
+</span></span><span style="display:flex;"><span>                  force_download<span style="color:#f92672">=</span><span style="color:#66d9ef">False</span>)
+</span></span></code></pre></div><h1 id="模型调用">模型调用 <a href="#%e6%a8%a1%e5%9e%8b%e8%b0%83%e7%94%a8" class="anchor">🔗</a></h1><h3 id="模型启动">模型启动 <a href="#%e6%a8%a1%e5%9e%8b%e5%90%af%e5%8a%a8" class="anchor">🔗</a></h3><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>启动说明：
+</span></span><span style="display:flex;"><span>CUDA_VISIBLE_DEVICES<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span> vllm serve /home/ubuntu/data/DeepSeek-R1-Distill-Llama-8B --port <span style="color:#ae81ff">8088</span> --max-model-len <span style="color:#ae81ff">16384</span>
+</span></span><span style="display:flex;"><span>参数说明:
+</span></span><span style="display:flex;"><span>CUDA_VISIBLE_DEVICES<span style="color:#f92672">=</span>0：指定使用的 GPU 设备（0 表示第一块 GPU）。
+</span></span><span style="display:flex;"><span>/home/ubuntu/data/DeepSeek-R1-Distill-Llama-8B：模型的实际保存路径。
+</span></span><span style="display:flex;"><span>--port：服务监听的端口号（可根据需要修改）。
+</span></span><span style="display:flex;"><span>--max-model-len：模型的最大上下文长度。
+</span></span><span style="display:flex;"><span>--tensor-parallel-size、-tp：多张量并行副本数量（对于 GPU）。默认值：1。
+</span></span><span style="display:flex;"><span>--gpu-memory-utilization：设置每张GPU的显存利用率上限，取值范围为0~1（例如：0.9表示限制为90%的显存使用）
+</span></span><span style="display:flex;"><span>--host 和 --port：指定服务器地址和端口。
+</span></span><span style="display:flex;"><span>--enforce-eager：启用即时执行模式（Eager Execution），即模型推理会在每个操作执行时立即进行，而非先构建完整的操作图。
+</span></span><span style="display:flex;"><span>--dtype：模型权重和激活的精度类型。可能的值：auto、half、float16、bfloat16、float、float32。默认值：auto。
+</span></span><span style="display:flex;"><span>--max-num-seqs：每次迭代的最大序列数。
+</span></span><span style="display:flex;"><span>--distributed-executor-backend<span style="color:#f92672">=</span>ray：指定分布式服务的后端，可能的值：ray、mp。默认值：ray（当使用超过一个 GPU 时，自动设置为 ray）。
+</span></span><span style="display:flex;"><span>服务启动后，可以通过访问 http://localhost:8088/docs 查看 API 文档，验证服务是否正常运行
+</span></span><span style="display:flex;"><span>后台启动：
+</span></span><span style="display:flex;"><span>nohup vllm serve /home/ubuntu/data/DeepSeek-R1-Distill-Llama-8B --port <span style="color:#ae81ff">8088</span> --max-model-len <span style="color:#ae81ff">16384</span> --gpu-memory-utilization 0.9 &gt; ./logs/vllm.log 2&gt;&amp;<span style="color:#ae81ff">1</span> &amp;
+</span></span></code></pre></div><h3 id="测试调用">测试调用 <a href="#%e6%b5%8b%e8%af%95%e8%b0%83%e7%94%a8" class="anchor">🔗</a></h3><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>curl --location <span style="color:#e6db74">&#39;http://101.33.248.34:8088/v1/chat/completions&#39;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--header <span style="color:#e6db74">&#39;Content-Type: application/json&#39;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--data <span style="color:#e6db74">&#39;{
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    &#34;model&#34;: &#34;/home/ubuntu/data/DeepSeek-R1-Distill-Llama-8B&#34;,
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    &#34;messages&#34;: [
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        {
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">            &#34;role&#34;: &#34;user&#34;,
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">            &#34;content&#34;: &#34;你是谁？&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        }
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    ]
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">}&#39;</span>
+</span></span></code></pre></div><h2 id="open-webui访问vllm">open-webui访问vllm <a href="#open-webui%e8%ae%bf%e9%97%aevllm" class="anchor">🔗</a></h2><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>conda create --name openwebui python<span style="color:#f92672">=</span>3.12
+</span></span><span style="display:flex;"><span>pip install open-webui -i https://mirrors.aliyun.com/pypi/simple/
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 启动</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#镜像站点</span>
+</span></span><span style="display:flex;"><span>export HF_ENDPOINT<span style="color:#f92672">=</span>https://hf-mirror.com
+</span></span><span style="display:flex;"><span><span style="color:#75715e">## 禁用OLLAMA API</span>
+</span></span><span style="display:flex;"><span>export ENABLE_OLLAMA_API<span style="color:#f92672">=</span>False
+</span></span><span style="display:flex;"><span><span style="color:#75715e">## 设置vllm API的基础URL为本地服务器</span>
+</span></span><span style="display:flex;"><span>export OPENAI_API_BASE_URL<span style="color:#f92672">=</span>http://localhost:8088/v1
+</span></span><span style="display:flex;"><span><span style="color:#75715e">## 设置默认模型路径</span>
+</span></span><span style="display:flex;"><span>export DEFAULT_MODELS<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;/home/ubuntu/data/DeepSeek-R1-Distill-Llama-8B&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">## 启动Open WebUI</span>
+</span></span><span style="display:flex;"><span>open-webui serve  
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 后台启动</span>
+</span></span><span style="display:flex;"><span>nohup open-webui serve &gt; ./logs/open-webui.log 2&gt;&amp;<span style="color:#ae81ff">1</span> &amp;
+</span></span></code></pre></div>
+    </div>
+
+    
+</section>
+
+
+            </div>
+            <div class="side">
+                <div class="side-categories">
+    <h2>Categories</h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/categories/ai">ai(3)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/go">go(23)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E4%BB%A3%E7%A0%81">代码(2)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E5%B7%A5%E5%85%B7">工具(8)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E9%80%86%E5%90%91">逆向(3)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E9%9D%A2%E8%AF%95">面试(5)</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/note/">Recent Note</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/note/%E6%9E%B6%E6%9E%84%E8%80%83%E7%82%B9/">场景总结</a>
+            </li>
+        
+            <li>
+                <a href="/note/rdis-%E7%BC%93%E5%AD%98%E7%A9%BF%E9%80%8F%E9%9B%AA%E5%B4%A9%E5%87%BB%E7%A9%BF%E7%9A%84%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95/">缓存穿透、雪崩、击穿的解决方法</a>
+            </li>
+        
+            <li>
+                <a href="/note/redis-%E5%8D%95%E7%BA%BF%E7%A8%8B%E7%9A%84redis%E4%B8%BA%E4%BB%80%E4%B9%88%E5%BF%AB/">单线程的redis为什么快</a>
+            </li>
+        
+            <li>
+                <a href="/note/redis-%E6%80%BB%E7%BB%93/">redis总结</a>
+            </li>
+        
+            <li>
+                <a href="/note/mysql-%E6%80%BB%E7%BB%93/">mysql总结</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/android/">Recent Android</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/android/redroid%E4%BD%BF%E7%94%A8/">Redroid安卓容器</a>
+            </li>
+        
+            <li>
+                <a href="/android/%E5%85%A5%E9%97%A8/">逆向环境-杂</a>
+            </li>
+        
+            <li>
+                <a href="/android/frida%E6%95%99%E7%A8%8B/">frida教程</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/tool/">Recent Tool</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/tool/linux-almalinux%E4%BC%98%E5%8C%96/">AlmaLinux10</a>
+            </li>
+        
+            <li>
+                <a href="/tool/almalinux-k8s/">AlmaLinux-k8s安装</a>
+            </li>
+        
+            <li>
+                <a href="/tool/vscode%E6%8A%98%E8%85%BE/">vscode折腾</a>
+            </li>
+        
+            <li>
+                <a href="/tool/linux-ubuntu%E4%BC%98%E5%8C%96/">Ubuntu开机优化</a>
+            </li>
+        
+            <li>
+                <a href="/tool/shell-ssh_script/">ssh常用脚本</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/llm/">Recent Llm</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/llm/transformers-%E5%85%A5%E9%97%A8%E7%AF%87/">Transformers-入门篇</a>
+            </li>
+        
+            <li>
+                <a href="/llm/%E6%A8%A1%E5%9E%8Bvllm%E9%83%A8%E7%BD%B2/">AI模型VLLM部署</a>
+            </li>
+        
+            <li>
+                <a href="/llm/%E6%A8%A1%E5%9E%8B%E5%BE%AE%E8%B0%83/">AI模型微调</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/go/">Recent Go</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/go/go%E4%B8%89%E8%89%B2%E6%A0%87%E8%AE%B0%E6%B7%B7%E5%90%88%E5%86%99%E5%B1%8F%E9%9A%9Cgc%E6%A8%A1%E5%BC%8F%E5%85%A8%E6%80%BB%E7%BB%93/">Go三色标记混合写屏障GC模式全总结</a>
+            </li>
+        
+            <li>
+                <a href="/go/go%E4%B8%ADmake%E4%B8%8Enew%E5%8C%BA%E5%88%AB/">Go中make与new区别</a>
+            </li>
+        
+            <li>
+                <a href="/go/go%E5%B8%B8%E7%94%A8bug%E5%92%8C%E6%80%A7%E8%83%BD%E9%97%AE%E9%A2%98%E7%9A%84%E5%AE%9E%E8%B7%B5%E6%96%B9%E6%B3%95/">Go常用bug和性能问题的实践方法</a>
+            </li>
+        
+            <li>
+                <a href="/go/grpc%E6%80%BB%E7%BB%93/">GRPC笔记</a>
+            </li>
+        
+            <li>
+                <a href="/go/go%E7%9A%84defer%E6%80%BB%E7%BB%93/">Go的defer总结</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+            </div>
+        </main>
+        <footer class="footer">
+    <div class="footer-row">
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/note/index.xml">
+                    Feed of Note
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/android/index.xml">
+                    Feed of Android
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/tool/index.xml">
+                    Feed of Tool
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/llm/index.xml">
+                    Feed of Llm
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/go/index.xml">
+                    Feed of Go
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+
+        
+            
+            
+        
+    </div>
+
+    
+</footer>
+
+    </body>
+</html>

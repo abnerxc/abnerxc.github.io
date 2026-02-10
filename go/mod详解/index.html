@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+<meta name="viewport" content="width=device-width,minimum-scale=1">
+
+
+
+
+<title>Go modules 详解 | Abner的博客</title>
+<link rel="canonical" href="https://abnerxc.github.io/go/mod%E8%AF%A6%E8%A7%A3/">
+<meta property="og:type" content="article" />
+<meta property="og:title" content="Go modules 详解 | Abner的博客" />
+<meta property="og:url" content="https://abnerxc.github.io/go/mod%E8%AF%A6%E8%A7%A3/" />
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/icofont/icofont.min.css" />
+<link rel="stylesheet" href="/css/syntax.css" />
+<link rel="stylesheet" href="/css/style.css" />
+<link rel="stylesheet" href="/css/custom.css" />
+<script src="/js/copy-code-block.js"></script>
+<link rel="shortcut icon" href="/images/favicon.ico" type="image/x-icon" />
+
+    </head>
+
+    <body>
+        <header class="header-wrapper">
+    <div class="header">
+        <a class="site-title" href="https://abnerxc.github.io/">Abner的博客</a>
+
+        <nav class="menu">
+            
+        </nav>
+    </div>
+</header>
+
+        <main class="main-wrapper">
+            <div class="main">
+                
+
+<section class="single">
+    <h1 class="title">Go modules 详解</h1>
+
+    <div class="tip">
+        <time datetime="2019-01-15 18:35:11 &#43;0800 CST">2019/01/15</time>
+        <span class="split">·</span>
+        <span> 494 words </span>
+        <span class="split">·</span>
+        <span>
+            3 minutes to read
+        </span>
+    </div>
+
+    <div class="taxonomies">
+        
+        <div>
+            Categories:
+            
+                <a href="/categories/go">Go</a>
+            
+        </div>
+        
+
+        
+    </div>
+
+    
+    
+    <div class="post-toc">
+        <h3>目录</h3>
+        <nav id="TableOfContents">
+  <ul>
+    <li><a href="#go-mod的介绍">go mod的介绍</a></li>
+    <li><a href="#go-mudules-版本规则">go mudules 版本规则</a></li>
+    <li><a href="#发布版本">发布版本</a></li>
+    <li><a href="#升级版本">升级版本</a></li>
+    <li><a href="#主要版本升级">主要版本升级</a></li>
+    <li><a href="#go-modules-命令大全">go modules 命令大全</a></li>
+    <li><a href="#go-翻墙">go 翻墙</a></li>
+    <li><a href="#自建goproxy-server">自建GOPROXY server</a></li>
+    <li><a href="#可用镜像">可用镜像</a></li>
+  </ul>
+</nav>
+    </div>
+    
+
+    <hr />
+
+    <div class="content">
+        <h1 id="go-mod的介绍">go mod的介绍 <a href="#go-mod%e7%9a%84%e4%bb%8b%e7%bb%8d" class="anchor">🔗</a></h1><p>我们以前用 go get 获取依赖其实是有潜在危险的，因为我们不确定最新版依赖是否会破坏掉我们项目对依赖包的使用方式，即当前项目可能会出现不兼容最新依赖包的问题。随着 go1.11 的发布，go 给我们带来了 module 新特性，这是 Go 语言新的一套依赖管理系统。</p>
+<p>在默认情况下，$GOPATH 默认情况下是不支持 go mudules 的，我们需要在项目目录下手动执行以下命令：<code>$ export GO111MODULE=on</code>,这也表明了 go 要利用 modules 机制消灭 $GOPATH 的决心啊！</p>
+<p>GO111MODULE可以设置为三个字符串值之一：off，on或auto（默认值）</p>
+<ul>
+<li>off : go命令从不使用新模块支持。它查找vendor 目录和GOPATH以查找依赖关系;也就是继续使用“GOPATH模式”。</li>
+<li>on : go命令需要使用模块，go 会忽略 $GOPATH 和 vendor 文件夹，只根据go.mod下载依赖。</li>
+<li>auto 或未设置: go命令根据当前目录启用或禁用模块支持。仅当当前目录位于$GOPATH/src之外并且其本身包含go.mod文件或位于包含go.mod文件的目录下时，才启用模块支持。</li>
+</ul>
+<p>演示使用教程</p>
+<ul>
+<li>创建项目,为了配合 go modules 机制，我们 $GOPATH 以外的目录创建一个 testmod 的包：</li>
+</ul>
+<pre tabindex="0"><code>$ mkdir testmod
+$ cd testmod
+
+$ echo &#39;package testmod
+		import &#34;fmt&#34;
+	func Hi(name string) string {
+        return fmt.Sprintf(&#34;Hi, %s&#34;, name)
+}&#39; &gt;&gt; testmod.go
+</code></pre><ul>
+<li>初始化module</li>
+</ul>
+<pre tabindex="0"><code>$ go mod init github.com/objcoding/testmod
+#这里如果是从git下来的，可以直接进入项目里面执行go init
+go: creating new go.mod: module github.com/objcoding/testmod
+</code></pre><ul>
+<li>推送到 github 仓库</li>
+</ul>
+<pre tabindex="0"><code>$ git init
+$ git add *
+$ git commit -am &#34;First commit&#34;
+$ git push -u origin master
+</code></pre><h1 id="go-mudules-版本规则">go mudules 版本规则 <a href="#go-mudules-%e7%89%88%e6%9c%ac%e8%a7%84%e5%88%99" class="anchor">🔗</a></h1><p>go modules 是一个版本化依赖管理系统，版本需要遵循一些规则，比如版本号需要遵循以下格式：</p>
+<pre tabindex="0"><code>vX.Y.Z-pre.0.yyyymmddhhmmss-abcdefabcdef
+vX.0.0-yyyymmddhhmmss-abcdefabcdef
+vX.Y.(Z+1)-0.yyyymmddhhmmss-abcdefabcdef
+vX.Y.Z
+</code></pre><p>vX.Y.Z 是我们仓库打的标签版本，也就是 go modules 是根据仓库标签来确定版本号的，因此我们发布版本时，需要给我们的仓库打上一个标签版本号。</p>
+<p>也就是版本号 + 时间戳 +hash，我们自己指定版本时只需要指定版本号即可，没有版本 tag 的则需要找到对应 commit 的时间和 hash 值。</p>
+<p>还有一个重要的规则是，版本 0 和 1，最好需要有不同的依赖路径，如：v1.0.0 和 v2.0.0 是有不同的依赖路径，下面会详细介绍一下这个版本规则。</p>
+<h1 id="发布版本">发布版本 <a href="#%e5%8f%91%e5%b8%83%e7%89%88%e6%9c%ac" class="anchor">🔗</a></h1><p>了解了 go modules 的版本规则后，现在我们发布一下该项目的版本：</p>
+<pre tabindex="0"><code>$ git tag v1.0.0
+$ git push --tags
+</code></pre><p>这时我们最好还需要创建一条 v1 分支，以便我们在其它分支写代码不会影响到 v1.0.0 版本：</p>
+<pre tabindex="0"><code>$ git checkout -b v1
+$ git push -u origin v1
+</code></pre><h1 id="升级版本">升级版本 <a href="#%e5%8d%87%e7%ba%a7%e7%89%88%e6%9c%ac" class="anchor">🔗</a></h1><pre tabindex="0"><code>$ git commit -m &#34;update testmod&#34; testmod.go
+$ git tag v1.0.1
+$ git push --tags origin v1
+</code></pre><p>现在我们的 项目已经升级到 v1.0.1 版本了，我们可以有多种方式获取这个版本依赖，go1.11 中，go get 拥有了很多新特性，我们可以直接通过以下命令获取 v1.01 版本依赖：</p>
+<pre tabindex="0"><code>$ go get github.com/objcoding/testmod@v1.0.1
+或者
+$ go mod edit -require=&#34;github.com/objcoding/testmod@v1.0.1&#34;
+$ go mod tidy
+</code></pre><p>go mod edit -require 可以主动修改 go.md 文件中依赖的版本号，然后通过 go mod tidy 对版本进行更新，它会自动清理掉不需要的依赖项，同时可以将依赖项更新到当前版本。</p>
+<h1 id="主要版本升级">主要版本升级 <a href="#%e4%b8%bb%e8%a6%81%e7%89%88%e6%9c%ac%e5%8d%87%e7%ba%a7" class="anchor">🔗</a></h1><p>上面版本规则说了，版本 0 和 1，即大版本更新，最好需要有不同的依赖路径，如：v1.0.0 和 v2.0.0 是有不同的依赖路径，那么用 go modules 怎么实现呢，我们可以通过修改 go.mod 文件第一行添加新路径：</p>
+<pre tabindex="0"><code>$ cd testmod
+$ echo &#39;module github.com/objcoding/testmod/v2&#39; &gt;&gt; go.mod
+</code></pre><p>然后我们修改 testmod 函数 Hi()：</p>
+<pre tabindex="0"><code>$ cd testmod
+
+$ echo &#39;package testmod
+import (
+	&#34;fmt&#34;
+	&#34;errors&#34;
+)
+func Hi(name, lang string) (string, error) {
+	switch lang {
+	case &#34;en&#34;:
+		return fmt.Sprintf(&#34;Hi, %s!&#34;, name), nil
+	default:
+		return &#34;&#34;, errors.New(&#34;unknown language&#34;)
+	}
+}&#39; &gt;&gt; testmod.go
+</code></pre><p>这时，Hi() 方法将不兼容 v1 版本，我们需要新建一个 v2.0.0 版本，还是老样子，我们最好在 v2.0.0 版本新建一条 v2 分分支，将 v2.0.0 版本的代码写到这条分支中（这只是一个规范，实际上你将代码也写到任何分支中都行，go并没有这个规范）：</p>
+<pre tabindex="0"><code>$ git add *
+$ git checkout -b v2
+$ git commit testmod.go -m &#34;v2.0.0&#34;
+$ git tag v2.0.0
+$ git push --tags origin v2
+</code></pre><p>然后我们修改代码中的版本import,为v2</p>
+<pre tabindex="0"><code>package main
+import (
+    &#34;fmt&#34;
+  	&#34;github.com/objcoding/testmod/v2&#34;
+)
+func main() {
+    fmt.Println(testmod.Hi(&#34;zch&#34;, &#34;en&#34;))
+}
+</code></pre><p>然后执行<code>go mod tidy</code>，go mod 会自动更新到v2.0.0版本</p>
+<h1 id="go-modules-命令大全">go modules 命令大全 <a href="#go-modules-%e5%91%bd%e4%bb%a4%e5%a4%a7%e5%85%a8" class="anchor">🔗</a></h1><pre tabindex="0"><code>go help modules
+
+go mod命令
+
+download    download modules to local cache (下载依赖的module到本地cache))
+edit        edit go.mod from tools or scripts (编辑go.mod文件)
+graph       print module requirement graph (打印模块依赖图))
+init        initialize new module in current directory (再当前文件夹下初始化一个新的module, 创建go.mod文件))
+tidy        add missing and remove unused modules (增加丢失的module，去掉未用的module)
+vendor      make vendored copy of dependencies (将依赖复制到vendor下)
+verify      verify dependencies have expected content (校验依赖)
+why         explain why packages or modules are needed (解释为什么需要依赖)
+
+初始化mod
+
+go mod init [module]可以创建一个go.mod，只有一行信息module。
+</code></pre><h1 id="go-翻墙">go 翻墙 <a href="#go-%e7%bf%bb%e5%a2%99" class="anchor">🔗</a></h1><p>swag安装为例</p>
+<p>mac/linux swag 安装</p>
+<pre tabindex="0"><code class="language-code" data-lang="code">## 127.0.0.1:1087 是 ssr的hhtp代理
+$ git config --global http.proxy &#34;127.0.0.1:1087&#34;
+$ http_proxy=127.0.0.1:1087 go get -u -v github.com/swaggo/swag/cmd/swag
+$ git config --global --unset-all http.proxy
+$ git config --global --unset-all https.proxy
+$ cd $GOPATH/src/github.com/swaggo/swag/cmd/swag
+$ go install
+$ swag -v #验证是否安装成功
+</code></pre><p>window goget.bat文件</p>
+<pre tabindex="0"><code>@echo off
+
+set http_proxy=socks5://127.0.0.1:1080
+set https_proxy=socks5://127.0.0.1:1080
+
+go get -u -v %*
+
+echo ...
+
+pause
+</code></pre><p>git bash上用goget.bat url就行了~</p>
+<h1 id="自建goproxy-server">自建GOPROXY server <a href="#%e8%87%aa%e5%bb%bagoproxy-server" class="anchor">🔗</a></h1><p>项目地址 <a href="https://github.com/gomods/athens">https://github.com/gomods/athens</a>
+Athens可以用来在公司内部建立自己的私有go mod服务器，或者在公网建立一个对外公开的GOPROXY server。</p>
+<h1 id="可用镜像">可用镜像 <a href="#%e5%8f%af%e7%94%a8%e9%95%9c%e5%83%8f" class="anchor">🔗</a></h1><ul>
+<li>阿里云:https://mirrors.aliyun.com/goproxy/</li>
+<li>go代理:https://goproxy.io</li>
+<li>go代理:https://goproxy.cn</li>
+</ul>
+
+    </div>
+
+    
+</section>
+
+
+            </div>
+            <div class="side">
+                <div class="side-categories">
+    <h2>Categories</h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/categories/ai">ai(3)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/go">go(23)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E4%BB%A3%E7%A0%81">代码(2)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E5%B7%A5%E5%85%B7">工具(8)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E9%80%86%E5%90%91">逆向(3)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E9%9D%A2%E8%AF%95">面试(5)</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/note/">Recent Note</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/note/%E6%9E%B6%E6%9E%84%E8%80%83%E7%82%B9/">场景总结</a>
+            </li>
+        
+            <li>
+                <a href="/note/rdis-%E7%BC%93%E5%AD%98%E7%A9%BF%E9%80%8F%E9%9B%AA%E5%B4%A9%E5%87%BB%E7%A9%BF%E7%9A%84%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95/">缓存穿透、雪崩、击穿的解决方法</a>
+            </li>
+        
+            <li>
+                <a href="/note/redis-%E5%8D%95%E7%BA%BF%E7%A8%8B%E7%9A%84redis%E4%B8%BA%E4%BB%80%E4%B9%88%E5%BF%AB/">单线程的redis为什么快</a>
+            </li>
+        
+            <li>
+                <a href="/note/redis-%E6%80%BB%E7%BB%93/">redis总结</a>
+            </li>
+        
+            <li>
+                <a href="/note/mysql-%E6%80%BB%E7%BB%93/">mysql总结</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/android/">Recent Android</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/android/redroid%E4%BD%BF%E7%94%A8/">Redroid安卓容器</a>
+            </li>
+        
+            <li>
+                <a href="/android/%E5%85%A5%E9%97%A8/">逆向环境-杂</a>
+            </li>
+        
+            <li>
+                <a href="/android/frida%E6%95%99%E7%A8%8B/">frida教程</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/tool/">Recent Tool</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/tool/linux-almalinux%E4%BC%98%E5%8C%96/">AlmaLinux10</a>
+            </li>
+        
+            <li>
+                <a href="/tool/almalinux-k8s/">AlmaLinux-k8s安装</a>
+            </li>
+        
+            <li>
+                <a href="/tool/vscode%E6%8A%98%E8%85%BE/">vscode折腾</a>
+            </li>
+        
+            <li>
+                <a href="/tool/linux-ubuntu%E4%BC%98%E5%8C%96/">Ubuntu开机优化</a>
+            </li>
+        
+            <li>
+                <a href="/tool/shell-ssh_script/">ssh常用脚本</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/llm/">Recent Llm</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/llm/transformers-%E5%85%A5%E9%97%A8%E7%AF%87/">Transformers-入门篇</a>
+            </li>
+        
+            <li>
+                <a href="/llm/%E6%A8%A1%E5%9E%8Bvllm%E9%83%A8%E7%BD%B2/">AI模型VLLM部署</a>
+            </li>
+        
+            <li>
+                <a href="/llm/%E6%A8%A1%E5%9E%8B%E5%BE%AE%E8%B0%83/">AI模型微调</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/go/">Recent Go</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/go/go%E4%B8%89%E8%89%B2%E6%A0%87%E8%AE%B0%E6%B7%B7%E5%90%88%E5%86%99%E5%B1%8F%E9%9A%9Cgc%E6%A8%A1%E5%BC%8F%E5%85%A8%E6%80%BB%E7%BB%93/">Go三色标记混合写屏障GC模式全总结</a>
+            </li>
+        
+            <li>
+                <a href="/go/go%E4%B8%ADmake%E4%B8%8Enew%E5%8C%BA%E5%88%AB/">Go中make与new区别</a>
+            </li>
+        
+            <li>
+                <a href="/go/go%E5%B8%B8%E7%94%A8bug%E5%92%8C%E6%80%A7%E8%83%BD%E9%97%AE%E9%A2%98%E7%9A%84%E5%AE%9E%E8%B7%B5%E6%96%B9%E6%B3%95/">Go常用bug和性能问题的实践方法</a>
+            </li>
+        
+            <li>
+                <a href="/go/grpc%E6%80%BB%E7%BB%93/">GRPC笔记</a>
+            </li>
+        
+            <li>
+                <a href="/go/go%E7%9A%84defer%E6%80%BB%E7%BB%93/">Go的defer总结</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+            </div>
+        </main>
+        <footer class="footer">
+    <div class="footer-row">
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/note/index.xml">
+                    Feed of Note
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/android/index.xml">
+                    Feed of Android
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/tool/index.xml">
+                    Feed of Tool
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/llm/index.xml">
+                    Feed of Llm
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/go/index.xml">
+                    Feed of Go
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+
+        
+            
+            
+        
+    </div>
+
+    
+</footer>
+
+    </body>
+</html>

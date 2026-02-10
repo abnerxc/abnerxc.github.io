@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+<meta name="viewport" content="width=device-width,minimum-scale=1">
+
+
+
+
+<title>git命令大全 | Abner的博客</title>
+<link rel="canonical" href="https://abnerxc.github.io/tool/git-%E5%91%BD%E4%BB%A4%E5%A4%A7%E5%85%A8/">
+<meta property="og:type" content="article" />
+<meta property="og:title" content="git命令大全 | Abner的博客" />
+<meta property="og:url" content="https://abnerxc.github.io/tool/git-%E5%91%BD%E4%BB%A4%E5%A4%A7%E5%85%A8/" />
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/icofont/icofont.min.css" />
+<link rel="stylesheet" href="/css/syntax.css" />
+<link rel="stylesheet" href="/css/style.css" />
+<link rel="stylesheet" href="/css/custom.css" />
+<script src="/js/copy-code-block.js"></script>
+<link rel="shortcut icon" href="/images/favicon.ico" type="image/x-icon" />
+
+    </head>
+
+    <body>
+        <header class="header-wrapper">
+    <div class="header">
+        <a class="site-title" href="https://abnerxc.github.io/">Abner的博客</a>
+
+        <nav class="menu">
+            
+        </nav>
+    </div>
+</header>
+
+        <main class="main-wrapper">
+            <div class="main">
+                
+
+<section class="single">
+    <h1 class="title">git命令大全</h1>
+
+    <div class="tip">
+        <time datetime="2022-07-21 18:35:11 &#43;0800 CST">2022/07/21</time>
+        <span class="split">·</span>
+        <span> 895 words </span>
+        <span class="split">·</span>
+        <span>
+            5 minutes to read
+        </span>
+    </div>
+
+    <div class="taxonomies">
+        
+        <div>
+            Categories:
+            
+                <a href="/categories/%E5%B7%A5%E5%85%B7">工具</a>
+            
+        </div>
+        
+
+        
+    </div>
+
+    
+    
+    <div class="post-toc">
+        <h3>目录</h3>
+        <nav id="TableOfContents">
+  <ul>
+    <li></li>
+  </ul>
+</nav>
+    </div>
+    
+
+    <hr />
+
+    <div class="content">
+        <h3 id="查看添加提交删除找回重置修改文件">查看、添加、提交、删除、找回，重置修改文件 <a href="#%e6%9f%a5%e7%9c%8b%e6%b7%bb%e5%8a%a0%e6%8f%90%e4%ba%a4%e5%88%a0%e9%99%a4%e6%89%be%e5%9b%9e%e9%87%8d%e7%bd%ae%e4%bf%ae%e6%94%b9%e6%96%87%e4%bb%b6" class="anchor">🔗</a></h3><pre tabindex="0"><code>git help &lt;command&gt; # 显示command的help
+git show # 显示某次提交的内容 git show $id
+git checkout -- &lt;file&gt; # 抛弃工作区修改
+git checkout . # 抛弃工作区修改
+git add &lt;file&gt; # 将工作文件修改提交到本地暂存区
+git add . # 将所有修改过的工作文件提交暂存区
+git rm &lt;file&gt; # 从版本库中删除文件
+git rm &lt;file&gt; --cached # 从版本库中删除文件，但不删除文件
+git reset &lt;file&gt; # 从暂存区恢复到工作文件
+git reset -- . # 从暂存区恢复到工作文件
+git reset --hard # 恢复最近一次提交过的状态，即放弃上次提交后的所有本次修改
+git commit &lt;file&gt; 
+git commit . 
+git commit -a # 将git add, git rm和git ci等操作都合并在一起做　　
+git commit -am &#34;some comments&#34;
+git commit --amend # 修改最后一次提交记录
+git revert &lt;$id&gt; # 恢复某次提交的状态，恢复动作本身也创建次提交对象
+git revert HEAD # 恢复最后一次提交的状态
+</code></pre><h3 id="查看文件diff">查看文件diff <a href="#%e6%9f%a5%e7%9c%8b%e6%96%87%e4%bb%b6diff" class="anchor">🔗</a></h3><pre tabindex="0"><code>git diff &lt;file&gt; # 比较当前文件和暂存区文件差异 git diff
+git diff &lt;id1&gt;&lt;id1&gt;&lt;id2&gt; # 比较两次提交之间的差异
+git diff &lt;branch1&gt;..&lt;branch2&gt; # 在两个分支之间比较
+git diff --staged # 比较暂存区和版本库差异
+git diff --cached # 比较暂存区和版本库差异
+git diff --stat # 仅仅比较统计信息
+</code></pre><h3 id="查看提交记录">查看提交记录 <a href="#%e6%9f%a5%e7%9c%8b%e6%8f%90%e4%ba%a4%e8%ae%b0%e5%bd%95" class="anchor">🔗</a></h3><pre tabindex="0"><code>git log  # 查看分支的提交记录
+git log &lt;file&gt; # 查看该文件每次提交记录
+git log -p &lt;file&gt; # 查看每次详细修改内容的diff
+git log -p -2 # 查看最近两次详细修改内容的diff
+git log --stat #查看提交统计信息
+</code></pre><h3 id="查看切换创建和删除分支">查看、切换、创建和删除分支 <a href="#%e6%9f%a5%e7%9c%8b%e5%88%87%e6%8d%a2%e5%88%9b%e5%bb%ba%e5%92%8c%e5%88%a0%e9%99%a4%e5%88%86%e6%94%af" class="anchor">🔗</a></h3><pre tabindex="0"><code>git branch -r # 查看远程分支
+git branch &lt;new_branch&gt; # 创建新的分支
+git branch -v # 查看各个分支最后提交信息
+git branch --merged # 查看已经被合并到当前分支的分支
+git branch --no-merged # 查看尚未被合并到当前分支的分支
+git checkout &lt;branch&gt; # 切换到某个分支
+git checkout -b &lt;new_branch&gt; # 创建新的分支，并且切换过去
+git checkout -b &lt;new_branch&gt; &lt;branch&gt; # 基于branch创建新的new_branch
+git checkout $id # 把某次历史提交记录checkout出来，但无分支信息，切换到其他分支会自动删除
+git checkout $id -b &lt;new_branch&gt; # 把某次历史提交记录checkout出来，创建成一个分支
+git checkout develop --patch 文件路径 #合并单个文件到当前分支
+git branch -d &lt;branch&gt; # 删除某个分支
+git branch -D &lt;branch&gt; # 强制删除某个分支 (未被合并的分支被删除的时候需要强制)
+</code></pre><h3 id="分支合并和rebase">分支合并和rebase <a href="#%e5%88%86%e6%94%af%e5%90%88%e5%b9%b6%e5%92%8crebase" class="anchor">🔗</a></h3><pre tabindex="0"><code class="language-cgo" data-lang="cgo">git merge &lt;branch&gt; # 将branch分支合并到当前分支
+git merge origin/master --no-ff # 不要Fast-Foward合并，这样可以生成merge提交
+git rebase master &lt;branch&gt; # 将master rebase到branch，相当于： git co &lt;branch&gt; &amp;&amp; git rebase master &amp;&amp; git co master &amp;&amp; git merge &lt;branch&gt;
+</code></pre><h3 id="同步远程分支目录到本地">同步远程分支目录到本地 <a href="#%e5%90%8c%e6%ad%a5%e8%bf%9c%e7%a8%8b%e5%88%86%e6%94%af%e7%9b%ae%e5%bd%95%e5%88%b0%e6%9c%ac%e5%9c%b0" class="anchor">🔗</a></h3><pre tabindex="0"><code class="language-cgo" data-lang="cgo">git remote update origin --prune
+</code></pre><h3 id="git补丁管理方便在多台机器上开发同步时用">Git补丁管理(方便在多台机器上开发同步时用) <a href="#git%e8%a1%a5%e4%b8%81%e7%ae%a1%e7%90%86%e6%96%b9%e4%be%bf%e5%9c%a8%e5%a4%9a%e5%8f%b0%e6%9c%ba%e5%99%a8%e4%b8%8a%e5%bc%80%e5%8f%91%e5%90%8c%e6%ad%a5%e6%97%b6%e7%94%a8" class="anchor">🔗</a></h3><pre tabindex="0"><code class="language-cgo" data-lang="cgo">git diff &gt; ../sync.patch # 生成补丁
+git apply ../sync.patch # 打补丁
+git apply --check ../sync.patch #测试补丁能否成功
+</code></pre><h3 id="git暂存管理">Git暂存管理 <a href="#git%e6%9a%82%e5%ad%98%e7%ae%a1%e7%90%86" class="anchor">🔗</a></h3><pre tabindex="0"><code class="language-cgo" data-lang="cgo">git stash # 暂存
+git stash list # 列所有stash
+git stash apply # 恢复暂存的内容
+git stash drop # 删除暂存区
+</code></pre><h3 id="git远程分支管理">Git远程分支管理 <a href="#git%e8%bf%9c%e7%a8%8b%e5%88%86%e6%94%af%e7%ae%a1%e7%90%86" class="anchor">🔗</a></h3><pre tabindex="0"><code class="language-cgo" data-lang="cgo">git pull # 抓取远程仓库所有分支更新并合并到本地
+git pull --no-ff # 抓取远程仓库所有分支更新并合并到本地，不要快进合并
+git fetch origin # 抓取远程仓库更新
+git merge origin/master # 将远程主分支合并到本地当前分支
+git checkout --track origin/branch # 跟踪某个远程分支创建相应的本地分支
+git checkout -b &lt;local_branch&gt; origin/&lt;remote_branch&gt; # 基于远程分支创建本地分支，功能同上
+git push # push所有分支
+git push origin master # 将本地主分支推到远程主分支
+git push -u origin master # 将本地主分支推到远程(如无远程主分支则创建，用于初始化远程仓库)
+git push origin &lt;local_branch&gt; # 创建远程分支， origin是远程仓库名
+git push origin &lt;local_branch&gt;:&lt;remote_branch&gt; # 创建远程分支
+git push origin :&lt;remote_branch&gt; #先删除本地分支(git br -d &lt;branch&gt;)，然后再push删除远程分支
+</code></pre><h3 id="git远程仓库管理">Git远程仓库管理 <a href="#git%e8%bf%9c%e7%a8%8b%e4%bb%93%e5%ba%93%e7%ae%a1%e7%90%86" class="anchor">🔗</a></h3><pre tabindex="0"><code class="language-cgo" data-lang="cgo">git remote -v # 查看远程服务器地址和仓库名称
+git remote show origin # 查看远程服务器仓库状态
+git remote add origin git@ github:robbin/robbin_site.git # 添加远程仓库地址
+git remote set-url origin git@ github.com:robbin/robbin_site.git # 设置远程仓库地址(用于修改远程仓库地址) git remote rm &lt;repository&gt; # 删除远程仓库
+</code></pre><h3 id="创建远程仓库">创建远程仓库 <a href="#%e5%88%9b%e5%bb%ba%e8%bf%9c%e7%a8%8b%e4%bb%93%e5%ba%93" class="anchor">🔗</a></h3><pre tabindex="0"><code class="language-cgo" data-lang="cgo">git clone --bare robbin_site robbin_site.git # 用带版本的项目创建纯版本仓库
+scp -r my_project.git git@ git.csdn.net:~ # 将纯仓库上传到服务器上
+mkdir robbin_site.git &amp;&amp; cd robbin_site.git &amp;&amp; git --bare init # 在服务器创建纯仓库
+
+git remote add origin git@ github.com:robbin/robbin_site.git # 设置远程仓库地址
+git push -u origin master # 客户端首次提交
+git push -u origin develop # 首次将本地develop分支提交到远程develop分支，并且track
+git remote set-head origin master # 设置远程仓库的HEAD指向master分支
+也可以命令设置跟踪远程库和本地库
+
+git branch --set-upstream master origin/master
+git branch --set-upstream develop origin/develop
+</code></pre><h3 id="git-init">git init <a href="#git-init" class="anchor">🔗</a></h3><p>在本地新建一个repo,进入一个项目目录,执行git init,会初始化一个repo,并在当前文件夹下创建一个.git文件夹.</p>
+<h3 id="git-clone">git clone <a href="#git-clone" class="anchor">🔗</a></h3><p>获取一个url对应的远程Git repo, 创建一个local copy.
+一般的格式是git clone [url].
+clone下来的repo会以url最后一个斜线后面的名称命名,创建一个文件夹,如果想要指定特定的名称,可以git clone [url] newname指定.</p>
+<h3 id="git-status">git status <a href="#git-status" class="anchor">🔗</a></h3><p>查询repo的状态.
+git status -s: -s表示short, -s的输出标记会有两列,第一列是对staging区域而言,第二列是对working目录而言.</p>
+<h3 id="git-log">git log <a href="#git-log" class="anchor">🔗</a></h3><pre tabindex="0"><code class="language-cgo" data-lang="cgo">在当前分支上查看提交日志
+git log --oneline --number: 每条log只显示一行,显示number条.
+git log --oneline --graph:可以图形化地表示出分支合并历史.
+git log branchname可以显示特定分支的log.
+git log --oneline branch1 ^branch2,可以查看在分支1,却不在分支2中的提交.^表示排除这个分支(Window下可能要给^branch2加上引号).
+git log --decorate会显示出tag信息.
+git log --author=[author name] 可以指定作者的提交历史.
+git log --since --before --until --after 根据提交时间筛选log.
+--no-merges可以将merge的commits排除在外.
+git log --grep 根据commit信息过滤log: git log --grep=keywords
+默认情况下, git log --grep --author是OR的关系,即满足一条即被返回,如果你想让它们是AND的关系,可以加上--all-match的option.
+git log -S: filter by introduced diff.
+比如: git log -SmethodName (注意S和后面的词之间没有等号分隔).
+git log -p: show patch introduced at each commit.
+每一个提交都是一个快照(snapshot),Git会把每次提交的diff计算出来,作为一个patch显示给你看.
+另一种方法是git show [SHA].
+git log --stat: show diffstat of changes introduced at each commit.
+同样是用来看改动的相对信息的,--stat比-p的输出更简单一些.
+</code></pre><h3 id="git-commit">git commit <a href="#git-commit" class="anchor">🔗</a></h3><pre tabindex="0"><code class="language-cgo" data-lang="cgo">提交已经被add进来的改动.
+git commit -m “the commit message&#34;
+git commit -a 会先把所有已经track的文件的改动add进来,然后提交(有点像svn的一次提交,不用先暂存). 对于没有track的文件,还是需要git add一下.
+git commit --amend 增补提交. 会使用与当前提交节点相同的父节点进行一次新的提交,旧的提交将会被取消.
+</code></pre><h3 id="git-reset">git reset <a href="#git-reset" class="anchor">🔗</a></h3><pre tabindex="0"><code class="language-cgo" data-lang="cgo">undo changes and commits.
+这里的HEAD关键字指的是当前分支最末梢最新的一个提交.也就是版本库中该分支上的最新版本.
+git reset HEAD: unstage files from index and reset pointer to HEAD
+这个命令用来把不小心add进去的文件从staged状态取出来,可以单独针对某一个文件操作: git reset HEAD - - filename, 这个- - 也可以不加.
+git reset --soft
+move HEAD to specific commit reference, index and staging are untouched.
+git reset --hard
+unstage files AND undo any changes in the working directory since last commit.
+使用git reset —hard HEAD进行reset,即上次提交之后,所有staged的改动和工作目录的改动都会消失,还原到上次提交的状态.
+这里的HEAD可以被写成任何一次提交的SHA-1.
+不带soft和hard参数的git reset,实际上带的是默认参数mixed.
+
+总结:
+git reset --mixed id,是将git的HEAD变了(也就是提交记录变了),但文件并没有改变，(也就是working tree并没有改变). 取消了commit和add的内容.
+git reset --soft id. 实际上，是git reset –mixed id 后,又做了一次git add.即取消了commit的内容.
+git reset --hard id.是将git的HEAD变了,文件也变了.
+按改动范围排序如下:
+soft (commit) &lt; mixed (commit + add) &lt; hard (commit + add + local working)
+</code></pre><h3 id="git-revert">git revert <a href="#git-revert" class="anchor">🔗</a></h3><pre tabindex="0"><code class="language-cgo" data-lang="cgo">反转撤销提交.只要把出错的提交(commit)的名字(reference)作为参数传给命令就可以了.
+git revert HEAD: 撤销最近的一个提交.
+git revert会创建一个反向的新提交,可以通过参数-n来告诉Git先不要提交.
+</code></pre><h3 id="git-rm">git rm <a href="#git-rm" class="anchor">🔗</a></h3><pre tabindex="0"><code class="language-cgo" data-lang="cgo">git rm file: 从staging区移除文件,同时也移除出工作目录.
+git rm --cached: 从staging区移除文件,但留在工作目录中.
+git rm --cached从功能上等同于git reset HEAD,清除了缓存区,但不动工作目录树.
+</code></pre><h3 id="git-clean">git clean <a href="#git-clean" class="anchor">🔗</a></h3><pre tabindex="0"><code class="language-cgo" data-lang="cgo">git clean是从工作目录中移除没有track的文件.
+通常的参数是git clean -df:
+-d表示同时移除目录,-f表示force,因为在git的配置文件中, clean.requireForce=true,如果不加-f,clean将会拒绝执行.
+</code></pre><h3 id="git-rebase">git rebase <a href="#git-rebase" class="anchor">🔗</a></h3><pre tabindex="0"><code class="language-cgo" data-lang="cgo">--rebase不会产生合并的提交,它会将本地的所有提交临时保存为补丁(patch),放在”.git/rebase”目录中,然后将当前分支更新到最新的分支尖端,最后把保存的补丁应用到分支上.
+rebase的过程中,也许会出现冲突,Git会停止rebase并让你解决冲突,在解决完冲突之后,用git add去更新这些内容,然后无需执行commit,只需要:
+git rebase --continue就会继续打余下的补丁.
+git rebase --abort将会终止rebase,当前分支将会回到rebase之前的状态.
+</code></pre><h3 id="git-reflog">git reflog <a href="#git-reflog" class="anchor">🔗</a></h3><p>git reflog是对reflog进行管理的命令,reflog是git用来记录引用变化的一种机制,比如记录分支的变化或者是HEAD引用的变化.
+当git reflog不指定引用的时候,默认列出HEAD的reflog.
+HEAD@{0}代表HEAD当前的值,HEAD@{3}代表HEAD在3次变化之前的值.
+git会将变化记录到HEAD对应的reflog文件中,其路径为.git/logs/HEAD, 分支的reflog文件都放在.git/logs/refs目录下的子目录中.</p>
+<h3 id="cherry-pick">cherry-pick <a href="#cherry-pick" class="anchor">🔗</a></h3><p>它会获取某一个分支的单笔提交，并作为一个新的提交引入到你当前分支上
+git cherry-pick [<options>] <commit-ish>&hellip;
+常用options:
+&ndash;quit                退出当前的chery-pick序列
+&ndash;continue            继续当前的chery-pick序列
+&ndash;abort               取消当前的chery-pick序列，恢复当前分支
+-n, &ndash;no-commit       不自动提交
+-e, &ndash;edit            编辑提交信息</p>
+<h3 id="git-代理设置">git 代理设置 <a href="#git-%e4%bb%a3%e7%90%86%e8%ae%be%e7%bd%ae" class="anchor">🔗</a></h3><ul>
+<li>http</li>
+</ul>
+<pre tabindex="0"><code>git config --global http.proxy &#34;socks5://127.0.0.1:1086&#34;
+git config --global https.proxy &#34;socks5://127.0.0.1:1086&#34;
+</code></pre><ul>
+<li>ssh 方式
+在用户文件夹下，打开/.ssh/config文件（如果没有就自己创建一个touch ~/.ssh/config）</li>
+</ul>
+<pre tabindex="0"><code>Host github.com
+	Port 443
+	Hostname ssh.github.com
+	IdentityFile /Users/abner/.ssh/id_rsa
+	TCPKeepAlive yes
+	ProxyCommand nc -X 5 -x 127.0.0.1:1086 %h %p
+	ServerAliveInterval 30
+</code></pre><h3 id="git使用对比工具">git使用对比工具 <a href="#git%e4%bd%bf%e7%94%a8%e5%af%b9%e6%af%94%e5%b7%a5%e5%85%b7" class="anchor">🔗</a></h3><p>.gitconfig 添加 如下配置</p>
+<pre tabindex="0"><code>[diff]
+    tool = bcomp
+[difftool]
+    prompt = false
+[difftool &#34;bcomp&#34;]
+    trustExitCode = true
+    cmd = &#34;/usr/local/bin/bcomp&#34; &#34;$LOCAL&#34; &#34;$REMOTE&#34;
+[merge]
+    tool = bcomp
+[mergetool]
+    prompt = false
+    keepBackup = false
+[mergetool &#34;bcomp&#34;]
+    trustExitCode = true
+    cmd = &#34;/usr/local/bin/bcomp&#34; &#34;$LOCAL&#34; &#34;$REMOTE&#34; &#34;$BASE&#34; &#34;$MERGED&#34;
+</code></pre><h3 id="windows-crlf">windows CRLF <a href="#windows-crlf" class="anchor">🔗</a></h3><pre tabindex="0"><code class="language-cgo" data-lang="cgo">#提交时转换为LF，检出时转换为CRLF
+git config --global core.autocrlf true
+适用于Windows系统，且一般为Windows默认设置，会在提交时对换行符进行CRLF - LF的转换，检出时又会进行LF - CRLF的转换。
+
+#提交时转换为LF，检出时不转换
+git config --global core.autocrlf input
+适用于Linux系统，所有换行符都会进行CRLF - LF转换，但操作时不会转换回CRLF。
+
+#提交检出均不转换
+git config --global core.autocrlf false
+*适用于Windows系统，且只在Windows上开发的情况。在提交、检出时不会对CRLF/LF换行符进行转换
+</code></pre>
+    </div>
+
+    
+</section>
+
+
+            </div>
+            <div class="side">
+                <div class="side-categories">
+    <h2>Categories</h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/categories/ai">ai(3)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/go">go(23)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E4%BB%A3%E7%A0%81">代码(2)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E5%B7%A5%E5%85%B7">工具(8)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E9%80%86%E5%90%91">逆向(3)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E9%9D%A2%E8%AF%95">面试(5)</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/note/">Recent Note</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/note/%E6%9E%B6%E6%9E%84%E8%80%83%E7%82%B9/">场景总结</a>
+            </li>
+        
+            <li>
+                <a href="/note/rdis-%E7%BC%93%E5%AD%98%E7%A9%BF%E9%80%8F%E9%9B%AA%E5%B4%A9%E5%87%BB%E7%A9%BF%E7%9A%84%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95/">缓存穿透、雪崩、击穿的解决方法</a>
+            </li>
+        
+            <li>
+                <a href="/note/redis-%E5%8D%95%E7%BA%BF%E7%A8%8B%E7%9A%84redis%E4%B8%BA%E4%BB%80%E4%B9%88%E5%BF%AB/">单线程的redis为什么快</a>
+            </li>
+        
+            <li>
+                <a href="/note/redis-%E6%80%BB%E7%BB%93/">redis总结</a>
+            </li>
+        
+            <li>
+                <a href="/note/mysql-%E6%80%BB%E7%BB%93/">mysql总结</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/android/">Recent Android</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/android/redroid%E4%BD%BF%E7%94%A8/">Redroid安卓容器</a>
+            </li>
+        
+            <li>
+                <a href="/android/%E5%85%A5%E9%97%A8/">逆向环境-杂</a>
+            </li>
+        
+            <li>
+                <a href="/android/frida%E6%95%99%E7%A8%8B/">frida教程</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/tool/">Recent Tool</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/tool/linux-almalinux%E4%BC%98%E5%8C%96/">AlmaLinux10</a>
+            </li>
+        
+            <li>
+                <a href="/tool/almalinux-k8s/">AlmaLinux-k8s安装</a>
+            </li>
+        
+            <li>
+                <a href="/tool/vscode%E6%8A%98%E8%85%BE/">vscode折腾</a>
+            </li>
+        
+            <li>
+                <a href="/tool/linux-ubuntu%E4%BC%98%E5%8C%96/">Ubuntu开机优化</a>
+            </li>
+        
+            <li>
+                <a href="/tool/shell-ssh_script/">ssh常用脚本</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/llm/">Recent Llm</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/llm/transformers-%E5%85%A5%E9%97%A8%E7%AF%87/">Transformers-入门篇</a>
+            </li>
+        
+            <li>
+                <a href="/llm/%E6%A8%A1%E5%9E%8Bvllm%E9%83%A8%E7%BD%B2/">AI模型VLLM部署</a>
+            </li>
+        
+            <li>
+                <a href="/llm/%E6%A8%A1%E5%9E%8B%E5%BE%AE%E8%B0%83/">AI模型微调</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/go/">Recent Go</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/go/go%E4%B8%89%E8%89%B2%E6%A0%87%E8%AE%B0%E6%B7%B7%E5%90%88%E5%86%99%E5%B1%8F%E9%9A%9Cgc%E6%A8%A1%E5%BC%8F%E5%85%A8%E6%80%BB%E7%BB%93/">Go三色标记混合写屏障GC模式全总结</a>
+            </li>
+        
+            <li>
+                <a href="/go/go%E4%B8%ADmake%E4%B8%8Enew%E5%8C%BA%E5%88%AB/">Go中make与new区别</a>
+            </li>
+        
+            <li>
+                <a href="/go/go%E5%B8%B8%E7%94%A8bug%E5%92%8C%E6%80%A7%E8%83%BD%E9%97%AE%E9%A2%98%E7%9A%84%E5%AE%9E%E8%B7%B5%E6%96%B9%E6%B3%95/">Go常用bug和性能问题的实践方法</a>
+            </li>
+        
+            <li>
+                <a href="/go/grpc%E6%80%BB%E7%BB%93/">GRPC笔记</a>
+            </li>
+        
+            <li>
+                <a href="/go/go%E7%9A%84defer%E6%80%BB%E7%BB%93/">Go的defer总结</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+            </div>
+        </main>
+        <footer class="footer">
+    <div class="footer-row">
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/note/index.xml">
+                    Feed of Note
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/android/index.xml">
+                    Feed of Android
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/tool/index.xml">
+                    Feed of Tool
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/llm/index.xml">
+                    Feed of Llm
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/go/index.xml">
+                    Feed of Go
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+
+        
+            
+            
+        
+    </div>
+
+    
+</footer>
+
+    </body>
+</html>
