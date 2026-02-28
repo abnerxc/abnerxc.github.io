@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+<meta name="viewport" content="width=device-width,minimum-scale=1">
+
+
+
+
+<title>场景总结 | Abner的博客</title>
+<link rel="canonical" href="https://abnerxc.github.io/note/%E6%9E%B6%E6%9E%84%E8%80%83%E7%82%B9/">
+<meta property="og:type" content="article" />
+<meta property="og:title" content="场景总结 | Abner的博客" />
+<meta property="og:url" content="https://abnerxc.github.io/note/%E6%9E%B6%E6%9E%84%E8%80%83%E7%82%B9/" />
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/icofont/icofont.min.css" />
+<link rel="stylesheet" href="/css/syntax.css" />
+<link rel="stylesheet" href="/css/style.css" />
+<link rel="stylesheet" href="/css/custom.css" />
+<script src="/js/copy-code-block.js"></script>
+<link rel="shortcut icon" href="/images/favicon.ico" type="image/x-icon" />
+
+    </head>
+
+    <body>
+        <header class="header-wrapper">
+    <div class="header">
+        <a class="site-title" href="https://abnerxc.github.io/">Abner的博客</a>
+
+        <nav class="menu">
+            
+        </nav>
+    </div>
+</header>
+
+        <main class="main-wrapper">
+            <div class="main">
+                
+
+<section class="single">
+    <h1 class="title">场景总结</h1>
+
+    <div class="tip">
+        <time datetime="2026-01-25 12:07:58 &#43;0800 CST">2026/01/25</time>
+        <span class="split">·</span>
+        <span> 1245 words </span>
+        <span class="split">·</span>
+        <span>
+            6 minutes to read
+        </span>
+    </div>
+
+    <div class="taxonomies">
+        
+        <div>
+            Categories:
+            
+                <a href="/categories/%E9%9D%A2%E8%AF%95">面试</a>
+            
+        </div>
+        
+
+        
+    </div>
+
+    
+    
+    <div class="post-toc">
+        <h3>目录</h3>
+        <nav id="TableOfContents">
+  <ul>
+    <li><a href="#项目里秒杀商品的详情页qps能到多少如果突然飙升到50万qps会出现什么瓶颈怎么优化">项目里秒杀商品的详情页QPS能到多少?如果突然飙升到50万QPS，会出现什么瓶颈?怎么优化?</a></li>
+    <li><a href="#拼单成功后需同时扣减商品库存更新拼单状态推送成功通知如何保证这三个操作的原子性比较seataatseatatcc本地消息表的优劣">拼单成功后需同时扣减商品库存、更新拼单状态、推送成功通知，如何保证这三个操作的原子性?比较SeataAT、SeataTCC、本地消息表的优劣。</a></li>
+    <li><a href="#用redis做拼单分布式锁时怎么防止锁被误删和死锁如果拼单业务执行时间超过锁超时会导致重复拼单吗怎么避免">用Redis做拼单分布式锁时，怎么防止锁被误删和死锁?如果拼单业务执行时间超过锁超时，会导致重复拼单吗?怎么避免?</a></li>
+    <li><a href="#商品库存分仓存储abc仓库跨仓调拨时数据同步延迟导致用户下单后发现目标仓库无货怎么解决">商品库存分仓存储(A/B/C仓库)，跨仓调拨时数据同步延迟，导致用户下单后发现目标仓库无货，怎么解决?</a></li>
+    <li><a href="#秒杀活动中用户每秒发起10次请求如何设计限流策略具体怎么实现和选择">秒杀活动中，用户每秒发起10次请求，如何设计限流策略?具体怎么实现和选择?</a></li>
+    <li><a href="#用redis存储1亿用户的砍价进度数据选什么数据结构内存占用大概多少怎么优化内存">用Redis存储1亿用户的砍价进度数据，选什么数据结构?内存占用大概多少?怎么优化内存?</a></li>
+    <li><a href="#优惠券核销时用户同时使用满100减30拼单价折5新人立减15如何精准计算实付金额规则引擎怎么设计">优惠券核销时，用户同时使用“满100减30”“拼单价折5%”“新人立减15”，如何精准计算实付金额?规则引擎怎么设计?</a></li>
+    <li><a href="#电商平台订单id用什么分布式id方案比较雪花算法变种含业务编码leafredis自增的优劣">电商平台订单ID用什么分布式ID方案?比较雪花算法变种(含业务编码)、Leaf、Redis自增的优劣</a></li>
+    <li><a href="#秒杀优惠券如何防止超发对比redislua脚本和分布式数据库锁的方案优劣">秒杀优惠券如何防止超发?对比Redis+Lua脚本和分布式数据库锁的方案优劣。</a></li>
+    <li><a href="#多级缓存架构本地缓存caffeine和redis如何协同保证数据一致性">多级缓存架构本地缓存(Caffeine)和Redis如何协同保证数据一致性?</a></li>
+    <li><a href="#订单过期处理策略如支付外卖订单超时">订单过期处理策略，如支付、外卖订单超时</a></li>
+  </ul>
+</nav>
+    </div>
+    
+
+    <hr />
+
+    <div class="content">
+        <h1 id="项目里秒杀商品的详情页qps能到多少如果突然飙升到50万qps会出现什么瓶颈怎么优化">项目里秒杀商品的详情页QPS能到多少?如果突然飙升到50万QPS，会出现什么瓶颈?怎么优化? <a href="#%e9%a1%b9%e7%9b%ae%e9%87%8c%e7%a7%92%e6%9d%80%e5%95%86%e5%93%81%e7%9a%84%e8%af%a6%e6%83%85%e9%a1%b5qps%e8%83%bd%e5%88%b0%e5%a4%9a%e5%b0%91%e5%a6%82%e6%9e%9c%e7%aa%81%e7%84%b6%e9%a3%99%e5%8d%87%e5%88%b050%e4%b8%87qps%e4%bc%9a%e5%87%ba%e7%8e%b0%e4%bb%80%e4%b9%88%e7%93%b6%e9%a2%88%e6%80%8e%e4%b9%88%e4%bc%98%e5%8c%96" class="anchor">🔗</a></h1><h2 id="场景">场景 <a href="#%e5%9c%ba%e6%99%af" class="anchor">🔗</a></h2><p>百亿补贴详情页通常包含静态信息（图文、参数）和动态信息（价格、库存、优惠）。平时QPS可能在几千，但大促时可能瞬间飙升至50万QPS。</p>
+<h2 id="50万-qps-下的瓶颈点">50万 QPS 下的瓶颈点 <a href="#50%e4%b8%87-qps-%e4%b8%8b%e7%9a%84%e7%93%b6%e9%a2%88%e7%82%b9" class="anchor">🔗</a></h2><ul>
+<li>网络带宽瓶颈： 详情页HTML很大（几百KB），50万QPS * 200KB = 100Gbps的带宽出口，瞬间打满交换机和网卡。</li>
+<li>CPU/计算瓶颈： 如果动态计算价格或拼接HTML，CPU会成为瓶颈，尤其是大量的序列化/反序列化和JSON渲染。</li>
+<li>Redis/DB瓶颈： 即使是Redis，单机QPS也就10万左右，且50万连接会耗尽文件句柄，导致连接建立失败。</li>
+<li>服务端连接数： 默认的内核参数（如ulimit）和全连接队列可能被占满，导致SYN丢弃。</li>
+</ul>
+<h2 id="优化方案分层架构">优化方案（分层架构） <a href="#%e4%bc%98%e5%8c%96%e6%96%b9%e6%a1%88%e5%88%86%e5%b1%82%e6%9e%b6%e6%9e%84" class="anchor">🔗</a></h2><p>按调用链拆解：CDN → Nginx → 商品服务 → Redis → MySQL / ES</p>
+<ul>
+<li>静态资源全面CDN加速（静态化）：
+<ul>
+<li>思路： 将商品详情页的HTML、图片、CSS、JS全部静态化，推送到CDN边缘节点。</li>
+<li>效果： 90%以上的流量直接在CDN边缘节点响应，根本不会打到你的源站服务器。</li>
+</ul>
+</li>
+<li>动态内容分离（动静分离）：
+<ul>
+<li>思路： 将动态内容（价格、库存、优惠）从HTML中分离出来，通过API异步获取。</li>
+<li>效果： 动态内容的QPS可以单独调整，而不会影响静态资源的访问。</li>
+</ul>
+</li>
+<li>多级缓存架构：
+<ul>
+<li>浏览器缓存： 对静态资源设置强缓存。</li>
+<li>本地缓存： 应用服务器部署L1缓存（如Guava/Caffeine或Golang的bigcache）。价格变更不频繁时，直接读内存，QPS可达百万级。设置10~50msTTL，抵挡 Redis 抖动。</li>
+<li>Redis集群： 做分片，避开单点热点。如 sku_stock:123 → sku_stock:{123}_{0..9}，通过 hash 取一个写时写多个 key</li>
+</ul>
+</li>
+<li>降级兜底：
+<ul>
+<li>思路： Redis 超时 → 返回“库存紧张”。</li>
+<li>效果： ES 超时 → 返回默认排序</li>
+</ul>
+</li>
+</ul>
+<h1 id="拼单成功后需同时扣减商品库存更新拼单状态推送成功通知如何保证这三个操作的原子性比较seataatseatatcc本地消息表的优劣">拼单成功后需同时扣减商品库存、更新拼单状态、推送成功通知，如何保证这三个操作的原子性?比较SeataAT、SeataTCC、本地消息表的优劣。 <a href="#%e6%8b%bc%e5%8d%95%e6%88%90%e5%8a%9f%e5%90%8e%e9%9c%80%e5%90%8c%e6%97%b6%e6%89%a3%e5%87%8f%e5%95%86%e5%93%81%e5%ba%93%e5%ad%98%e6%9b%b4%e6%96%b0%e6%8b%bc%e5%8d%95%e7%8a%b6%e6%80%81%e6%8e%a8%e9%80%81%e6%88%90%e5%8a%9f%e9%80%9a%e7%9f%a5%e5%a6%82%e4%bd%95%e4%bf%9d%e8%af%81%e8%bf%99%e4%b8%89%e4%b8%aa%e6%93%8d%e4%bd%9c%e7%9a%84%e5%8e%9f%e5%ad%90%e6%80%a7%e6%af%94%e8%be%83seataatseatatcc%e6%9c%ac%e5%9c%b0%e6%b6%88%e6%81%af%e8%a1%a8%e7%9a%84%e4%bc%98%e5%8a%a3" class="anchor">🔗</a></h1><h2 id="场景-1">场景 <a href="#%e5%9c%ba%e6%99%af-1" class="anchor">🔗</a></h2><p>扣减库存、更新拼单状态、推送通知（短信/IM），<code>保证原子性（一致性）的思路</code>：
+这三个操作中，库存和状态属于强一致性范畴，通知属于最终一致性范畴。<code>不要试图让这三者全部强一致</code>，否则性能会极度低下。</p>
+<ul>
+<li>库存 &amp; 状态： 必须在一个事务内（本地事务或TCC）。</li>
+<li>通知： 必须异步，允许失败重试。</li>
+</ul>
+<h2 id="方案对比">方案对比 <a href="#%e6%96%b9%e6%a1%88%e5%af%b9%e6%af%94" class="anchor">🔗</a></h2><table>
+  <thead>
+      <tr>
+          <th>方案</th>
+          <th>优点</th>
+          <th>缺点</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td><strong>Seata AT</strong></td>
+          <td>接入简单</td>
+          <td>高并发下性能差</td>
+      </tr>
+      <tr>
+          <td><strong>Seata TCC</strong></td>
+          <td>强一致</td>
+          <td>侵入性强</td>
+      </tr>
+      <tr>
+          <td><strong>本地消息表（推荐）</strong></td>
+          <td>最稳、可扩展</td>
+          <td>实现复杂</td>
+      </tr>
+  </tbody>
+</table>
+<ul>
+<li>
+<p>Seata AT模式：</p>
+<ul>
+<li>原理： 基于本地事务 + Undo Log（回滚日志）。二阶段提交时，如果全局失败，回滚时利用Undo Log反向补偿。</li>
+<li>劣势：
+<ul>
+<li>锁竞争严重： 全局事务期间，数据库行锁被锁定直到事务结束，在高并发拼单场景下，数据库吞吐量极低。</li>
+<li>性能损耗： 需要解析SQL，生成前后镜像，额外开销大。</li>
+</ul>
+</li>
+<li>适用性： 不适合高并发的秒杀/拼单核心链路，适合低并发的后台管理链路。</li>
+</ul>
+</li>
+<li>
+<p>Seata TCC模式：</p>
+<ul>
+<li>原理： Try-Confirm-Cancel。业务代码需要写三个接口。</li>
+<li>优劣： 性能比AT好，锁由业务控制，不依赖DB锁。但代码侵入性极强，开发成本高，且有空回滚、悬挂等坑。</li>
+<li>适用性： 适合核心资产操作（如库存扣减）。</li>
+</ul>
+</li>
+<li>
+<p>本地消息表模式：</p>
+<ol>
+<li>本地DB事务：
+<ul>
+<li>扣库存</li>
+<li>更新拼单状态</li>
+<li>写消息表（SUCCESS）</li>
+</ul>
+</li>
+<li>MQ 异步：
+<ul>
+<li>推送通知</li>
+<li>发放权益</li>
+</ul>
+</li>
+<li>消息表重试：
+<ul>
+<li>DB 保证一致性</li>
+<li>MQ 只负责“最终通知”</li>
+<li>可补偿、可回放</li>
+</ul>
+</li>
+</ol>
+</li>
+</ul>
+<h1 id="用redis做拼单分布式锁时怎么防止锁被误删和死锁如果拼单业务执行时间超过锁超时会导致重复拼单吗怎么避免">用Redis做拼单分布式锁时，怎么防止锁被误删和死锁?如果拼单业务执行时间超过锁超时，会导致重复拼单吗?怎么避免? <a href="#%e7%94%a8redis%e5%81%9a%e6%8b%bc%e5%8d%95%e5%88%86%e5%b8%83%e5%bc%8f%e9%94%81%e6%97%b6%e6%80%8e%e4%b9%88%e9%98%b2%e6%ad%a2%e9%94%81%e8%a2%ab%e8%af%af%e5%88%a0%e5%92%8c%e6%ad%bb%e9%94%81%e5%a6%82%e6%9e%9c%e6%8b%bc%e5%8d%95%e4%b8%9a%e5%8a%a1%e6%89%a7%e8%a1%8c%e6%97%b6%e9%97%b4%e8%b6%85%e8%bf%87%e9%94%81%e8%b6%85%e6%97%b6%e4%bc%9a%e5%af%bc%e8%87%b4%e9%87%8d%e5%a4%8d%e6%8b%bc%e5%8d%95%e5%90%97%e6%80%8e%e4%b9%88%e9%81%bf%e5%85%8d" class="anchor">🔗</a></h1><h2 id="问题1防止误删锁">问题1：防止误删锁 <a href="#%e9%97%ae%e9%a2%981%e9%98%b2%e6%ad%a2%e8%af%af%e5%88%a0%e9%94%81" class="anchor">🔗</a></h2><ul>
+<li>现象： 线程A拿到锁，业务执行慢，锁超时自动释放。线程B拿到锁，此时线程A执行完，误删了线程B的锁。</li>
+<li>解决： Value标识法。SET key value时，value设为UUID+线程ID。删除前，先用Lua脚本（保证原子性）判断Redis中的Value是否等于自己持有的标识，相等才DEL。</li>
+</ul>
+<h2 id="问题2防止死锁">问题2：防止死锁 <a href="#%e9%97%ae%e9%a2%982%e9%98%b2%e6%ad%a2%e6%ad%bb%e9%94%81" class="anchor">🔗</a></h2><ul>
+<li>现象： 拿到锁的服务宕机，锁永远无法释放。</li>
+<li>解决： 设置过期时间（TTL）。SETNX EX 10。即使宕机，10秒后锁自动释放。</li>
+</ul>
+<h2 id="问题3业务执行超过锁超时导致重复下单">问题3：业务执行超过锁超时（导致重复下单） <a href="#%e9%97%ae%e9%a2%983%e4%b8%9a%e5%8a%a1%e6%89%a7%e8%a1%8c%e8%b6%85%e8%bf%87%e9%94%81%e8%b6%85%e6%97%b6%e5%af%bc%e8%87%b4%e9%87%8d%e5%a4%8d%e4%b8%8b%e5%8d%95" class="anchor">🔗</a></h2><ul>
+<li>现象： 锁TTL=10s，业务跑了15s。第10s锁释放，第二个线程进来，导致两个线程同时拼单。</li>
+<li>解决（看门狗机制 / Watchdog）：
+<ul>
+<li>自动续期： 开启一个后台守护线程（Watchdog）。如果业务未执行完，在TTL过期前的1/3时间（如3s时），主动将Redis中的Key重新设置过期时间为10s。</li>
+<li>实现： Redisson（Java）或类似的Golang库都有此机制。自实现时，需确保续期逻辑与业务逻辑同生命周期，业务停则续期停。</li>
+<li>避免重复拼单： 即使锁续期失败，数据库层面必须兜底。拼单SQL带上条件 UPDATE order SET status = &lsquo;SUCCESS&rsquo; WHERE id = ? AND status = &lsquo;状态值&rsquo;（乐观锁），利用数据库行锁或唯一索引防止并发修改。</li>
+</ul>
+</li>
+</ul>
+<h1 id="商品库存分仓存储abc仓库跨仓调拨时数据同步延迟导致用户下单后发现目标仓库无货怎么解决">商品库存分仓存储(A/B/C仓库)，跨仓调拨时数据同步延迟，导致用户下单后发现目标仓库无货，怎么解决? <a href="#%e5%95%86%e5%93%81%e5%ba%93%e5%ad%98%e5%88%86%e4%bb%93%e5%ad%98%e5%82%a8abc%e4%bb%93%e5%ba%93%e8%b7%a8%e4%bb%93%e8%b0%83%e6%8b%a8%e6%97%b6%e6%95%b0%e6%8d%ae%e5%90%8c%e6%ad%a5%e5%bb%b6%e8%bf%9f%e5%af%bc%e8%87%b4%e7%94%a8%e6%88%b7%e4%b8%8b%e5%8d%95%e5%90%8e%e5%8f%91%e7%8e%b0%e7%9b%ae%e6%a0%87%e4%bb%93%e5%ba%93%e6%97%a0%e8%b4%a7%e6%80%8e%e4%b9%88%e8%a7%a3%e5%86%b3" class="anchor">🔗</a></h1><p>核心矛盾： CAP定理下，为了保证高可用（A）和分区容错（P），牺牲了强一致性（C），导致用户看到的“有货”是旧数据。</p>
+<h2 id="解决方案">解决方案 <a href="#%e8%a7%a3%e5%86%b3%e6%96%b9%e6%a1%88" class="anchor">🔗</a></h2><ul>
+<li>写入前校验（强约束）:
+<ul>
+<li>思路： 下单时，强制路由到主仓的Master数据库进行库存扣减。不允许读取Slave库存作为扣减依据，Slave仅用于查询展示。</li>
+<li>实现： 数据库路由层配置读写分离规则，强制主从同步。</li>
+</ul>
+</li>
+<li>库存预占/预留机制：
+<ul>
+<li>库存预占：在跨仓调拨发起时，系统生成“锁定库存”。目标仓库的库存 = 实物库存 + 锁定库存。</li>
+<li>库存预留：数据同步时，不仅要同步实物，还要同步“调拨单”的状态。这样即使实物没到，只要系统里调拨单是“在途”，用户也能下单。</li>
+</ul>
+</li>
+<li>设置“安全库存水位”
+<ul>
+<li>思路： 为了避免用户下单后发现目标仓库无货，设置一个“安全库存水位”。</li>
+<li>实现： 如果同步延迟最大5秒，根据平均销售速度，计算5秒内可能卖出的数量（如100件）。系统展示库存 = 实际库存 - 缓冲库存（100件）。只有当调拨货物确认入库后，才释放这100件的缓冲。</li>
+</ul>
+</li>
+<li>最终一致性修复
+<ul>
+<li>思路： 当用户下单后，发现目标仓库无货，系统会自动回滚订单。用户稍后再查询，会发现目标仓库有货了。</li>
+<li>实现： 订单表添加状态字段（如status=&lsquo;CANCELLED&rsquo;），当回滚订单时，更新为“已取消”。逆向流程：主动取消订单、退款并发送优惠券补偿，不要阻塞用户下单流程太久。</li>
+</ul>
+</li>
+</ul>
+<h1 id="秒杀活动中用户每秒发起10次请求如何设计限流策略具体怎么实现和选择">秒杀活动中，用户每秒发起10次请求，如何设计限流策略?具体怎么实现和选择? <a href="#%e7%a7%92%e6%9d%80%e6%b4%bb%e5%8a%a8%e4%b8%ad%e7%94%a8%e6%88%b7%e6%af%8f%e7%a7%92%e5%8f%91%e8%b5%b710%e6%ac%a1%e8%af%b7%e6%b1%82%e5%a6%82%e4%bd%95%e8%ae%be%e8%ae%a1%e9%99%90%e6%b5%81%e7%ad%96%e7%95%a5%e5%85%b7%e4%bd%93%e6%80%8e%e4%b9%88%e5%ae%9e%e7%8e%b0%e5%92%8c%e9%80%89%e6%8b%a9" class="anchor">🔗</a></h1><h2 id="限流的算法">限流的算法 <a href="#%e9%99%90%e6%b5%81%e7%9a%84%e7%ae%97%e6%b3%95" class="anchor">🔗</a></h2><ul>
+<li>
+<p>计数器：</p>
+<ul>
+<li>思路：在一段时间间隔内（时间窗/时间区间），处理请求的最大数量固定，超过部分不做处理</li>
+<li>实现：
+<ul>
+<li>Redis 固定窗：INCR + EXPIRE 实现“每用户/每IP 每秒/每分钟最多 N 次”</li>
+<li>Redis 滑动窗：ZSET 记录时间戳，移除过窗外数据后按窗口内计数</li>
+<li>应用内实现：Spring/Go/Node 服务用 Redis/本地内存做计数器，Lua 保证原子性</li>
+</ul>
+</li>
+<li>场景：
+<ul>
+<li>登录/短信验证码频控：每手机号每分钟 ≤ 1 次</li>
+<li>秒杀活动：每个用户/IP 每秒最多 N 次</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p>漏桶：</p>
+<ul>
+<li>思路：漏桶大小固定，处理速度固定，但请求进入速度不固定（在突发情况请求过多时，会丢弃过多的请求）。</li>
+<li>实现：
+<ul>
+<li>Nginx limit_req：平均速率 + burst，<code>limit_req_zone $binary_remote_addr zone=one:10m rate=10r/s</code></li>
+<li>HAProxy：通过请求速率和队列把突刺抹平，保障稳定出流</li>
+</ul>
+</li>
+<li>场景：
+<ul>
+<li>网关入口平滑流量：避免瞬时突刺把后端打挂</li>
+<li>下游保护：对数据库/搜索/外部依赖维持稳定吞吐</li>
+<li>大促秒杀入口：允许小幅 burst，但整体以稳定速率过网关</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p>令牌桶：</p>
+<ul>
+<li>思路：令牌桶大小固定，令牌的产生速度固定，但是消耗令牌（即请求）速度不固定（可以应对一些某些时间请求过多的情况）；每个请求都会从令牌桶中取出令牌，如果没有令牌则丢弃该次请求。</li>
+<li>实现：
+<ul>
+<li>使用Google Guava的RateLimiter或Redis+Lua实现令牌桶</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h2 id="方案选择">方案选择 <a href="#%e6%96%b9%e6%a1%88%e9%80%89%e6%8b%a9" class="anchor">🔗</a></h2><ul>
+<li>网关入口：优先用 Nginx 的漏桶或令牌桶，结合 burst 与队列</li>
+<li>服务内部：本地令牌桶（Guava/Resilience 生态）+ Redis 分布式计数滑窗</li>
+<li>限流维度：同时按用户、IP、路径、租户、实例维度分层配置</li>
+<li>观察与回退：配合限流日志、指标报警、灰度参数和降级页，避免误伤真实用户</li>
+</ul>
+<h1 id="用redis存储1亿用户的砍价进度数据选什么数据结构内存占用大概多少怎么优化内存">用Redis存储1亿用户的砍价进度数据，选什么数据结构?内存占用大概多少?怎么优化内存? <a href="#%e7%94%a8redis%e5%ad%98%e5%82%a81%e4%ba%bf%e7%94%a8%e6%88%b7%e7%9a%84%e7%a0%8d%e4%bb%b7%e8%bf%9b%e5%ba%a6%e6%95%b0%e6%8d%ae%e9%80%89%e4%bb%80%e4%b9%88%e6%95%b0%e6%8d%ae%e7%bb%93%e6%9e%84%e5%86%85%e5%ad%98%e5%8d%a0%e7%94%a8%e5%a4%a7%e6%a6%82%e5%a4%9a%e5%b0%91%e6%80%8e%e4%b9%88%e4%bc%98%e5%8c%96%e5%86%85%e5%ad%98" class="anchor">🔗</a></h1><h2 id="数据结构选择hash">数据结构选择：Hash <a href="#%e6%95%b0%e6%8d%ae%e7%bb%93%e6%9e%84%e9%80%89%e6%8b%a9hash" class="anchor">🔗</a></h2><pre tabindex="0"><code>Key：activity:progress:{userID}
+Field：{activityID}
+Value：{current_price} (整数或浮点数字符串)
+</code></pre><p><strong>理由:</strong> Hash结构可以在Field较少时使用ziplist（压缩列表）编码，极其节省内存。</p>
+<h2 id="内存占用估算粗略">内存占用估算（粗略）： <a href="#%e5%86%85%e5%ad%98%e5%8d%a0%e7%94%a8%e4%bc%b0%e7%ae%97%e7%b2%97%e7%95%a5" class="anchor">🔗</a></h2><ul>
+<li>如果不优化：1亿个Key，每个Key本身的开销 + Redis对象头开销很大，可能需要几十GB。</li>
+<li>使用Hash优化：可以将Key的数量减少。例如，将用户ID取模分片，每个Hash存1000个用户。</li>
+<li>每个Entry假设10字节（Field 4字节 + Value 4字节 + 开销）。</li>
+<li>1亿用户 * 10字节 ≈ 1GB (纯数据量)。加上Key开销和Redis对象头，可能在 2GB~3GB 左右。</li>
+</ul>
+<h2 id="内存优化策略">内存优化策略： <a href="#%e5%86%85%e5%ad%98%e4%bc%98%e5%8c%96%e7%ad%96%e7%95%a5" class="anchor">🔗</a></h2><ul>
+<li>Hash ZipMap优化： 配置hash-max-ziplist-entries和hash-max-ziplist-value，确保Hash内部使用ziplist编码，而不是hashtable，能节省50%以上内存。</li>
+<li>Key精简： 去掉不必要的业务前缀，使用短ID或Hash映射ID。</li>
+<li>数值编码： 如果砍价金额都是整数，Redis内部会使用int编码存储Value，非常省内存。</li>
+<li>数据分片： 不要让单个Redis节点存1亿数据。按userID % 1000分片到不同Redis实例上。</li>
+</ul>
+<h1 id="优惠券核销时用户同时使用满100减30拼单价折5新人立减15如何精准计算实付金额规则引擎怎么设计">优惠券核销时，用户同时使用“满100减30”“拼单价折5%”“新人立减15”，如何精准计算实付金额?规则引擎怎么设计? <a href="#%e4%bc%98%e6%83%a0%e5%88%b8%e6%a0%b8%e9%94%80%e6%97%b6%e7%94%a8%e6%88%b7%e5%90%8c%e6%97%b6%e4%bd%bf%e7%94%a8%e6%bb%a1100%e5%87%8f30%e6%8b%bc%e5%8d%95%e4%bb%b7%e6%8a%985%e6%96%b0%e4%ba%ba%e7%ab%8b%e5%87%8f15%e5%a6%82%e4%bd%95%e7%b2%be%e5%87%86%e8%ae%a1%e7%ae%97%e5%ae%9e%e4%bb%98%e9%87%91%e9%a2%9d%e8%a7%84%e5%88%99%e5%bc%95%e6%93%8e%e6%80%8e%e4%b9%88%e8%ae%be%e8%ae%a1" class="anchor">🔗</a></h1><p>计算顺序与逻辑：<code>电商通用顺序：单品价 -&gt; 会员价/限时价 -&gt; 类目满减 -&gt; 平台满减 -&gt; 拼单价 -&gt; 新人券。</code>注意：有些互斥，有些叠加。</p>
+<h2 id="规则引擎设计策略模式--责任链模式">规则引擎设计（策略模式 + 责任链模式）： <a href="#%e8%a7%84%e5%88%99%e5%bc%95%e6%93%8e%e8%ae%be%e8%ae%a1%e7%ad%96%e7%95%a5%e6%a8%a1%e5%bc%8f--%e8%b4%a3%e4%bb%bb%e9%93%be%e6%a8%a1%e5%bc%8f" class="anchor">🔗</a></h2><ul>
+<li>策略模式(模型抽象)： 每个优惠券是一个<code>Rule</code>对象，包含：<code>Condition</code>（规则，如满100元）和<code>Action</code>（动作，减30元）,<code>Condition</code>支持逻辑组合：<code>AND / OR</code>。</li>
+<li>责任链模式：
+<ul>
+<li>将多个优惠券规则串成一条链。</li>
+<li>上下文Context在链中传递，包含：当前金额、商品列表、用户信息。</li>
+<li>每个Rule节点：检查Context是否满足Condition -&gt; 若满足，修改Context金额，标记已使用优惠。</li>
+</ul>
+</li>
+</ul>
+<h1 id="电商平台订单id用什么分布式id方案比较雪花算法变种含业务编码leafredis自增的优劣">电商平台订单ID用什么分布式ID方案?比较雪花算法变种(含业务编码)、Leaf、Redis自增的优劣 <a href="#%e7%94%b5%e5%95%86%e5%b9%b3%e5%8f%b0%e8%ae%a2%e5%8d%95id%e7%94%a8%e4%bb%80%e4%b9%88%e5%88%86%e5%b8%83%e5%bc%8fid%e6%96%b9%e6%a1%88%e6%af%94%e8%be%83%e9%9b%aa%e8%8a%b1%e7%ae%97%e6%b3%95%e5%8f%98%e7%a7%8d%e5%90%ab%e4%b8%9a%e5%8a%a1%e7%bc%96%e7%a0%81leafredis%e8%87%aa%e5%a2%9e%e7%9a%84%e4%bc%98%e5%8a%a3" class="anchor">🔗</a></h1><h2 id="雪花算法变种">雪花算法变种： <a href="#%e9%9b%aa%e8%8a%b1%e7%ae%97%e6%b3%95%e5%8f%98%e7%a7%8d" class="anchor">🔗</a></h2><ul>
+<li>原理： 1位符号位 + 41位时间毫秒 + 10位机器ID + 12位序列号。</li>
+<li>变种： 将机器ID部分替换为 业务编码（如机房ID+业务线ID） 或 分片ID。</li>
+<li>优劣： 性能最高（本地生成），不依赖网络。但依赖机器时钟（时钟回拨会重复），且ID过长（19位），不具备严格的业务可读性。</li>
+</ul>
+<h2 id="leaf美团">Leaf（美团） <a href="#leaf%e7%be%8e%e5%9b%a2" class="anchor">🔗</a></h2><ul>
+<li>Segment模式： 从DB批量获取ID号段（如[1000, 2000]），缓存在本地内存。</li>
+<li>优劣： 性能高，DB压力小。双Buffer优化保障平滑。重启可能丢失部分ID（不连续），但唯一性没问题。</li>
+<li>Snowflake模式： 基于Zookeeper解决时钟回拨问题。</li>
+<li>适用性： 稳定性极高，适合中大型互联网公司。</li>
+</ul>
+<h2 id="redis自增incr">Redis自增（INCR）： <a href="#redis%e8%87%aa%e5%a2%9eincr" class="anchor">🔗</a></h2><ul>
+<li>优劣： 实现最简单。但强依赖Redis，集群扩缩容麻烦（需要考虑Lua脚本或Redis Cluster Slot），且网络IO有延迟。高并发下成为单点瓶颈。</li>
+</ul>
+<h1 id="秒杀优惠券如何防止超发对比redislua脚本和分布式数据库锁的方案优劣">秒杀优惠券如何防止超发?对比Redis+Lua脚本和分布式数据库锁的方案优劣。 <a href="#%e7%a7%92%e6%9d%80%e4%bc%98%e6%83%a0%e5%88%b8%e5%a6%82%e4%bd%95%e9%98%b2%e6%ad%a2%e8%b6%85%e5%8f%91%e5%af%b9%e6%af%94redislua%e8%84%9a%e6%9c%ac%e5%92%8c%e5%88%86%e5%b8%83%e5%bc%8f%e6%95%b0%e6%8d%ae%e5%ba%93%e9%94%81%e7%9a%84%e6%96%b9%e6%a1%88%e4%bc%98%e5%8a%a3" class="anchor">🔗</a></h1><h2 id="方案一redis--lua-脚本主流秒杀首选">方案一：Redis + Lua 脚本（主流、秒杀首选） <a href="#%e6%96%b9%e6%a1%88%e4%b8%80redis--lua-%e8%84%9a%e6%9c%ac%e4%b8%bb%e6%b5%81%e7%a7%92%e6%9d%80%e9%a6%96%e9%80%89" class="anchor">🔗</a></h2><ul>
+<li>数据结构设计</li>
+</ul>
+<pre tabindex="0"><code>key设计：
+coupon:stock:{couponId}: 字符串，剩余库存数。
+coupon:user:{couponId}: Set 或 Hash，记录已领取用户（Set 做“是否已领”，Hash 可记录领了几张）。
+初始化时（活动开始前）预热到 Redis：
+SET coupon:stock:1001 1000
+SADD coupon:user:1001（空集合即可，后续通过 SADD 添加 userId）
+</code></pre><ul>
+<li>lua脚本</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-lua" data-lang="lua"><span style="display:flex;"><span><span style="color:#75715e">-- KEYS[1]: coupon:stock:{couponId}</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">-- KEYS[2]: coupon:user:{couponId}</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">-- ARGV[1]: userId</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">-- ARGV[2]: maxPerUser（同一用户最多可领几张，可为 1）</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> stockKey   <span style="color:#f92672">=</span> KEYS[<span style="color:#ae81ff">1</span>]
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> userSetKey <span style="color:#f92672">=</span> KEYS[<span style="color:#ae81ff">2</span>]
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> userId     <span style="color:#f92672">=</span> ARGV[<span style="color:#ae81ff">1</span>]
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> maxPerUser <span style="color:#f92672">=</span> tonumber(ARGV[<span style="color:#ae81ff">2</span>])
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">-- 1) 用户是否已达到领取上限</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> count <span style="color:#f92672">=</span> tonumber(redis.call(<span style="color:#e6db74">&#34;HGET&#34;</span>, userSetKey, userId) <span style="color:#f92672">or</span> <span style="color:#e6db74">&#34;0&#34;</span>)
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> count <span style="color:#f92672">&gt;=</span> maxPerUser <span style="color:#66d9ef">then</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">return</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span> <span style="color:#75715e">-- 超过个人限额</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">end</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">-- 2) 检查库存</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> stock <span style="color:#f92672">=</span> tonumber(redis.call(<span style="color:#e6db74">&#34;GET&#34;</span>, stockKey) <span style="color:#f92672">or</span> <span style="color:#e6db74">&#34;0&#34;</span>)
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> stock <span style="color:#f92672">&lt;=</span> <span style="color:#ae81ff">0</span> <span style="color:#66d9ef">then</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">0</span>  <span style="color:#75715e">-- 库存不足</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">end</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">-- 3) 扣库存</span>
+</span></span><span style="display:flex;"><span>redis.call(<span style="color:#e6db74">&#34;DECR&#34;</span>, stockKey)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">-- 4) 记录用户已领</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> count <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span> <span style="color:#66d9ef">then</span>
+</span></span><span style="display:flex;"><span>  redis.call(<span style="color:#e6db74">&#34;HSET&#34;</span>, userSetKey, userId, <span style="color:#ae81ff">1</span>, <span style="color:#e6db74">&#34;ts&#34;</span>, ARGV[<span style="color:#ae81ff">3</span>]) <span style="color:#75715e">-- 记录领取时间</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">else</span>
+</span></span><span style="display:flex;"><span>  redis.call(<span style="color:#e6db74">&#34;HINCRBY&#34;</span>, userSetKey, userId, <span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">end</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">-- 5) 返回剩余库存（可选）</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">return</span> tonumber(redis.call(<span style="color:#e6db74">&#34;GET&#34;</span>, stockKey))
+</span></span></code></pre></div><p>PHP集成与MQ集成，落库</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-php" data-lang="php"><span style="display:flex;"><span> <span style="color:#e6db74">/**
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">     * 用户领取优惠券（秒杀接口）
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">     *
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">     * @param int $couponId  优惠券ID
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">     * @param int $userId    用户ID
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">     * @param int $maxPerUser 每人最大可领数量（一般 1）
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">     *
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">     * @return array [&#39;code&#39;=&gt;int, &#39;msg&#39;=&gt;string, &#39;leftStock&#39;=&gt;int|null]
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">     */</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">function</span> <span style="color:#a6e22e">grabCoupon</span>(<span style="color:#a6e22e">int</span> $couponId, <span style="color:#a6e22e">int</span>$userId, <span style="color:#a6e22e">int</span> $maxPerUser <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>)<span style="color:#f92672">:</span> <span style="color:#66d9ef">array</span>
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        $stockKey <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;coupon:stock:</span><span style="color:#e6db74">{</span>$couponId<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>;
+</span></span><span style="display:flex;"><span>        $userKey  <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;coupon:user:</span><span style="color:#e6db74">{</span>$couponId<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Lua 脚本
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>        $script <span style="color:#f92672">=</span> <span style="color:#e6db74">&lt;&lt;&lt;&#39;</span><span style="color:#e6db74">LUA</span><span style="color:#e6db74">&#39;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">local stockKey   = KEYS[1]
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">local userSetKey = KEYS[2]
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">local userId     = ARGV[1]
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">local maxPerUser = tonumber(ARGV[2])
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">local nowTs      = ARGV[3]
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">local ttlSeconds = tonumber(ARGV[4]) // 过期时间（秒）
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">local count = tonumber(redis.call(&#34;HGET&#34;, userSetKey, userId) or &#34;0&#34;)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">if count &gt;= maxPerUser then
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  return -1
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">end
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">local stock = tonumber(redis.call(&#34;GET&#34;, stockKey) or &#34;0&#34;)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">if stock &lt;= 0 then
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  return 0
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">end
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">redis.call(&#34;DECR&#34;, stockKey)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">if count == 0 then
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  redis.call(&#34;HSET&#34;, userSetKey, userId, 1, &#34;ts&#34;, nowTs)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  if ttlSeconds and ttlSeconds &gt; 0 then
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    local ttl = redis.call(&#34;TTL&#34;, userSetKey)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    if ttl == -1 then
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      redis.call(&#34;EXPIRE&#34;, userSetKey, ttlSeconds)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    end
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  end
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">else
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  redis.call(&#34;HINCRBY&#34;, userSetKey, userId, 1)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">end
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">return tonumber(redis.call(&#34;GET&#34;, stockKey))
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74"></span><span style="color:#e6db74">LUA</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// 按照官方文档，eval 的第二个参数是包含所有 KEYS 和 ARGV 的数组
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>        <span style="color:#75715e">// 第三个参数是 KEYS 的个数，Redis 会把前 N 个元素当作 KEYS，后面的当作 ARGV
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>        $args <span style="color:#f92672">=</span> [
+</span></span><span style="display:flex;"><span>            $stockKey,                 <span style="color:#75715e">// KEYS[1]
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>            $userKey,                  <span style="color:#75715e">// KEYS[2]
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>            $userId,                   <span style="color:#75715e">// ARGV[1]
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>            $maxPerUser,               <span style="color:#75715e">// ARGV[2]
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>            (<span style="color:#a6e22e">string</span>)<span style="color:#a6e22e">time</span>(),            <span style="color:#75715e">// ARGV[3] 当前时间戳
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>            <span style="color:#ae81ff">3</span> <span style="color:#f92672">*</span> <span style="color:#ae81ff">24</span> <span style="color:#f92672">*</span> <span style="color:#ae81ff">3600</span>,             <span style="color:#75715e">// ARGV[4] 过期时间
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>        ];
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        $numKeys <span style="color:#f92672">=</span> <span style="color:#ae81ff">2</span>; <span style="color:#75715e">// KEYS 的个数
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>
+</span></span><span style="display:flex;"><span>        $result <span style="color:#f92672">=</span>$this<span style="color:#f92672">-&gt;</span><span style="color:#a6e22e">redis</span><span style="color:#f92672">-&gt;</span><span style="color:#a6e22e">eval</span>($script,$args, $numKeys);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> ($result <span style="color:#f92672">===</span> <span style="color:#66d9ef">false</span>) {
+</span></span><span style="display:flex;"><span>            <span style="color:#75715e">// Redis 错误
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>            <span style="color:#66d9ef">return</span> [
+</span></span><span style="display:flex;"><span>                <span style="color:#e6db74">&#39;code&#39;</span>     <span style="color:#f92672">=&gt;</span> <span style="color:#ae81ff">500</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#e6db74">&#39;msg&#39;</span>      <span style="color:#f92672">=&gt;</span> <span style="color:#e6db74">&#39;系统繁忙，请稍后重试&#39;</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#e6db74">&#39;leftStock&#39;</span> <span style="color:#f92672">=&gt;</span> <span style="color:#66d9ef">null</span>,
+</span></span><span style="display:flex;"><span>            ];
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        $result <span style="color:#f92672">=</span> (<span style="color:#a6e22e">int</span>)$result;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> ($result <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">0</span>) {
+</span></span><span style="display:flex;"><span>            <span style="color:#75715e">// 领取成功
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>            <span style="color:#66d9ef">return</span> [
+</span></span><span style="display:flex;"><span>                <span style="color:#e6db74">&#39;code&#39;</span>     <span style="color:#f92672">=&gt;</span> <span style="color:#ae81ff">0</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#e6db74">&#39;msg&#39;</span>      <span style="color:#f92672">=&gt;</span> <span style="color:#e6db74">&#39;领取成功&#39;</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#e6db74">&#39;leftStock&#39;</span> <span style="color:#f92672">=&gt;</span> $result,
+</span></span><span style="display:flex;"><span>            ];
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> ($result <span style="color:#f92672">===</span> <span style="color:#ae81ff">0</span>) {
+</span></span><span style="display:flex;"><span>            <span style="color:#75715e">// 库存不足
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>            <span style="color:#66d9ef">return</span> [
+</span></span><span style="display:flex;"><span>                <span style="color:#e6db74">&#39;code&#39;</span>     <span style="color:#f92672">=&gt;</span> <span style="color:#ae81ff">1</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#e6db74">&#39;msg&#39;</span>      <span style="color:#f92672">=&gt;</span> <span style="color:#e6db74">&#39;优惠券已被抢光&#39;</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#e6db74">&#39;leftStock&#39;</span> <span style="color:#f92672">=&gt;</span> <span style="color:#ae81ff">0</span>,
+</span></span><span style="display:flex;"><span>            ];
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// $result === -1
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>        <span style="color:#75715e">// 重复领取
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>        <span style="color:#66d9ef">return</span> [
+</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">&#39;code&#39;</span>     <span style="color:#f92672">=&gt;</span> <span style="color:#ae81ff">2</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">&#39;msg&#39;</span>      <span style="color:#f92672">=&gt;</span> <span style="color:#e6db74">&#39;你已经领取过该优惠券&#39;</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">&#39;leftStock&#39;</span> <span style="color:#f92672">=&gt;</span> <span style="color:#66d9ef">null</span>,
+</span></span><span style="display:flex;"><span>        ];
+</span></span><span style="display:flex;"><span>    }
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-php" data-lang="php"><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>$service <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> <span style="color:#a6e22e">SeckillCouponService</span>();
+</span></span><span style="display:flex;"><span>$couponId <span style="color:#f92672">=</span> <span style="color:#ae81ff">1001</span>;
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// 活动开启前，在后台管理或脚本里初始化库存（只做一次）
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>$service<span style="color:#f92672">-&gt;</span><span style="color:#a6e22e">initStock</span>($couponId, <span style="color:#ae81ff">1000</span>);
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// 用户请求领取
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>$userId <span style="color:#f92672">=</span> <span style="color:#ae81ff">12345</span>;
+</span></span><span style="display:flex;"><span>$ret <span style="color:#f92672">=</span>$service<span style="color:#f92672">-&gt;</span><span style="color:#a6e22e">grabCoupon</span>($couponId,$userId);
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">switch</span> ($ret[<span style="color:#e6db74">&#39;code&#39;</span>]) {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">case</span> <span style="color:#ae81ff">0</span><span style="color:#f92672">:</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">echo</span> <span style="color:#e6db74">&#34;领取成功，剩余库存：&#34;</span> <span style="color:#f92672">.</span> $ret[<span style="color:#e6db74">&#39;leftStock&#39;</span>] <span style="color:#f92672">.</span> <span style="color:#a6e22e">PHP_EOL</span>;
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// 假设你有一个简单的队列封装（Redis List 或更专业的 MQ）
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>        $event <span style="color:#f92672">=</span> <span style="color:#a6e22e">json_encode</span>([
+</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">&#39;couponId&#39;</span> <span style="color:#f92672">=&gt;</span> $couponId,
+</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">&#39;userId&#39;</span>   <span style="color:#f92672">=&gt;</span> $userId,
+</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">&#39;ts&#39;</span>       <span style="color:#f92672">=&gt;</span> <span style="color:#a6e22e">time</span>(),
+</span></span><span style="display:flex;"><span>        ]);
+</span></span><span style="display:flex;"><span>        $redis<span style="color:#f92672">-&gt;</span><span style="color:#a6e22e">lPush</span>(<span style="color:#e6db74">&#39;coupon:grab:queue&#39;</span>,$event);
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">break</span>;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">case</span> <span style="color:#ae81ff">1</span><span style="color:#f92672">:</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">echo</span> <span style="color:#e6db74">&#34;已被抢光，库存不足：&#34;</span> <span style="color:#f92672">.</span> $ret[<span style="color:#e6db74">&#39;leftStock&#39;</span>] <span style="color:#f92672">.</span> <span style="color:#a6e22e">PHP_EOL</span>;
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">break</span>;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">case</span> <span style="color:#ae81ff">2</span><span style="color:#f92672">:</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">echo</span> $ret[<span style="color:#e6db74">&#39;msg&#39;</span>] <span style="color:#f92672">.</span> <span style="color:#a6e22e">PHP_EOL</span>; <span style="color:#75715e">// 你已经领取过该优惠券
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>        <span style="color:#66d9ef">break</span>;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">default</span><span style="color:#f92672">:</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">echo</span> $ret[<span style="color:#e6db74">&#39;msg&#39;</span>] <span style="color:#f92672">.</span> <span style="color:#a6e22e">PHP_EOL</span>; <span style="color:#75715e">// 系统错误
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>        <span style="color:#66d9ef">break</span>;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><h2 id="方案二分布式数据库锁mysql-行锁--乐观锁等">方案二：分布式数据库锁（MySQL 行锁 / 乐观锁等） <a href="#%e6%96%b9%e6%a1%88%e4%ba%8c%e5%88%86%e5%b8%83%e5%bc%8f%e6%95%b0%e6%8d%ae%e5%ba%93%e9%94%81mysql-%e8%a1%8c%e9%94%81--%e4%b9%90%e8%a7%82%e9%94%81%e7%ad%89" class="anchor">🔗</a></h2><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">update</span> coupon
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">set</span> stock <span style="color:#f92672">=</span> stock <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">where</span> id <span style="color:#f92672">=</span> <span style="color:#f92672">?</span> <span style="color:#66d9ef">and</span> stock <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">0</span>;
+</span></span></code></pre></div><h2 id="缺点">缺点 <a href="#%e7%bc%ba%e7%82%b9" class="anchor">🔗</a></h2><table>
+  <thead>
+      <tr>
+          <th>维度</th>
+          <th>Redis + Lua</th>
+          <th>数据库锁</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>防超发能力</td>
+          <td>✅ 强</td>
+          <td>✅ 强</td>
+      </tr>
+      <tr>
+          <td>性能</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td>⭐</td>
+      </tr>
+      <tr>
+          <td>并发能力</td>
+          <td>10万~百万</td>
+          <td>几千</td>
+      </tr>
+      <tr>
+          <td>架构复杂度</td>
+          <td>中</td>
+          <td>低</td>
+      </tr>
+      <tr>
+          <td>数据一致性</td>
+          <td>最终一致</td>
+          <td>强一致</td>
+      </tr>
+      <tr>
+          <td>秒杀适配度</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td>❌</td>
+      </tr>
+  </tbody>
+</table>
+<h1 id="多级缓存架构本地缓存caffeine和redis如何协同保证数据一致性">多级缓存架构本地缓存(Caffeine)和Redis如何协同保证数据一致性? <a href="#%e5%a4%9a%e7%ba%a7%e7%bc%93%e5%ad%98%e6%9e%b6%e6%9e%84%e6%9c%ac%e5%9c%b0%e7%bc%93%e5%ad%98caffeine%e5%92%8credis%e5%a6%82%e4%bd%95%e5%8d%8f%e5%90%8c%e4%bf%9d%e8%af%81%e6%95%b0%e6%8d%ae%e4%b8%80%e8%87%b4%e6%80%a7" class="anchor">🔗</a></h1><p><strong>多级缓存“一定会不一致”,只能保证最终一致性</strong></p>
+<h2 id="最核心的协同策略">最核心的协同策略 <a href="#%e6%9c%80%e6%a0%b8%e5%bf%83%e7%9a%84%e5%8d%8f%e5%90%8c%e7%ad%96%e7%95%a5" class="anchor">🔗</a></h2><ul>
+<li>写操作：先 DB，后删缓存（两级）：</li>
+</ul>
+<pre tabindex="0"><code>1. 更新 DB（事务提交）
+2. 删除 Redis
+3. 删除 Caffeine
+</code></pre><p><code>不是更新缓存，是删除缓存</code> , 更新缓存更容易脏写,删除让读请求回源重建</p>
+<ul>
+<li>防止并发写导致脏数据：延迟双删:</li>
+</ul>
+<pre tabindex="0"><code>1. 删 Redis + Caffeine
+2. sleep 500ms
+3. 再删一次 Redis
+</code></pre><ul>
+<li>节点间本地缓存一致性：消息通知</li>
+</ul>
+<pre tabindex="0"><code>DB 更新
+ → 删除 Redis
+ → 发送 MQ / Redis PubSub
+ → 各节点清理本地 Caffeine
+</code></pre><ul>
+<li>TTL + 版本兜底（防“永远不一致”）</li>
+</ul>
+<pre tabindex="0"><code>本地缓存：TTL = 30 ~ 60 秒
+Redis缓存：TTL =  5 ~ 10 分钟
+</code></pre><h2 id="完整读写流程真实生产">完整读写流程（真实生产） <a href="#%e5%ae%8c%e6%95%b4%e8%af%bb%e5%86%99%e6%b5%81%e7%a8%8b%e7%9c%9f%e5%ae%9e%e7%94%9f%e4%ba%a7" class="anchor">🔗</a></h2><ul>
+<li>读流程</li>
+</ul>
+<pre tabindex="0"><code>1. 查 Caffeine
+2. 未命中 → 查 Redis
+3. Redis 命中 → 回填 Caffeine
+4. Redis 未命中 → 查 DB
+5. 回填 Redis + Caffeine
+</code></pre><ul>
+<li>写流程</li>
+</ul>
+<pre tabindex="0"><code>1. 后台内容操作
+2. 更新 DB（事务）
+3. 删除 Redis
+4. 删除本地 Caffeine
+5. 发 MQ 通知
+6. 各节点清本地缓存
+</code></pre><h1 id="订单过期处理策略如支付外卖订单超时">订单过期处理策略，如支付、外卖订单超时 <a href="#%e8%ae%a2%e5%8d%95%e8%bf%87%e6%9c%9f%e5%a4%84%e7%90%86%e7%ad%96%e7%95%a5%e5%a6%82%e6%94%af%e4%bb%98%e5%a4%96%e5%8d%96%e8%ae%a2%e5%8d%95%e8%b6%85%e6%97%b6" class="anchor">🔗</a></h1><h2 id="定时任务">定时任务 <a href="#%e5%ae%9a%e6%97%b6%e4%bb%bb%e5%8a%a1" class="anchor">🔗</a></h2><ul>
+<li>优点：实现逻辑简单，扫描数据库即可</li>
+<li>缺点：时间不够精确，如订单超时10分钟，定时任务只能每1分钟扫描一次，会有10分钟的延迟，随着数据量的增加延迟增大</li>
+</ul>
+<h2 id="redis过期监听">Redis过期监听 <a href="#redis%e8%bf%87%e6%9c%9f%e7%9b%91%e5%90%ac" class="anchor">🔗</a></h2><ul>
+<li>源码</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// 订阅端</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">main</span>() { <span style="color:#75715e">// 主函数，程序入口</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">addr</span> <span style="color:#f92672">:=</span> <span style="color:#e6db74">&#34;127.0.0.1:6379&#34;</span>               <span style="color:#75715e">// Redis 地址（主机:端口）</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">pwd</span> <span style="color:#f92672">:=</span> <span style="color:#e6db74">&#34;123456&#34;</span>                        <span style="color:#75715e">// Redis 密码（如无密码可置空）</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">rdb</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">redis</span>.<span style="color:#a6e22e">NewClient</span>(<span style="color:#f92672">&amp;</span><span style="color:#a6e22e">redis</span>.<span style="color:#a6e22e">Options</span>{ <span style="color:#75715e">// 创建 Redis 客户端</span>
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">Addr</span>:     <span style="color:#a6e22e">addr</span>, <span style="color:#75715e">// 连接地址</span>
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">Password</span>: <span style="color:#a6e22e">pwd</span>,  <span style="color:#75715e">// 连接密码</span>
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">DB</span>:       <span style="color:#ae81ff">0</span>,    <span style="color:#75715e">// 使用的数据库编号</span>
+</span></span><span style="display:flex;"><span>	})
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">rdb</span>.<span style="color:#a6e22e">Ping</span>().<span style="color:#a6e22e">Result</span>(); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> { <span style="color:#75715e">// 探测连接是否正常</span>
+</span></span><span style="display:flex;"><span>		panic(<span style="color:#a6e22e">err</span>) <span style="color:#75715e">// 连接失败直接退出</span>
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">rdb</span>.<span style="color:#a6e22e">ConfigSet</span>(<span style="color:#e6db74">&#34;notify-keyspace-events&#34;</span>, <span style="color:#e6db74">&#34;Ex&#34;</span>).<span style="color:#a6e22e">Err</span>(); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> { <span style="color:#75715e">// 启用键过期事件通知</span>
+</span></span><span style="display:flex;"><span>		panic(<span style="color:#a6e22e">err</span>) <span style="color:#75715e">// 设置通知失败直接退出（云服务可能需要在服务端配置）</span>
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">ps</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">rdb</span>.<span style="color:#a6e22e">PSubscribe</span>(<span style="color:#e6db74">&#34;__keyevent@0__:expired&#34;</span>) <span style="color:#75715e">// 订阅 DB0 的键过期事件频道，不可随意更改</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">defer</span> <span style="color:#a6e22e">ps</span>.<span style="color:#a6e22e">Close</span>()                               <span style="color:#75715e">// 程序结束时关闭订阅</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">ch</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">ps</span>.<span style="color:#a6e22e">Channel</span>()                             <span style="color:#75715e">// 获取订阅消息的通道</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">for</span> <span style="color:#a6e22e">msg</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">ch</span> {                          <span style="color:#75715e">// 持续读取过期事件消息</span>
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">key</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">msg</span>.<span style="color:#a6e22e">Payload</span>                        <span style="color:#75715e">// 过期的键名</span>
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">strings</span>.<span style="color:#a6e22e">HasPrefix</span>(<span style="color:#a6e22e">key</span>, <span style="color:#e6db74">&#34;pay:order:&#34;</span>) { <span style="color:#75715e">// 只处理支付订单相关的键</span>
+</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">id</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">strings</span>.<span style="color:#a6e22e">TrimPrefix</span>(<span style="color:#a6e22e">key</span>, <span style="color:#e6db74">&#34;pay:order:&#34;</span>)                                 <span style="color:#75715e">// 提取订单 ID</span>
+</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;timeout order=%s at=%s\n&#34;</span>, <span style="color:#a6e22e">id</span>, <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Now</span>().<span style="color:#a6e22e">Format</span>(<span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">RFC3339</span>)) <span style="color:#75715e">// 打印超时日志</span>
+</span></span><span style="display:flex;"><span>		}
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">//生产端</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">main</span>() {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">addr</span> <span style="color:#f92672">:=</span> <span style="color:#e6db74">&#34;127.0.0.1:6379&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">pwd</span> <span style="color:#f92672">:=</span> <span style="color:#e6db74">&#34;123456&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">rdb</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">redis</span>.<span style="color:#a6e22e">NewClient</span>(<span style="color:#f92672">&amp;</span><span style="color:#a6e22e">redis</span>.<span style="color:#a6e22e">Options</span>{
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">Addr</span>:     <span style="color:#a6e22e">addr</span>,
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">Password</span>: <span style="color:#a6e22e">pwd</span>,
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">DB</span>:       <span style="color:#ae81ff">0</span>,
+</span></span><span style="display:flex;"><span>	})
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">rdb</span>.<span style="color:#a6e22e">Ping</span>().<span style="color:#a6e22e">Result</span>(); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>		panic(<span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">rand</span>.<span style="color:#a6e22e">Seed</span>(<span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Now</span>().<span style="color:#a6e22e">UnixNano</span>())
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">for</span> <span style="color:#a6e22e">i</span> <span style="color:#f92672">:=</span> <span style="color:#ae81ff">0</span>; <span style="color:#a6e22e">i</span> &lt; <span style="color:#ae81ff">500</span>; <span style="color:#a6e22e">i</span><span style="color:#f92672">++</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">id</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Sprintf</span>(<span style="color:#e6db74">&#34;%d%03d&#34;</span>, <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Now</span>().<span style="color:#a6e22e">UnixNano</span>(), <span style="color:#a6e22e">rand</span>.<span style="color:#a6e22e">Intn</span>(<span style="color:#ae81ff">1000</span>))
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">key</span> <span style="color:#f92672">:=</span> <span style="color:#e6db74">&#34;pay:order:&#34;</span> <span style="color:#f92672">+</span> <span style="color:#a6e22e">id</span>
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">rdb</span>.<span style="color:#a6e22e">Set</span>(<span style="color:#a6e22e">key</span>, <span style="color:#e6db74">&#34;test&#34;</span><span style="color:#f92672">+</span><span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Now</span>().<span style="color:#a6e22e">Format</span>(<span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">RFC3339</span>), <span style="color:#ae81ff">10</span><span style="color:#f92672">*</span><span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Second</span>).<span style="color:#a6e22e">Err</span>(); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>			panic(<span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>		}
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;create order=%s ttl=10s\n&#34;</span>, <span style="color:#a6e22e">id</span>)
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Sleep</span>(<span style="color:#ae81ff">2</span> <span style="color:#f92672">*</span> <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Second</span>)
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><ul>
+<li>优点: 由于redis的高性能，所以我们在设置key，或者消费key 时，速度上是可以保证的。</li>
+<li>缺点: 由于redis 的key 过期策略原因，当一个key 过期时，redis 无法保证立刻将其删除，自然我们的监听事件也无法第一时间消费到这个key，所以会存在一定的延迟。另外，在redis5.0之前，订阅发布中的消息并没有被持久化，自然也没有所谓的确认机制。所以一旦消费消息的过程中我们的客户端发生了宕机，这条消息就彻底丢失了。</li>
+</ul>
+<h2 id="rocketmq延迟队列-或者-死信队列">RocketMQ延迟队列 或者 死信队列 <a href="#rocketmq%e5%bb%b6%e8%bf%9f%e9%98%9f%e5%88%97-%e6%88%96%e8%80%85-%e6%ad%bb%e4%bf%a1%e9%98%9f%e5%88%97" class="anchor">🔗</a></h2><p>延迟消息，当消息写入到Broker后，不会立刻被消费者消费，需要等待指定的时长后才可被消费处理的消息，称为延时消息。
+在订单创建之后，我们就可以把订单作为一条消息投递到rocketmq，并将延迟时间设置为 30分钟，这样，30分钟后我们定义的consumer 就可以消费到这条消息，然后检查用户是否支付了这个订单。
+通过延迟消息，我们就可以将业务解耦，极大地简化我们的代码逻辑。</p>
+<ul>
+<li>优点:可以使代码逻辑清晰，系统之间完全解耦，只需关注生产及消费消息即可。另外其吞吐量极高，最多可以支撑万亿级的数据量。</li>
+<li>缺点:相对来说mq是重量级的组件，引入mq之后，随之而来的消息丢失、幂等性问题等都加深了系统的复杂度。</li>
+<li>总结:通过 mq 进行系统业务解耦，以及对系统性能削峰填谷已经是当前高性能系统的标配。</li>
+</ul>
+
+    </div>
+
+    
+</section>
+
+
+            </div>
+            <div class="side">
+                <div class="side-categories">
+    <h2>Categories</h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/categories/ai">ai(3)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/go">go(23)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E4%BB%A3%E7%A0%81">代码(2)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E5%B7%A5%E5%85%B7">工具(8)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E9%80%86%E5%90%91">逆向(3)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E9%9D%A2%E8%AF%95">面试(5)</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/note/">Recent Note</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/note/%E6%9E%B6%E6%9E%84%E8%80%83%E7%82%B9/">场景总结</a>
+            </li>
+        
+            <li>
+                <a href="/note/rdis-%E7%BC%93%E5%AD%98%E7%A9%BF%E9%80%8F%E9%9B%AA%E5%B4%A9%E5%87%BB%E7%A9%BF%E7%9A%84%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95/">缓存穿透、雪崩、击穿的解决方法</a>
+            </li>
+        
+            <li>
+                <a href="/note/redis-%E5%8D%95%E7%BA%BF%E7%A8%8B%E7%9A%84redis%E4%B8%BA%E4%BB%80%E4%B9%88%E5%BF%AB/">单线程的redis为什么快</a>
+            </li>
+        
+            <li>
+                <a href="/note/redis-%E6%80%BB%E7%BB%93/">redis总结</a>
+            </li>
+        
+            <li>
+                <a href="/note/mysql-%E6%80%BB%E7%BB%93/">mysql总结</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/android/">Recent Android</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/android/redroid%E4%BD%BF%E7%94%A8/">Redroid安卓容器</a>
+            </li>
+        
+            <li>
+                <a href="/android/%E5%85%A5%E9%97%A8/">逆向环境-杂</a>
+            </li>
+        
+            <li>
+                <a href="/android/frida%E6%95%99%E7%A8%8B/">frida教程</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/tool/">Recent Tool</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/tool/linux-almalinux%E4%BC%98%E5%8C%96/">AlmaLinux10</a>
+            </li>
+        
+            <li>
+                <a href="/tool/almalinux-k8s/">AlmaLinux-k8s安装</a>
+            </li>
+        
+            <li>
+                <a href="/tool/vscode%E6%8A%98%E8%85%BE/">vscode折腾</a>
+            </li>
+        
+            <li>
+                <a href="/tool/linux-ubuntu%E4%BC%98%E5%8C%96/">Ubuntu开机优化</a>
+            </li>
+        
+            <li>
+                <a href="/tool/shell-ssh_script/">ssh常用脚本</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/llm/">Recent Llm</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/llm/transformers-%E5%85%A5%E9%97%A8%E7%AF%87/">Transformers-入门篇</a>
+            </li>
+        
+            <li>
+                <a href="/llm/%E6%A8%A1%E5%9E%8Bvllm%E9%83%A8%E7%BD%B2/">AI模型VLLM部署</a>
+            </li>
+        
+            <li>
+                <a href="/llm/%E6%A8%A1%E5%9E%8B%E5%BE%AE%E8%B0%83/">AI模型微调</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/go/">Recent Go</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/go/go%E4%B8%89%E8%89%B2%E6%A0%87%E8%AE%B0%E6%B7%B7%E5%90%88%E5%86%99%E5%B1%8F%E9%9A%9Cgc%E6%A8%A1%E5%BC%8F%E5%85%A8%E6%80%BB%E7%BB%93/">Go三色标记混合写屏障GC模式全总结</a>
+            </li>
+        
+            <li>
+                <a href="/go/go%E4%B8%ADmake%E4%B8%8Enew%E5%8C%BA%E5%88%AB/">Go中make与new区别</a>
+            </li>
+        
+            <li>
+                <a href="/go/go%E5%B8%B8%E7%94%A8bug%E5%92%8C%E6%80%A7%E8%83%BD%E9%97%AE%E9%A2%98%E7%9A%84%E5%AE%9E%E8%B7%B5%E6%96%B9%E6%B3%95/">Go常用bug和性能问题的实践方法</a>
+            </li>
+        
+            <li>
+                <a href="/go/grpc%E6%80%BB%E7%BB%93/">GRPC笔记</a>
+            </li>
+        
+            <li>
+                <a href="/go/go%E7%9A%84defer%E6%80%BB%E7%BB%93/">Go的defer总结</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+            </div>
+        </main>
+        <footer class="footer">
+    <div class="footer-row">
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/note/index.xml">
+                    Feed of Note
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/android/index.xml">
+                    Feed of Android
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/tool/index.xml">
+                    Feed of Tool
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/llm/index.xml">
+                    Feed of Llm
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/go/index.xml">
+                    Feed of Go
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+
+        
+            
+            
+        
+    </div>
+
+    
+</footer>
+
+    </body>
+</html>

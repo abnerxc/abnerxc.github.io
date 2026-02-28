@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+<meta name="viewport" content="width=device-width,minimum-scale=1">
+
+
+
+
+<title>Go-log日志 | Abner的博客</title>
+<link rel="canonical" href="https://abnerxc.github.io/go/log%E6%97%A5%E5%BF%97/">
+<meta property="og:type" content="article" />
+<meta property="og:title" content="Go-log日志 | Abner的博客" />
+<meta property="og:url" content="https://abnerxc.github.io/go/log%E6%97%A5%E5%BF%97/" />
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/icofont/icofont.min.css" />
+<link rel="stylesheet" href="/css/syntax.css" />
+<link rel="stylesheet" href="/css/style.css" />
+<link rel="stylesheet" href="/css/custom.css" />
+<script src="/js/copy-code-block.js"></script>
+<link rel="shortcut icon" href="/images/favicon.ico" type="image/x-icon" />
+
+    </head>
+
+    <body>
+        <header class="header-wrapper">
+    <div class="header">
+        <a class="site-title" href="https://abnerxc.github.io/">Abner的博客</a>
+
+        <nav class="menu">
+            
+        </nav>
+    </div>
+</header>
+
+        <main class="main-wrapper">
+            <div class="main">
+                
+
+<section class="single">
+    <h1 class="title">Go-log日志</h1>
+
+    <div class="tip">
+        <time datetime="2019-01-15 18:35:11 &#43;0800 CST">2019/01/15</time>
+        <span class="split">·</span>
+        <span> 414 words </span>
+        <span class="split">·</span>
+        <span>
+            2 minutes to read
+        </span>
+    </div>
+
+    <div class="taxonomies">
+        
+        <div>
+            Categories:
+            
+                <a href="/categories/go">Go</a>
+            
+        </div>
+        
+
+        
+    </div>
+
+    
+    
+    <div class="post-toc">
+        <h3>目录</h3>
+        <nav id="TableOfContents">
+  <ul>
+    <li><a href="#日志使用">日志使用</a></li>
+    <li><a href="#实现原理">实现原理</a></li>
+    <li><a href="#定制自己的日志">定制自己的日志</a></li>
+  </ul>
+</nav>
+    </div>
+    
+
+    <hr />
+
+    <div class="content">
+        <h1 id="日志使用">日志使用 <a href="#%e6%97%a5%e5%bf%97%e4%bd%bf%e7%94%a8" class="anchor">🔗</a></h1><p>o语言为我们提供了标准的log包，来跟踪日志的记录。下面我们看看日志包log的使用</p>
+<pre tabindex="0"><code>func main() {
+	log.Println(&#34;这是百度地址:&#34;,&#34;http://www.baidu.com&#34;)
+	log.Printf(&#34;这是百度地址域名：%s\n&#34;,&#34;baidu.com&#34;)
+}
+</code></pre><pre tabindex="0"><code>2019/08/28 13:18:44 这是百度地址: http://www.baidu.com
+2019/08/28 13:18:44 这是百度地址域名：baidu.com
+</code></pre><p>有了时间了，我们还想要更多的信息，必然发生的源代码行号等，对此日志包log 为我们提供了可定制化的配制，让我们可以自己定制日志的抬头信息。</p>
+<pre tabindex="0"><code>func init(){
+	log.SetFlags(log.Ldate|log.Lshortfile)
+}
+</code></pre><p>我们使用<code>init</code>函数，这个函数在<code>main</code>函数执行之前就可以初始化，可以帮我们做一些配置，这里我们自定义日志的抬头信息为时间+文件名+源代码所在行号。也就是<code>log.Ldate|log.Lshortfile,</code>中间是一个位运算符<code>|</code>，然后通过函数<code>log.SetFlags</code>进行设置。</p>
+<pre tabindex="0"><code>2017/04/29 main.go:10: 飞雪无情的博客: http://www.flysnow.org
+2017/04/29 main.go:11: 飞雪无情的微信公众号：flysnow_org
+</code></pre><p>看看<code>log</code>包为我们提供了那些可以定义的选项常量。</p>
+<pre tabindex="0"><code>const (
+	Ldate         = 1 &lt;&lt; iota     //日期示例： 2009/01/23
+	Ltime                         //时间示例: 01:23:23
+	Lmicroseconds                 //毫秒示例: 01:23:23.123123.
+	Llongfile                     //绝对路径和行号: /a/b/c/d.go:23
+	Lshortfile                    //文件和行号: d.go:23.
+	LUTC                          //日期时间转为0时区的
+	LstdFlags     = Ldate | Ltime //Go提供的标准抬头信息
+)
+</code></pre><p>这是log包定义的一些抬头信息，有日期、时间、毫秒时间、绝对路径和行号、文件名和行号等，在上面都有注释说明，这里需要注意的是：如果设置了<code>Lmicroseconds</code>，那么<code>Ltime</code>就不生效了；设置了<code>Lshortfile</code>， <code>Llongfile</code>也不会生效，大家自己可以测试一下。</p>
+<p><code>LUTC</code>比较特殊，如果我们配置了时间标签，那么如果设置了LUTC的话，就会把输出的日期时间转为0时区的日期时间显示。</p>
+<pre tabindex="0"><code>log.SetFlags(log.Ldate|log.Ltime |log.LUTC)
+</code></pre><p>那么对我们东八区的时间来说，就会减去8个小时，我们看输出：</p>
+<pre tabindex="0"><code>2017/04/29 05:46:29 飞雪无情的博客: http://www.flysnow.org
+2017/04/29 05:46:29 飞雪无情的微信公众号：flysnow_org
+</code></pre><p>最后一个<code>LstdFlags</code>表示标准的日志抬头信息，也就是默认的，包含日期和具体时间。</p>
+<p>我们大部分情况下，都有很多业务，每个业务都需要记录日志，那么有没有办法，能区分这些业务呢？这样我们在查找日志的时候，就方便多了。</p>
+<p>对于这种情况，Go语言也帮我们考虑到了，这就是设置日志的前缀，比如一个用户中心系统的日志，我们可以这么设置。</p>
+<pre tabindex="0"><code>func init(){
+	log.SetPrefix(&#34;【UserCenter】&#34;)
+	log.SetFlags(log.LstdFlags | log.Lshortfile |log.LUTC)
+}
+</code></pre><p>通过<code>log.SetPrefix</code>可以指定输出日志的前缀，这里我们指定为<code>【UserCenter】</code>，然后就可以看到日志的打印输出已经清晰的标记出我们的这些日志是属于哪些业务的啦。</p>
+<pre tabindex="0"><code>【UserCenter】2017/04/29 05:53:26 main.go:11: 飞雪无情的博客: http://www.flysnow.org
+【UserCenter】2017/04/29 05:53:26 main.go:12: 飞雪无情的微信公众号：flysnow_org
+</code></pre><p><code>log</code>包除了有<code>Print</code>系列的函数，还有<code>Fatal</code>以及<code>Panic</code>系列的函数，其中<code>Fatal</code>表示程序遇到了致命的错误，需要退出，这时候使用<code>Fatal</code>记录日志后，然后程序退出，也就是说Fatal相当于先调用<code>Print</code>打印日志，然后再调用<code>os.Exit(1)</code>退出程序。</p>
+<p>同理<code>Panic</code>系列的函数也一样，表示先使用<code>Print</code>记录日志，然后调用<code>panic()</code>函数抛出一个恐慌，这时候除非使用<code>recover()</code>函数，否则程序就会打印错误堆栈信息，然后程序终止。</p>
+<p>这里贴下这几个系列函数的源代码，更好理解。</p>
+<pre tabindex="0"><code>func Println(v ...interface{}) {
+	std.Output(2, fmt.Sprintln(v...))
+}
+
+func Fatalln(v ...interface{}) {
+	std.Output(2, fmt.Sprintln(v...))
+	os.Exit(1)
+}
+
+func Panicln(v ...interface{}) {
+	s := fmt.Sprintln(v...)
+	std.Output(2, s)
+	panic(s)
+}
+</code></pre><h1 id="实现原理">实现原理 <a href="#%e5%ae%9e%e7%8e%b0%e5%8e%9f%e7%90%86" class="anchor">🔗</a></h1><p>通过上面的源代码，我们发现，日志包<code>log</code>的这些函数都是类似的，关键的输出日志就在于<code>std.Output</code>方法</p>
+<pre tabindex="0"><code>func New(out io.Writer, prefix string, flag int) *Logger {
+	return &amp;Logger{out: out, prefix: prefix, flag: flag}
+}
+
+var std = New(os.Stderr, &#34;&#34;, LstdFlags)
+</code></pre><p>从以上源代码可以看出，变量<code>std</code>其实是一个<code>*Logger</code>，通过<code>log.New</code>函数创建，默认输出到<code>os.Stderr</code>设备，前缀为空，日志抬头信息为标准抬头<code>LstdFlags</code>。</p>
+<p><code>os.Stderr</code>对应的是UNIX里的标准错误警告信息的输出设备，同时被作为默认的日志输出目的地。初次之外，还有标准输出设备<code>os.Stdout</code>以及标准输入设备<code>os.Stdin</code>。</p>
+<pre tabindex="0"><code>var (
+	Stdin  = NewFile(uintptr(syscall.Stdin), &#34;/dev/stdin&#34;)
+	Stdout = NewFile(uintptr(syscall.Stdout), &#34;/dev/stdout&#34;)
+	Stderr = NewFile(uintptr(syscall.Stderr), &#34;/dev/stderr&#34;)
+)
+</code></pre><p>以上就是定义的UNIX的标准的三种设备，分别用于输入、输出和警告错误信息。理解了<code>os.Stderr</code>，现在我们看下<code>Logger</code>这个结构体，日志的信息和操作，都是通过这个<code>Logger</code>操作的。</p>
+<pre tabindex="0"><code>type Logger struct {
+	mu     sync.Mutex // 字段mu是一个互斥锁，主要是是保证这个日志记录器Logger在多goroutine下也是安全的
+	prefix string     // 字段prefix是每一行日志的前缀
+	flag   int        // 字段flag是日志抬头信息
+	out    io.Writer  // 字段out是日志输出的目的地，默认情况下是os.Stderr。
+	buf    []byte     // 字段buf是一次日志输出文本缓冲，最终会被写到out里。
+}
+</code></pre><p>了解了结构体<code>Logger</code>的字段，现在就可以看下它最重要的方法<code>Output</code>了，这个方法会输出格式化好的日志信息。</p>
+<pre tabindex="0"><code>func (l *Logger) Output(calldepth int, s string) error {
+	now := time.Now() // get this early.
+	var file string
+	var line int
+	//加锁，保证多goroutine下的安全
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	//如果配置了获取文件和行号的话
+	if l.flag&amp;(Lshortfile|Llongfile) != 0 {
+		//因为runtime.Caller代价比较大，先不加锁
+		l.mu.Unlock()
+		var ok bool
+		_, file, line, ok = runtime.Caller(calldepth)
+		if !ok {
+			file = &#34;???&#34;
+			line = 0
+		}
+		//获取到行号等信息后，再加锁，保证安全
+		l.mu.Lock()
+	}
+	//把我们的日志信息和设置的日志抬头进行拼接
+	l.buf = l.buf[:0]
+	l.formatHeader(&amp;l.buf, now, file, line)
+	l.buf = append(l.buf, s...)
+	if len(s) == 0 || s[len(s)-1] != &#39;\n&#39; {
+		l.buf = append(l.buf, &#39;\n&#39;)
+	}
+	//输出拼接好的缓冲buf里的日志信息到目的地
+	_, err := l.out.Write(l.buf)
+	return err
+}
+</code></pre><p>整个代码比较简洁，为了多goroutine安全互斥锁也用上了，但是在获取调用堆栈信息的时候，又要先解锁，因为这个过程比较重。获取到文件、行号等信息后，继续加互斥锁保证安全。</p>
+<p>后面的就比较简单了，<code>formatHeader</code>方法主要是格式化日志抬头信息，然后存储在buf这个缓冲中，最后再把我们自己的日志信息拼接到缓冲buf的后面，然后为一次log日志输出追加一个换行符，这样每次日志输出都是一行一行的。</p>
+<p>有了最终的日志信息<code>buf</code>，然后把它写到输出的目的地out里就可以了，这是一个实现了<code>io.Writer</code>接口的类型，只要实现了这个接口，都可以当作输出目的地。</p>
+<pre tabindex="0"><code>func (l *Logger) SetOutput(w io.Writer) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	l.out = w
+}
+</code></pre><p><code>log</code>包的<code>SetOutput</code>函数，可以设置输出目的地。这里稍微简单介绍下<code>runtime.Caller</code>，它可以获取运行时方法的调用信息。</p>
+<pre tabindex="0"><code>func Caller(skip int) (pc uintptr, file string, line int, ok bool)
+</code></pre><p>参数<code>skip</code>表示跳过栈帧数，<code>0</code>表示不跳过，也就是<code>runtime.Caller</code>的调用者。<code>1</code>的话就是再向上一层，表示调用者的调用者。</p>
+<p><code>log</code>日志包里使用的是<code>2</code>，也就是表示我们在源代码中调用<code>log.Print</code>、<code>log.Fatal</code>和<code>log.Panic</code>这些函数的调用者。</p>
+<p>以<code>main</code>函数调用<code>log.Println</code>为例，是<code>main-&gt;log.Println-&gt;*Logger.Output-&gt;runtime.Caller</code>这么一个方法调用栈，所以这时候，skip的值分别代表：</p>
+<ol>
+<li>0表示*Logger.Output中调用runtime.Caller的源代码文件和行号</li>
+<li>1表示log.Println中调用*Logger.Output的源代码文件和行号</li>
+<li>2表示main中调用log.Println的源代码文件和行号</li>
+</ol>
+<p>所以这也是<code>log</code>包里的这个<code>skip</code>的值为什么一直是2的原因。</p>
+<h1 id="定制自己的日志">定制自己的日志 <a href="#%e5%ae%9a%e5%88%b6%e8%87%aa%e5%b7%b1%e7%9a%84%e6%97%a5%e5%bf%97" class="anchor">🔗</a></h1><p>通过上面的源码分析，我们知道日志记录的根本就在于一个日志记录器<code>Logger</code>，所以我们定制自己的日志，其实就是创建不同的<code>Logger</code>。</p>
+<pre tabindex="0"><code>var (
+	Info *log.Logger
+	Warning *log.Logger
+	Error * log.Logger
+)
+
+func init(){
+	errFile,err:=os.OpenFile(&#34;errors.log&#34;,os.O_CREATE|os.O_WRONLY|os.O_APPEND,0666)
+	if err!=nil{
+		log.Fatalln(&#34;打开日志文件失败：&#34;,err)
+	}
+
+	Info = log.New(os.Stdout,&#34;Info:&#34;,log.Ldate | log.Ltime | log.Lshortfile)
+	Warning = log.New(os.Stdout,&#34;Warning:&#34;,log.Ldate | log.Ltime | log.Lshortfile)
+	Error = log.New(io.MultiWriter(os.Stderr,errFile),&#34;Error:&#34;,log.Ldate | log.Ltime | log.Lshortfile)
+
+}
+
+func main() {
+	Info.Println(&#34;飞雪无情的博客:&#34;,&#34;http://www.flysnow.org&#34;)
+	Warning.Printf(&#34;飞雪无情的微信公众号：%s\n&#34;,&#34;flysnow_org&#34;)
+	Error.Println(&#34;欢迎关注留言&#34;)
+}
+</code></pre><p>我们根据日志级别定义了三种不同的<code>Logger</code>，分别为<code>Info</code>,<code>Warning</code>,<code>Error</code>，用于不同级别日志的输出。这三种日志记录器都是使用<code>log.New</code>函数进行创建。</p>
+<p>这里创建<code>Logger</code>的时候，<code>Info</code>和<code>Warning</code>都比较正常，<code>Error</code>这里采用了多个目的地输出，这里可以同时把错误日志输出到<code>os.Stderr</code>以及我们创建的<code>errors.log</code>文件中。</p>
+<p><code>io.MultiWriter</code>函数可以包装多个<code>io.Writer</code>为一个<code>io.Writer</code>，这样我们就可以达到同时对多个<code>io.Writer</code>输出日志的目的。</p>
+<p><code>io.MultiWriter</code>的实现也很简单，定义一个类型实现<code>io.Writer</code>，然后在实现的<code>Write</code>方法里循环调用要包装的多个<code>Writer</code>接口的<code>Write</code>方法即可。</p>
+<pre tabindex="0"><code>func (t *multiWriter) Write(p []byte) (n int, err error) {
+	for _, w := range t.writers {
+		n, err = w.Write(p)
+		if err != nil {
+			return
+		}
+		if n != len(p) {
+			err = ErrShortWrite
+			return
+		}
+	}
+	return len(p), nil
+}
+</code></pre><p>这里我们通过定义了多个Logger来区分不同的日志级别，使用比较麻烦，针对这种情况，可以使用第三方的log框架，也可以自定包装定义，直接通过不同级别的方法来记录不同级别的日志，还可以设置记录日志的级别等。</p>
+<blockquote>
+<p>本文收集来源：https://www.flysnow.org</p>
+</blockquote>
+
+    </div>
+
+    
+</section>
+
+
+            </div>
+            <div class="side">
+                <div class="side-categories">
+    <h2>Categories</h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/categories/ai">ai(3)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/go">go(23)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E4%BB%A3%E7%A0%81">代码(2)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E5%B7%A5%E5%85%B7">工具(8)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E9%80%86%E5%90%91">逆向(3)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E9%9D%A2%E8%AF%95">面试(5)</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/note/">Recent Note</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/note/%E6%9E%B6%E6%9E%84%E8%80%83%E7%82%B9/">场景总结</a>
+            </li>
+        
+            <li>
+                <a href="/note/rdis-%E7%BC%93%E5%AD%98%E7%A9%BF%E9%80%8F%E9%9B%AA%E5%B4%A9%E5%87%BB%E7%A9%BF%E7%9A%84%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95/">缓存穿透、雪崩、击穿的解决方法</a>
+            </li>
+        
+            <li>
+                <a href="/note/redis-%E5%8D%95%E7%BA%BF%E7%A8%8B%E7%9A%84redis%E4%B8%BA%E4%BB%80%E4%B9%88%E5%BF%AB/">单线程的redis为什么快</a>
+            </li>
+        
+            <li>
+                <a href="/note/redis-%E6%80%BB%E7%BB%93/">redis总结</a>
+            </li>
+        
+            <li>
+                <a href="/note/mysql-%E6%80%BB%E7%BB%93/">mysql总结</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/android/">Recent Android</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/android/redroid%E4%BD%BF%E7%94%A8/">Redroid安卓容器</a>
+            </li>
+        
+            <li>
+                <a href="/android/%E5%85%A5%E9%97%A8/">逆向环境-杂</a>
+            </li>
+        
+            <li>
+                <a href="/android/frida%E6%95%99%E7%A8%8B/">frida教程</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/tool/">Recent Tool</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/tool/linux-almalinux%E4%BC%98%E5%8C%96/">AlmaLinux10</a>
+            </li>
+        
+            <li>
+                <a href="/tool/almalinux-k8s/">AlmaLinux-k8s安装</a>
+            </li>
+        
+            <li>
+                <a href="/tool/vscode%E6%8A%98%E8%85%BE/">vscode折腾</a>
+            </li>
+        
+            <li>
+                <a href="/tool/linux-ubuntu%E4%BC%98%E5%8C%96/">Ubuntu开机优化</a>
+            </li>
+        
+            <li>
+                <a href="/tool/shell-ssh_script/">ssh常用脚本</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/llm/">Recent Llm</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/llm/transformers-%E5%85%A5%E9%97%A8%E7%AF%87/">Transformers-入门篇</a>
+            </li>
+        
+            <li>
+                <a href="/llm/%E6%A8%A1%E5%9E%8Bvllm%E9%83%A8%E7%BD%B2/">AI模型VLLM部署</a>
+            </li>
+        
+            <li>
+                <a href="/llm/%E6%A8%A1%E5%9E%8B%E5%BE%AE%E8%B0%83/">AI模型微调</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/go/">Recent Go</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/go/go%E4%B8%89%E8%89%B2%E6%A0%87%E8%AE%B0%E6%B7%B7%E5%90%88%E5%86%99%E5%B1%8F%E9%9A%9Cgc%E6%A8%A1%E5%BC%8F%E5%85%A8%E6%80%BB%E7%BB%93/">Go三色标记混合写屏障GC模式全总结</a>
+            </li>
+        
+            <li>
+                <a href="/go/go%E4%B8%ADmake%E4%B8%8Enew%E5%8C%BA%E5%88%AB/">Go中make与new区别</a>
+            </li>
+        
+            <li>
+                <a href="/go/go%E5%B8%B8%E7%94%A8bug%E5%92%8C%E6%80%A7%E8%83%BD%E9%97%AE%E9%A2%98%E7%9A%84%E5%AE%9E%E8%B7%B5%E6%96%B9%E6%B3%95/">Go常用bug和性能问题的实践方法</a>
+            </li>
+        
+            <li>
+                <a href="/go/grpc%E6%80%BB%E7%BB%93/">GRPC笔记</a>
+            </li>
+        
+            <li>
+                <a href="/go/go%E7%9A%84defer%E6%80%BB%E7%BB%93/">Go的defer总结</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+            </div>
+        </main>
+        <footer class="footer">
+    <div class="footer-row">
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/note/index.xml">
+                    Feed of Note
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/android/index.xml">
+                    Feed of Android
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/tool/index.xml">
+                    Feed of Tool
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/llm/index.xml">
+                    Feed of Llm
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/go/index.xml">
+                    Feed of Go
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+
+        
+            
+            
+        
+    </div>
+
+    
+</footer>
+
+    </body>
+</html>

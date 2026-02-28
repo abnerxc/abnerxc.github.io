@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Categories on Abner的博客</title>
+    <link>https://abnerxc.github.io/categories/</link>
+    <description>Recent content in Categories on Abner的博客</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-CN</language>
+    <lastBuildDate>Sun, 25 Jan 2026 12:07:58 +0800</lastBuildDate><atom:link href="https://abnerxc.github.io/categories/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>面试</title>
+      <link>https://abnerxc.github.io/categories/%E9%9D%A2%E8%AF%95/</link>
+      <pubDate>Sun, 25 Jan 2026 12:07:58 +0800</pubDate>
+      
+      <guid>https://abnerxc.github.io/categories/%E9%9D%A2%E8%AF%95/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>逆向</title>
+      <link>https://abnerxc.github.io/categories/%E9%80%86%E5%90%91/</link>
+      <pubDate>Fri, 25 Jul 2025 20:07:58 +0800</pubDate>
+      
+      <guid>https://abnerxc.github.io/categories/%E9%80%86%E5%90%91/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>工具</title>
+      <link>https://abnerxc.github.io/categories/%E5%B7%A5%E5%85%B7/</link>
+      <pubDate>Mon, 21 Jul 2025 18:35:11 +0800</pubDate>
+      
+      <guid>https://abnerxc.github.io/categories/%E5%B7%A5%E5%85%B7/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>AI</title>
+      <link>https://abnerxc.github.io/categories/ai/</link>
+      <pubDate>Tue, 18 Mar 2025 15:35:58 +0800</pubDate>
+      
+      <guid>https://abnerxc.github.io/categories/ai/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>Go</title>
+      <link>https://abnerxc.github.io/categories/go/</link>
+      <pubDate>Sat, 21 Sep 2024 10:46:12 +0800</pubDate>
+      
+      <guid>https://abnerxc.github.io/categories/go/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>代码</title>
+      <link>https://abnerxc.github.io/categories/%E4%BB%A3%E7%A0%81/</link>
+      <pubDate>Mon, 25 Jan 2021 22:07:58 +0800</pubDate>
+      
+      <guid>https://abnerxc.github.io/categories/%E4%BB%A3%E7%A0%81/</guid>
+      <description></description>
+    </item>
+    
+  </channel>
+</rss>

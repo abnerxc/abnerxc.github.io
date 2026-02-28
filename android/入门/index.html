@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+<meta name="viewport" content="width=device-width,minimum-scale=1">
+
+
+
+
+<title>逆向环境-杂 | Abner的博客</title>
+<link rel="canonical" href="https://abnerxc.github.io/android/%E5%85%A5%E9%97%A8/">
+<meta property="og:type" content="article" />
+<meta property="og:title" content="逆向环境-杂 | Abner的博客" />
+<meta property="og:url" content="https://abnerxc.github.io/android/%E5%85%A5%E9%97%A8/" />
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/icofont/icofont.min.css" />
+<link rel="stylesheet" href="/css/syntax.css" />
+<link rel="stylesheet" href="/css/style.css" />
+<link rel="stylesheet" href="/css/custom.css" />
+<script src="/js/copy-code-block.js"></script>
+<link rel="shortcut icon" href="/images/favicon.ico" type="image/x-icon" />
+
+    </head>
+
+    <body>
+        <header class="header-wrapper">
+    <div class="header">
+        <a class="site-title" href="https://abnerxc.github.io/">Abner的博客</a>
+
+        <nav class="menu">
+            
+        </nav>
+    </div>
+</header>
+
+        <main class="main-wrapper">
+            <div class="main">
+                
+
+<section class="single">
+    <h1 class="title">逆向环境-杂</h1>
+
+    <div class="tip">
+        <time datetime="2021-01-25 22:07:58 &#43;0800 CST">2021/01/25</time>
+        <span class="split">·</span>
+        <span> 416 words </span>
+        <span class="split">·</span>
+        <span>
+            2 minutes to read
+        </span>
+    </div>
+
+    <div class="taxonomies">
+        
+        <div>
+            Categories:
+            
+                <a href="/categories/%E9%80%86%E5%90%91">逆向</a>
+            
+        </div>
+        
+
+        
+    </div>
+
+    
+    
+    <div class="post-toc">
+        <h3>目录</h3>
+        <nav id="TableOfContents">
+  <ul>
+    <li><a href="#usb找不到设备">USB找不到设备</a></li>
+    <li><a href="#面具root隐藏">面具root隐藏</a></li>
+    <li><a href="#面具root后过环境检测">面具root后过环境检测</a></li>
+    <li><a href="#抓包">抓包</a></li>
+    <li><a href="#常用工具下载地址">常用工具下载地址</a></li>
+    <li><a href="#特别mac在pd虚拟机安装win10中的模拟器">特别：mac在PD虚拟机安装win10中的模拟器</a></li>
+    <li><a href="#adb导出命令">adb导出命令</a></li>
+    <li><a href="#刷入twrp操作">刷入twrp操作</a></li>
+  </ul>
+</nav>
+    </div>
+    
+
+    <hr />
+
+    <div class="content">
+        <h1 id="usb找不到设备">USB找不到设备 <a href="#usb%e6%89%be%e4%b8%8d%e5%88%b0%e8%ae%be%e5%a4%87" class="anchor">🔗</a></h1><h2 id="windows-环境">windows 环境 <a href="#windows-%e7%8e%af%e5%a2%83" class="anchor">🔗</a></h2><ol>
+<li>找不到设备:右键电脑属性-&gt;设备管理器-&gt;便携设备-&gt;属性-&gt;详细信息-&gt;属性（硬件id）,把硬件id复制到C:\Users\xxxx.android\adb_usb.ini文件中,填入<code>0x12345</code>,12345替换成设备ID,然后重启adb服务</li>
+</ol>
+<h2 id="macos环境">macOS环境 <a href="#macos%e7%8e%af%e5%a2%83" class="anchor">🔗</a></h2><ol>
+<li>执行<code>system_profiler SPUSBDataType</code>里面找到Android的Vendor ID</li>
+<li>将vendor id的值写入 /User/你对应的用户文件夹/.android/adb_usb.ini文件。若该文件不存在，则新建一个。</li>
+<li>adb kill-server &amp;&amp; adb start-server &amp;&amp;  adb devices</li>
+<li>华为手机无法识别：https://www.jianshu.com/p/8c19fb78a680</li>
+<li>首先关闭mac<code>sip</code>黑苹果在recovery模式下去关闭也可以,mac夜神abd找不到,找到app包下面的adb命令：<code>/app包路径/adb connect 127.0.0.1:62001</code> 连接以后，可以发现设备了</li>
+</ol>
+<h1 id="面具root隐藏">面具root隐藏 <a href="#%e9%9d%a2%e5%85%b7root%e9%9a%90%e8%97%8f" class="anchor">🔗</a></h1><ul>
+<li>首先：移除系统的支付APP检查，例如miui的<code>手机管家-&gt;支付保护中心</code>关闭APP保护，</li>
+<li>方案一：面具设置，新版的magisk已增加了zygisk排除列表，我们可以通过这个排除列表去排除需要隐藏的应用，打开magisk，点右上角的设置图标，在设置里找到zygisk打开，然后打开遵循排除列表，在配置排除列表里把需要隐藏的应用打上钩。</li>
+<li>方案二：(建议使用适用APP更广)如果有些APP还是无法隐藏，面具里面安装<code>Shamiko</code>插件，<code>https://github.com/LSPosed/LSPosed.github.io/releases</code> ，在使用Magisk官方版24+开启Zygisk和遵守排除列表隐藏root之后，排除列表内被隐藏root了的app就没法在LSP模块内勾选了，会显示在排除列表内，然后呈灰色状态无法勾选。<code>使用Shamiko的时候必须关闭遵守排除列表这个开关。</code>,后续在配置排除列表里把需要隐藏的应用打上钩。</li>
+</ul>
+<h1 id="面具root后过环境检测">面具root后过环境检测 <a href="#%e9%9d%a2%e5%85%b7root%e5%90%8e%e8%bf%87%e7%8e%af%e5%a2%83%e6%a3%80%e6%b5%8b" class="anchor">🔗</a></h1><ul>
+<li>关闭magisk的Zygisk开关，刷入<code>Zygisk-Next</code>模块，代替面具的Zygisk模块，重启手机</li>
+<li>刷入<code>Shamiko</code>模块，重启手机</li>
+<li>刷入<code>LSPosed</code>框架模块，重启手机</li>
+<li>刷入<code>PlayIntegrityFix</code>模块,注意这个模块需要开启翻墙，隐藏bootloader环境检测，重启手机</li>
+<li>然后在<code>magisk</code>排除列表去排除需要隐藏的应用,如<code>momo检测</code>就可以过了</li>
+<li>【注意：如果TEE受损】：刷入<code>Tricky-Store</code>和<code>TrickyAddonModule</code>增强模块，这个模块可以解决某些设备上密钥证明不完整或损坏的问题</li>
+</ul>
+<h1 id="抓包">抓包 <a href="#%e6%8a%93%e5%8c%85" class="anchor">🔗</a></h1><h2 id="简单app网页调试">简单APP网页调试 <a href="#%e7%ae%80%e5%8d%95app%e7%bd%91%e9%a1%b5%e8%b0%83%e8%af%95" class="anchor">🔗</a></h2><ul>
+<li>chrome浏览器输入：<code>chrome://inspect/#devices</code></li>
+<li>安卓开启USB调试</li>
+</ul>
+<h2 id="证书安装">证书安装 <a href="#%e8%af%81%e4%b9%a6%e5%ae%89%e8%a3%85" class="anchor">🔗</a></h2><ul>
+<li>说明：安卓7.0以上，需要解锁BL和root权限</li>
+<li>Charles配置 <code>help-&gt;SSL Proxying-&gt;install charels root cer</code>  安装电脑证书，mac证书查看详情 信任证书</li>
+<li>保存证书配置 <code>help-&gt;SSL Proxying-&gt;save charels root cer</code>  安装电脑证书，mac证书查看详情 信任证书</li>
+<li>转换证书：<code>openssl x509 -inform DER -in charles-ssl-proxying-certificate.cer -out imac.crt</code></li>
+<li>多格式转换命令:<code>openssl x509 -inform PEM -outform DER -in {yourcert.pem} -out {yourcert.crt}</code></li>
+<li>charles无法下载证书:证书保存到本地,adb push 文件路径  <code>/sdcard/Download</code>; 设置—更多设置—系统安全—加密与凭据—从存储设备安装证书，先清除所有凭据，后选择SD卡安装</li>
+<li>安装证书：
+<ul>
+<li>进入以下目录：<code>/data/misc/user/0/cacerts-added</code> 可以看到刚才安装的证书<code>.0</code>结尾的</li>
+<li>将system分区挂在为可读写 <code>mount -o rw,remount /system</code> , 如果有的版本报错可以替换 <code>mount -o rw,remount /</code></li>
+<li><code>cp /data/misc/user/0/cacerts-added/xx.0  /system/etc/security/cacerts/</code> ,并将权限改成644,（<code>chmod -R 644 /system/etc/security/cacerts/xx.0</code>）,重启设备</li>
+</ul>
+</li>
+<li>完成以上配置，大部分APP可以抓包了，如果出现反抓包，看下面解决办法。</li>
+</ul>
+<h2 id="反抓包解决iptables--redsocks2--charles-透明代理抓包">(反抓包解决)iptables + redsocks2 + Charles 透明代理抓包 <a href="#%e5%8f%8d%e6%8a%93%e5%8c%85%e8%a7%a3%e5%86%b3iptables--redsocks2--charles-%e9%80%8f%e6%98%8e%e4%bb%a3%e7%90%86%e6%8a%93%e5%8c%85" class="anchor">🔗</a></h2><p>先打开你的APP，然后<code>ps -ef | grep com.xxx.xxxxx</code>命令找到有你的应用包名那一行，第一列就是uid
+通常你看到的是u0_a428这样的，那么后面的命令，uid相关的可以写成<code>u0_a428</code>，也可以写成<code>10428</code></p>
+<ul>
+<li>透明代理下载，<code>https://fh0.github.io/assets/android-redsocks2.tgz</code> , 把redsocks.conf和redsocks2_arm64推送到手机<code>/data/local/tmp</code></li>
+<li>redsocks.conf配置如下 ,其中<code>bind</code>就是透明代理地址，<code>relay</code>就是Charles的代理地址 ,注意配置文件的每一对<code>{}</code>后面都应该有一个空行，否则会提示<code>unclosed section</code></li>
+</ul>
+<pre tabindex="0"><code class="language-config" data-lang="config">base {
+    log_debug = off;
+    log_info = on;
+    log = stderr;
+    daemon = off;
+    redirector = iptables;
+} 
+
+redsocks {
+    bind = &#34;127.0.0.1:16677&#34;; #本地透明代理地址
+    relay = &#34;192.168.3.141:7777&#34;;  # Charles Socks-Proxy代理地址
+    type = socks5;
+    autoproxy = 0;
+    timeout = 13;
+} 
+</code></pre><ul>
+<li>推送</li>
+</ul>
+<pre tabindex="0"><code class="language-config" data-lang="config">adb push redsocks2_arm64 /data/local/tmp/
+adb push redsocks.conf /data/local/tmp/
+adb shell 
+su
+chmod +x /data/local/tmp/redsocks2_arm64
+</code></pre><ul>
+<li>iptables配置：
+<ul>
+<li>保存开机后的iptables方法:<code>iptables-save &gt; /data/local/tmp/iptables.rules</code>;</li>
+<li>恢复方法： <code>重启手机</code>，</li>
+<li>配置转发
+<ul>
+<li>(全转发)配置全转发<code>iptables -t nat -A OUTPUT -p tcp ! -d 127.0.0.1 -m owner --uid-owner 10172 --dport 0:65535 -j DNAT --to-destination 127.0.0.1:16677</code>, 作用是：将uid为10428所请求的在0-65535端口上的tcp流量，转发到127.0.0.1:16677，但是排除了来自127.0.0.1的请求</li>
+<li>(按端口转发)配置端口抓包,如80，443<code>iptables -t nat -A OUTPUT -p tcp ! -d 127.0.0.1 -m owner --uid-owner 10172 -m multiport --dports 80,443 -j DNAT --to-destination 127.0.0.1:16677</code></li>
+<li>删除规则<code>iptables -t nat -D OUTPUT -p tcp ! -d 127.0.0.1 -m owner --uid-owner 10172 --dport 0:65535 -j DNAT --to-destination 127.0.0.1:16677</code></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>启动 <code>cd /data/local/tmp/ &amp;&amp; ./redsocks2_arm64</code></li>
+<li>查看代理工具的socks代理流量</li>
+</ul>
+<h1 id="常用工具下载地址">常用工具下载地址 <a href="#%e5%b8%b8%e7%94%a8%e5%b7%a5%e5%85%b7%e4%b8%8b%e8%bd%bd%e5%9c%b0%e5%9d%80" class="anchor">🔗</a></h1><ul>
+<li>无需root沙箱抓包工具:https://github.com/android-hacker/VirtualXposed</li>
+<li>JustTrustMe:https://github.com/Fuzion24/JustTrustMe</li>
+<li>安装搞基助手apk:https://github.com/liuran001/GJZS</li>
+<li>SSLUnpinning:https://github.com/ac-pm/SSLUnpinning_Xposed\</li>
+<li>frida: <a href="https://github.com/frida/frida/releases">https://github.com/frida/frida/releases</a></li>
+<li>反编译工具：https://github.com/iBotPeaches/Apktool/releases</li>
+</ul>
+<h2 id="mac安装集合工具">mac安装集合工具 <a href="#mac%e5%ae%89%e8%a3%85%e9%9b%86%e5%90%88%e5%b7%a5%e5%85%b7" class="anchor">🔗</a></h2><ul>
+<li>adb <code>brew cask install android-platform-tools</code></li>
+<li>java-sdk安装</li>
+<li>安卓sdk-tools: <a href="https://www.androiddevtools.cn/">https://www.androiddevtools.cn/</a> 下载build-tools</li>
+<li>jadx-gui: <code>brew install jadx 启动方法：jadx-gui</code></li>
+<li>scrcpy: 远程投屏安卓手机 <a href="https://github.com/Genymobile/scrcpy">https://github.com/Genymobile/scrcpy</a></li>
+</ul>
+<h1 id="特别mac在pd虚拟机安装win10中的模拟器">特别：mac在PD虚拟机安装win10中的模拟器 <a href="#%e7%89%b9%e5%88%abmac%e5%9c%a8pd%e8%99%9a%e6%8b%9f%e6%9c%ba%e5%ae%89%e8%a3%85win10%e4%b8%ad%e7%9a%84%e6%a8%a1%e6%8b%9f%e5%99%a8" class="anchor">🔗</a></h1><p>win管理员运行 win10 转发端口</p>
+<pre tabindex="0"><code class="language-config" data-lang="config">netsh interface portproxy add v4tov4 5555 127.0.0.1 5555 #模拟器端口转发到外网
+netsh interface portproxy del v4tov4 listenport=5555 #删除端口转发
+
+#firda抓包
+adb.exe forward tcp:27042 tcp:27042
+adb.exe forward tcp:27043 tcp:27043
+netsh interface portproxy add v4tov4 27042 127.0.0.1 27042 #firda抓包转发外网
+netsh interface portproxy add v4tov4 27043 127.0.0.1 27043 #firda抓包转发外网
+
+雷电模拟器
+emulator-5554   device  实际端口：5555
+emulator-5556   device  实际端口：5557  ，雷电是+2的端口递增
+</code></pre><p>win查看端口转发
+<code>netsh interface portproxy show all</code>
+mac 远程连接pd中win10的模拟器
+<code>adb connect 192.168.0.3:62001</code></p>
+<h1 id="adb导出命令">adb导出命令 <a href="#adb%e5%af%bc%e5%87%ba%e5%91%bd%e4%bb%a4" class="anchor">🔗</a></h1><ul>
+<li>打印出来所有安装到手机上的APP包名 : <code>adb  pm list package</code></li>
+<li>找出安装后的包名应用的apk所在位置 : <code>adb  pm path com.ccb.longjiLife</code></li>
+<li>下载：<code>adb pull /data/app/com.ccb.longjiLife-MXDTkEBGW2u_cAwg20D4JQ==/base.apk  /Users/abner/Downloads/apk</code></li>
+</ul>
+<h1 id="刷入twrp操作">刷入twrp操作 <a href="#%e5%88%b7%e5%85%a5twrp%e6%93%8d%e4%bd%9c" class="anchor">🔗</a></h1><h2 id="红米note9-5g版本操作">红米note9 5G版本操作 <a href="#%e7%ba%a2%e7%b1%b3note9-5g%e7%89%88%e6%9c%ac%e6%93%8d%e4%bd%9c" class="anchor">🔗</a></h2><ol>
+<li>手机进入fastboot</li>
+</ol>
+<pre tabindex="0"><code class="language-config" data-lang="config">adb reboot bootloader
+</code></pre><ol start="2">
+<li>刷入 TWRP</li>
+</ol>
+<pre tabindex="0"><code class="language-config" data-lang="config">fastboot flash recovery /Users/abner/Downloads/RedmiNote95g-twrp.img
+</code></pre><ol start="3">
+<li>为防止重启手机 MIUI 自动替换回官方 Recovery，按住手机<code>音量上键</code>，命令行同时执行</li>
+</ol>
+<pre tabindex="0"><code class="language-config" data-lang="config">fastboot reboot recovery
+</code></pre><ol start="4">
+<li>在进入 TWRP 后，挂载“系统分区为只读”。这里滑动按钮以允许修改 ，不然不能禁止 MIUI 替换回官方 Recovery。</li>
+<li>下载<a href="https://github.com/topjohnwu/Magisk">Magisk zip包</a>，下载apk文件修改为zip后缀，并推送到手机，必须在<code>external_sd</code>路径下不可以修改，因为sdcard目录加密是乱码</li>
+</ol>
+<pre tabindex="0"><code class="language-config" data-lang="config">adb push Magisk-v28.1.zip /external_sd/
+</code></pre><ol start="6">
+<li>乱码解决，双清data的cache，然后安装Magisk-v28.1.zip。由于 MIUI 在启动时会检查 System 分区完整性，上一步 TWRP 修改了 System 分区，需要通过刷入 Magisk 移除启动验证。</li>
+</ol>
+
+    </div>
+
+    
+</section>
+
+
+            </div>
+            <div class="side">
+                <div class="side-categories">
+    <h2>Categories</h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/categories/ai">ai(3)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/go">go(23)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E4%BB%A3%E7%A0%81">代码(2)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E5%B7%A5%E5%85%B7">工具(8)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E9%80%86%E5%90%91">逆向(3)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E9%9D%A2%E8%AF%95">面试(5)</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/note/">Recent Note</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/note/%E6%9E%B6%E6%9E%84%E8%80%83%E7%82%B9/">场景总结</a>
+            </li>
+        
+            <li>
+                <a href="/note/rdis-%E7%BC%93%E5%AD%98%E7%A9%BF%E9%80%8F%E9%9B%AA%E5%B4%A9%E5%87%BB%E7%A9%BF%E7%9A%84%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95/">缓存穿透、雪崩、击穿的解决方法</a>
+            </li>
+        
+            <li>
+                <a href="/note/redis-%E5%8D%95%E7%BA%BF%E7%A8%8B%E7%9A%84redis%E4%B8%BA%E4%BB%80%E4%B9%88%E5%BF%AB/">单线程的redis为什么快</a>
+            </li>
+        
+            <li>
+                <a href="/note/redis-%E6%80%BB%E7%BB%93/">redis总结</a>
+            </li>
+        
+            <li>
+                <a href="/note/mysql-%E6%80%BB%E7%BB%93/">mysql总结</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/android/">Recent Android</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/android/redroid%E4%BD%BF%E7%94%A8/">Redroid安卓容器</a>
+            </li>
+        
+            <li>
+                <a href="/android/%E5%85%A5%E9%97%A8/">逆向环境-杂</a>
+            </li>
+        
+            <li>
+                <a href="/android/frida%E6%95%99%E7%A8%8B/">frida教程</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/tool/">Recent Tool</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/tool/linux-almalinux%E4%BC%98%E5%8C%96/">AlmaLinux10</a>
+            </li>
+        
+            <li>
+                <a href="/tool/almalinux-k8s/">AlmaLinux-k8s安装</a>
+            </li>
+        
+            <li>
+                <a href="/tool/vscode%E6%8A%98%E8%85%BE/">vscode折腾</a>
+            </li>
+        
+            <li>
+                <a href="/tool/linux-ubuntu%E4%BC%98%E5%8C%96/">Ubuntu开机优化</a>
+            </li>
+        
+            <li>
+                <a href="/tool/shell-ssh_script/">ssh常用脚本</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/llm/">Recent Llm</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/llm/transformers-%E5%85%A5%E9%97%A8%E7%AF%87/">Transformers-入门篇</a>
+            </li>
+        
+            <li>
+                <a href="/llm/%E6%A8%A1%E5%9E%8Bvllm%E9%83%A8%E7%BD%B2/">AI模型VLLM部署</a>
+            </li>
+        
+            <li>
+                <a href="/llm/%E6%A8%A1%E5%9E%8B%E5%BE%AE%E8%B0%83/">AI模型微调</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/go/">Recent Go</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/go/go%E4%B8%89%E8%89%B2%E6%A0%87%E8%AE%B0%E6%B7%B7%E5%90%88%E5%86%99%E5%B1%8F%E9%9A%9Cgc%E6%A8%A1%E5%BC%8F%E5%85%A8%E6%80%BB%E7%BB%93/">Go三色标记混合写屏障GC模式全总结</a>
+            </li>
+        
+            <li>
+                <a href="/go/go%E4%B8%ADmake%E4%B8%8Enew%E5%8C%BA%E5%88%AB/">Go中make与new区别</a>
+            </li>
+        
+            <li>
+                <a href="/go/go%E5%B8%B8%E7%94%A8bug%E5%92%8C%E6%80%A7%E8%83%BD%E9%97%AE%E9%A2%98%E7%9A%84%E5%AE%9E%E8%B7%B5%E6%96%B9%E6%B3%95/">Go常用bug和性能问题的实践方法</a>
+            </li>
+        
+            <li>
+                <a href="/go/grpc%E6%80%BB%E7%BB%93/">GRPC笔记</a>
+            </li>
+        
+            <li>
+                <a href="/go/go%E7%9A%84defer%E6%80%BB%E7%BB%93/">Go的defer总结</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+            </div>
+        </main>
+        <footer class="footer">
+    <div class="footer-row">
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/note/index.xml">
+                    Feed of Note
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/android/index.xml">
+                    Feed of Android
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/tool/index.xml">
+                    Feed of Tool
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/llm/index.xml">
+                    Feed of Llm
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/go/index.xml">
+                    Feed of Go
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+
+        
+            
+            
+        
+    </div>
+
+    
+</footer>
+
+    </body>
+</html>

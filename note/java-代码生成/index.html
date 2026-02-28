@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+<meta name="viewport" content="width=device-width,minimum-scale=1">
+
+
+
+
+<title>JAVA代码生成 | Abner的博客</title>
+<link rel="canonical" href="https://abnerxc.github.io/note/java-%E4%BB%A3%E7%A0%81%E7%94%9F%E6%88%90/">
+<meta property="og:type" content="article" />
+<meta property="og:title" content="JAVA代码生成 | Abner的博客" />
+<meta property="og:url" content="https://abnerxc.github.io/note/java-%E4%BB%A3%E7%A0%81%E7%94%9F%E6%88%90/" />
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/icofont/icofont.min.css" />
+<link rel="stylesheet" href="/css/syntax.css" />
+<link rel="stylesheet" href="/css/style.css" />
+<link rel="stylesheet" href="/css/custom.css" />
+<script src="/js/copy-code-block.js"></script>
+<link rel="shortcut icon" href="/images/favicon.ico" type="image/x-icon" />
+
+    </head>
+
+    <body>
+        <header class="header-wrapper">
+    <div class="header">
+        <a class="site-title" href="https://abnerxc.github.io/">Abner的博客</a>
+
+        <nav class="menu">
+            
+        </nav>
+    </div>
+</header>
+
+        <main class="main-wrapper">
+            <div class="main">
+                
+
+<section class="single">
+    <h1 class="title">JAVA代码生成</h1>
+
+    <div class="tip">
+        <time datetime="2021-01-25 22:07:58 &#43;0800 CST">2021/01/25</time>
+        <span class="split">·</span>
+        <span> 325 words </span>
+        <span class="split">·</span>
+        <span>
+            2 minutes to read
+        </span>
+    </div>
+
+    <div class="taxonomies">
+        
+        <div>
+            Categories:
+            
+                <a href="/categories/%E4%BB%A3%E7%A0%81">代码</a>
+            
+        </div>
+        
+
+        
+    </div>
+
+    
+    
+    <div class="post-toc">
+        <h3>目录</h3>
+        <nav id="TableOfContents">
+  <ul>
+    <li><a href="#依赖包版本">依赖包版本</a></li>
+    <li><a href="#java代码生成">Java代码生成</a></li>
+    <li><a href="#freemarker模板">Freemarker模板</a></li>
+  </ul>
+</nav>
+    </div>
+    
+
+    <hr />
+
+    <div class="content">
+        <h1 id="依赖包版本">依赖包版本 <a href="#%e4%be%9d%e8%b5%96%e5%8c%85%e7%89%88%e6%9c%ac" class="anchor">🔗</a></h1><pre tabindex="0"><code class="language-config" data-lang="config">&lt;dependency&gt;
+    &lt;groupId&gt;com.baomidou&lt;/groupId&gt;
+    &lt;artifactId&gt;mybatis-plus-generator&lt;/artifactId&gt;
+    &lt;version&gt;3.5.3.1&lt;/version&gt;
+    &lt;scope&gt;test&lt;/scope&gt;
+&lt;/dependency&gt;
+&lt;dependency&gt;
+    &lt;groupId&gt;org.freemarker&lt;/groupId&gt;
+    &lt;artifactId&gt;freemarker&lt;/artifactId&gt;
+    &lt;version&gt;2.3.32&lt;/version&gt; &lt;!-- or latest version --&gt;
+&lt;/dependency&gt;
+</code></pre><h1 id="java代码生成">Java代码生成 <a href="#java%e4%bb%a3%e7%a0%81%e7%94%9f%e6%88%90" class="anchor">🔗</a></h1><pre tabindex="0"><code class="language-config" data-lang="config">import com.baomidou.mybatisplus.generator.FastAutoGenerator;
+import com.baomidou.mybatisplus.generator.config.OutputFile;
+import com.baomidou.mybatisplus.generator.config.rules.DbColumnType;
+import com.baomidou.mybatisplus.generator.engine.FreemarkerTemplateEngine;
+import com.baomidou.mybatisplus.generator.config.builder.CustomFile;
+import java.sql.Types;
+import java.util.*;
+
+public class CodeGeneratorTest {
+    public static void main(String[] args) {
+        // 数据库配置
+        String url = &#34;jdbc:mysql://127.0.01:3306/test?useUnicode=true&amp;characterEncoding=UTF8&amp;useSSL=false&amp;serverTimezone=Asia/Shanghai&#34;;
+        String username = &#34;root&#34;;
+        String password = &#34;123456&#34;;
+
+        // 表名配置
+        String[] tableName = {&#34;sys_subject&#34;};
+        String[] tablePreFix = {&#34;sys_&#34;, &#34;tpl_&#34;};
+
+        // 项目配置
+        String projectName = &#34;com-server-demo-provider&#34;;
+        String basePkg = &#34;com.server.demo.provider&#34;;
+        String moduleName = &#34;subject&#34;;
+        String author = &#34;abner&#34;;
+
+        String rootPath = System.getProperty(&#34;user.dir&#34;);
+        String mainPath = rootPath + &#34;/&#34; + projectName + &#34;/src/main&#34;;
+
+         FastAutoGenerator.create(url, username, password)
+                .globalConfig(builder -&gt; {
+                    builder.author(author)
+                            .fileOverride()
+                            .outputDir(mainPath + &#34;/java&#34;);
+                })
+                .dataSourceConfig(builder -&gt; builder.typeConvertHandler((globalConfig, typeRegistry, metaInfo) -&gt; {
+                    int typeCode = metaInfo.getJdbcType().TYPE_CODE;
+                    if (typeCode == Types.SMALLINT || typeCode == Types.TINYINT) {  // 添加 TINYINT 类型处理
+                        return DbColumnType.INTEGER;
+                    }
+                    return typeRegistry.getColumnType(metaInfo);
+                }))
+                .packageConfig(builder -&gt; {
+                    builder.parent(basePkg)
+                            .moduleName(moduleName)
+                            .entity(&#34;model.entity&#34;)  // 实体类放在model包下
+                            .pathInfo(Collections.singletonMap(OutputFile.xml, mainPath + &#34;/mapper/&#34; + moduleName));
+                })
+                .strategyConfig(builder -&gt; {
+                    builder.addInclude(tableName)
+                            .addTablePrefix(tablePreFix);
+
+                    // 实体类配置
+                    builder.entityBuilder()
+                            //.superClass(BaseEntity.class)
+                            .enableChainModel()
+                            .enableLombok()
+                            .disableSerialVersionUID()
+                            .enableTableFieldAnnotation()
+                            // 字段过滤配置（排除BaseEntity.class父类中已经继承的字段，防止重复生成覆盖）
+                            //.addSuperEntityColumns(&#34;id&#34;, &#34;create_by&#34;, &#34;create_name&#34;,
+                                    &#34;create_time&#34;, &#34;modify_by&#34;, &#34;modify_name&#34;,
+                                    &#34;modify_time&#34;);
+
+                    // 新增Controller配置
+                    builder.controllerBuilder()
+                            .enableRestStyle()  // 使用@RestController注解
+                            .enableHyphenStyle() // 启用驼峰转连字符
+                            .formatFileName(&#34;%sController&#34;);
+
+                    // Mapper配置
+                    builder.mapperBuilder()
+                            .superClass(BaseMapperX.class)
+                            .enableBaseColumnList()
+                            .enableMapperAnnotation();
+
+                    // Service配置
+                    builder.serviceBuilder()
+                            .formatServiceFileName(&#34;%sService&#34;);
+                })
+                .injectionConfig(builder -&gt; {
+                    Map&lt;String, Object&gt; customMap = new HashMap&lt;&gt;();
+                    // 添加父包路径变量
+                    customMap.put(&#34;packageName&#34;, basePkg + &#34;.&#34; + moduleName);
+                    customMap.put(&#34;dtoPackage&#34;, &#34;model.dto&#34;);
+                    customMap.put(&#34;voPackage&#34;, &#34;model.vo&#34;);
+                    customMap.put(&#34;convertPackage&#34;, &#34;model.convert&#34;);
+
+                    builder.customMap(customMap)
+                            // DTO模板
+                            .customFile(new CustomFile.Builder()
+                                    .fileName(&#34;Dto.java&#34;)
+                                    .templatePath(&#34;/templates/dto.java.ftl&#34;)
+                                    .packageName(&#34;model.dto&#34;)
+                                    .build())
+                            // VO模板
+                            .customFile(new CustomFile.Builder()
+                                    .fileName(&#34;Vo.java&#34;)
+                                    .templatePath(&#34;/templates/vo.java.ftl&#34;)
+                                    .packageName(&#34;model.vo&#34;)
+                                    .build())
+                            // Convert模板
+                            .customFile(new CustomFile.Builder()
+                                    .fileName(&#34;Convert.java&#34;)
+                                    .templatePath(&#34;/templates/convert.java.ftl&#34;)
+                                    .packageName(&#34;model.convert&#34;)
+                                    .build());
+                })
+                .templateEngine(new FreemarkerTemplateEngine())
+                .execute();
+    }
+}
+</code></pre><h1 id="freemarker模板">Freemarker模板 <a href="#freemarker%e6%a8%a1%e6%9d%bf" class="anchor">🔗</a></h1><p>convert.java.ftl</p>
+<pre tabindex="0"><code class="language-config" data-lang="config">package ${packageName}.${convertPackage};
+
+import ${package.Entity}.${entity};
+import ${package.Entity?replace(&#34;entity&#34;,&#34;dto&#34;)}.${entity}Dto;
+import ${package.Entity?replace(&#34;entity&#34;,&#34;vo&#34;)}.${entity}Vo;
+import org.mapstruct.Mapper;
+import org.mapstruct.factory.Mappers;
+import java.util.List;
+
+@Mapper(componentModel = &#34;spring&#34;)
+public interface ${entity}Convert {
+
+${entity}Convert INSTANCE = Mappers.getMapper(${entity}Convert.class);
+
+${entity}Dto entityToDto(${entity} entity);
+
+${entity} dtoToEntity(${entity}Dto dto);
+
+${entity} voToEntity(${entity}Vo vo);
+
+List&lt;${entity}Dto&gt; entityListToDto(List&lt;${entity}&gt; entities);
+}
+</code></pre><p>dto.java.ftl</p>
+<pre tabindex="0"><code class="language-config" data-lang="config">package ${packageName}.${dtoPackage};
+
+    import lombok.Data;
+    import lombok.experimental.Accessors;
+
+    @Data
+    @Accessors(chain = true)
+    public class ${table.entityName}Dto {
+
+    }
+</code></pre><p>vo.java.ftl</p>
+<pre tabindex="0"><code class="language-config" data-lang="config">package ${packageName}.${voPackage};
+
+    import lombok.Data;
+    import lombok.experimental.Accessors;
+
+    @Data
+    @Accessors(chain = true)
+    public class ${table.entityName}Vo {
+
+    }
+</code></pre>
+    </div>
+
+    
+</section>
+
+
+            </div>
+            <div class="side">
+                <div class="side-categories">
+    <h2>Categories</h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/categories/ai">ai(3)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/go">go(23)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E4%BB%A3%E7%A0%81">代码(2)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E5%B7%A5%E5%85%B7">工具(8)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E9%80%86%E5%90%91">逆向(3)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E9%9D%A2%E8%AF%95">面试(5)</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/note/">Recent Note</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/note/%E6%9E%B6%E6%9E%84%E8%80%83%E7%82%B9/">场景总结</a>
+            </li>
+        
+            <li>
+                <a href="/note/rdis-%E7%BC%93%E5%AD%98%E7%A9%BF%E9%80%8F%E9%9B%AA%E5%B4%A9%E5%87%BB%E7%A9%BF%E7%9A%84%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95/">缓存穿透、雪崩、击穿的解决方法</a>
+            </li>
+        
+            <li>
+                <a href="/note/redis-%E5%8D%95%E7%BA%BF%E7%A8%8B%E7%9A%84redis%E4%B8%BA%E4%BB%80%E4%B9%88%E5%BF%AB/">单线程的redis为什么快</a>
+            </li>
+        
+            <li>
+                <a href="/note/redis-%E6%80%BB%E7%BB%93/">redis总结</a>
+            </li>
+        
+            <li>
+                <a href="/note/mysql-%E6%80%BB%E7%BB%93/">mysql总结</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/android/">Recent Android</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/android/redroid%E4%BD%BF%E7%94%A8/">Redroid安卓容器</a>
+            </li>
+        
+            <li>
+                <a href="/android/%E5%85%A5%E9%97%A8/">逆向环境-杂</a>
+            </li>
+        
+            <li>
+                <a href="/android/frida%E6%95%99%E7%A8%8B/">frida教程</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/tool/">Recent Tool</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/tool/linux-almalinux%E4%BC%98%E5%8C%96/">AlmaLinux10</a>
+            </li>
+        
+            <li>
+                <a href="/tool/almalinux-k8s/">AlmaLinux-k8s安装</a>
+            </li>
+        
+            <li>
+                <a href="/tool/vscode%E6%8A%98%E8%85%BE/">vscode折腾</a>
+            </li>
+        
+            <li>
+                <a href="/tool/linux-ubuntu%E4%BC%98%E5%8C%96/">Ubuntu开机优化</a>
+            </li>
+        
+            <li>
+                <a href="/tool/shell-ssh_script/">ssh常用脚本</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/llm/">Recent Llm</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/llm/transformers-%E5%85%A5%E9%97%A8%E7%AF%87/">Transformers-入门篇</a>
+            </li>
+        
+            <li>
+                <a href="/llm/%E6%A8%A1%E5%9E%8Bvllm%E9%83%A8%E7%BD%B2/">AI模型VLLM部署</a>
+            </li>
+        
+            <li>
+                <a href="/llm/%E6%A8%A1%E5%9E%8B%E5%BE%AE%E8%B0%83/">AI模型微调</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/go/">Recent Go</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/go/go%E4%B8%89%E8%89%B2%E6%A0%87%E8%AE%B0%E6%B7%B7%E5%90%88%E5%86%99%E5%B1%8F%E9%9A%9Cgc%E6%A8%A1%E5%BC%8F%E5%85%A8%E6%80%BB%E7%BB%93/">Go三色标记混合写屏障GC模式全总结</a>
+            </li>
+        
+            <li>
+                <a href="/go/go%E4%B8%ADmake%E4%B8%8Enew%E5%8C%BA%E5%88%AB/">Go中make与new区别</a>
+            </li>
+        
+            <li>
+                <a href="/go/go%E5%B8%B8%E7%94%A8bug%E5%92%8C%E6%80%A7%E8%83%BD%E9%97%AE%E9%A2%98%E7%9A%84%E5%AE%9E%E8%B7%B5%E6%96%B9%E6%B3%95/">Go常用bug和性能问题的实践方法</a>
+            </li>
+        
+            <li>
+                <a href="/go/grpc%E6%80%BB%E7%BB%93/">GRPC笔记</a>
+            </li>
+        
+            <li>
+                <a href="/go/go%E7%9A%84defer%E6%80%BB%E7%BB%93/">Go的defer总结</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+            </div>
+        </main>
+        <footer class="footer">
+    <div class="footer-row">
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/note/index.xml">
+                    Feed of Note
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/android/index.xml">
+                    Feed of Android
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/tool/index.xml">
+                    Feed of Tool
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/llm/index.xml">
+                    Feed of Llm
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/go/index.xml">
+                    Feed of Go
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+
+        
+            
+            
+        
+    </div>
+
+    
+</footer>
+
+    </body>
+</html>

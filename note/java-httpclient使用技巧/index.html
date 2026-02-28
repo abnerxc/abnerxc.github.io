@@ -1,0 +1,1184 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+<meta name="viewport" content="width=device-width,minimum-scale=1">
+
+
+
+
+<title>HttpClient使用技巧 | Abner的博客</title>
+<link rel="canonical" href="https://abnerxc.github.io/note/java-httpclient%E4%BD%BF%E7%94%A8%E6%8A%80%E5%B7%A7/">
+<meta property="og:type" content="article" />
+<meta property="og:title" content="HttpClient使用技巧 | Abner的博客" />
+<meta property="og:url" content="https://abnerxc.github.io/note/java-httpclient%E4%BD%BF%E7%94%A8%E6%8A%80%E5%B7%A7/" />
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/icofont/icofont.min.css" />
+<link rel="stylesheet" href="/css/syntax.css" />
+<link rel="stylesheet" href="/css/style.css" />
+<link rel="stylesheet" href="/css/custom.css" />
+<script src="/js/copy-code-block.js"></script>
+<link rel="shortcut icon" href="/images/favicon.ico" type="image/x-icon" />
+
+    </head>
+
+    <body>
+        <header class="header-wrapper">
+    <div class="header">
+        <a class="site-title" href="https://abnerxc.github.io/">Abner的博客</a>
+
+        <nav class="menu">
+            
+        </nav>
+    </div>
+</header>
+
+        <main class="main-wrapper">
+            <div class="main">
+                
+
+<section class="single">
+    <h1 class="title">HttpClient使用技巧</h1>
+
+    <div class="tip">
+        <time datetime="2021-01-25 22:07:58 &#43;0800 CST">2021/01/25</time>
+        <span class="split">·</span>
+        <span> 1978 words </span>
+        <span class="split">·</span>
+        <span>
+            10 minutes to read
+        </span>
+    </div>
+
+    <div class="taxonomies">
+        
+        <div>
+            Categories:
+            
+                <a href="/categories/%E4%BB%A3%E7%A0%81">代码</a>
+            
+        </div>
+        
+
+        
+    </div>
+
+    
+    
+    <div class="post-toc">
+        <h3>目录</h3>
+        <nav id="TableOfContents">
+  <ul>
+    <li></li>
+  </ul>
+</nav>
+    </div>
+    
+
+    <hr />
+
+    <div class="content">
+        <h2 id="1-规范背景">1. 规范背景 <a href="#1-%e8%a7%84%e8%8c%83%e8%83%8c%e6%99%af" class="anchor">🔗</a></h2><h3 id="11-http-client选择">1.1. http client选择 <a href="#11-http-client%e9%80%89%e6%8b%a9" class="anchor">🔗</a></h3><ul>
+<li>如无特殊情况（比如：单机tps上千），建议选Spring Rest Template做门面，Apache HttpClient 4.x做实现</li>
+</ul>
+<h3 id="12-rest-template-运行环境">1.2. rest template 运行环境 <a href="#12-rest-template-%e8%bf%90%e8%a1%8c%e7%8e%af%e5%a2%83" class="anchor">🔗</a></h3><ul>
+<li>
+<p>jdk 1.8</p>
+</li>
+<li>
+<p>spring boot项目</p>
+</li>
+</ul>
+<h2 id="2-配置-rest-template">2. 配置 rest template <a href="#2-%e9%85%8d%e7%bd%ae-rest-template" class="anchor">🔗</a></h2><h3 id="21-引入jar包">2.1. 引入jar包 <a href="#21-%e5%bc%95%e5%85%a5jar%e5%8c%85" class="anchor">🔗</a></h3><ul>
+<li>
+<p>Spring Rest Template在spring-web模块中内置了，spring boot会自动帮你引进来，因此无需再引入</p>
+</li>
+<li>
+<p>引入Apache HttpClient 4.x包:</p>
+</li>
+</ul>
+<pre tabindex="0"><code>&lt;dependency&gt;
+    &lt;groupId&gt;org.apache.httpcomponents&lt;/groupId&gt;
+    &lt;artifactId&gt;httpclient&lt;/artifactId&gt;
+    &lt;version&gt;4.5.5&lt;/version&gt;
+&lt;/dependency&gt;
+&lt;!-- 如果不配异步（AsyncRestTemplate），则不需要这个依赖 --&gt;
+&lt;dependency&gt;
+    &lt;groupId&gt;io.netty&lt;/groupId&gt;
+    &lt;artifactId&gt;netty-all&lt;/artifactId&gt;
+    &lt;version&gt;4.1.5.Final&lt;/version&gt;
+&lt;/dependency&gt;
+</code></pre><h3 id="22-编写-yml-文件配置可选">2.2. 编写 yml 文件配置（可选） <a href="#22-%e7%bc%96%e5%86%99-yml-%e6%96%87%e4%bb%b6%e9%85%8d%e7%bd%ae%e5%8f%af%e9%80%89" class="anchor">🔗</a></h3><pre tabindex="0"><code># yml配置的优先级高于java配置；如果yml配置和java配置同时存在，则yml配置会覆盖java配置
+####restTemplate的yml配置开始####
+spring:
+  restTemplate:
+    maxTotalConnect: 1000 #连接池的最大连接数，0代表不限；如果取0，需要考虑连接泄露导致系统崩溃的后果
+    maxConnectPerRoute: 200
+    connectTimeout: 3000
+    readTimeout: 5000
+    charset: UTF-8
+####restTemplate的 yml配置开始####
+</code></pre><h3 id="23-编写java配置必备不可省略">2.3. 编写java配置（必备，不可省略） <a href="#23-%e7%bc%96%e5%86%99java%e9%85%8d%e7%bd%ae%e5%bf%85%e5%a4%87%e4%b8%8d%e5%8f%af%e7%9c%81%e7%95%a5" class="anchor">🔗</a></h3><pre tabindex="0"><code>//xxx代表你的项目，例如：
+//com.douyu.wsd.adx.gateway.config
+//com.douyu.wsd.venus.config
+//可以写一级，也可以写多级，具体自己随意
+package com.douyu.wsd.xxx.config;
+
+
+
+import java.nio.charset.Charset;
+import java.util.LinkedList;
+import java.util.List;
+
+import org.apache.http.Header;
+import org.apache.http.client.HttpRequestRetryHandler;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.DefaultHttpRequestRetryHandler;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+import org.apache.http.message.BasicHeader;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.client.ClientHttpRequestFactory;
+import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
+import org.springframework.http.client.Netty4ClientHttpRequestFactory;
+import org.springframework.http.converter.HttpMessageConverter;
+import org.springframework.http.converter.StringHttpMessageConverter;
+import org.springframework.web.client.AsyncRestTemplate;
+import org.springframework.web.client.DefaultResponseErrorHandler;
+import org.springframework.web.client.RestTemplate;
+
+@Configuration
+@ConfigurationProperties(prefix = &#34;spring.restTemplate&#34;)
+@ConditionalOnClass(value = {RestTemplate.class, CloseableHttpClient.class})
+public class RestTemplateConfiguration {
+
+    // java配置的优先级低于yml配置；如果yml配置不存在，会采用java配置
+    // ####restTemplate的 java配置开始####
+
+    private int maxTotalConnection = 500; //连接池的最大连接数
+
+    private int maxConnectionPerRoute = 100; //同路由的并发数
+
+    private int connectionTimeout = 2 * 1000; //连接超时，默认2s
+
+    private int readTimeout = 30 * 1000; //读取超时，默认30s
+
+    private String charset = &#34;UTF-8&#34;;
+
+    // ####restTemplate的 java配置结束####
+
+    public void setMaxTotalConnection(int maxTotalConnection) {
+        this.maxTotalConnection = maxTotalConnection;
+    }
+
+    public void setMaxConnectionPerRoute(int maxConnectionPerRoute) {
+        this.maxConnectionPerRoute = maxConnectionPerRoute;
+    }
+
+    public void setConnectionTimeout(int connectionTimeout) {
+        this.connectionTimeout = connectionTimeout;
+    }
+
+    public void setReadTimeout(int readTimeout) {
+        this.readTimeout = readTimeout;
+    }
+
+    public void setCharset(String charset) {
+        this.charset = charset;
+    }
+
+    //创建HTTP客户端工厂
+    @Bean(name = &#34;clientHttpRequestFactory&#34;)
+    public ClientHttpRequestFactory clientHttpRequestFactory() {
+        return createClientHttpRequestFactory(this.connectionTimeout, this.readTimeout);
+    }
+
+    //初始化RestTemplate,并加入spring的Bean工厂，由spring统一管理
+    @Bean(name = &#34;restTemplate&#34;)
+    @ConditionalOnMissingBean(RestTemplate.class)
+    public RestTemplate restTemplate(ClientHttpRequestFactory factory) {
+        return createRestTemplate(factory);
+    }
+
+    //初始化支持异步的RestTemplate,并加入spring的Bean工厂，由spring统一管理
+    //如果你用不到异步，则无须创建该对象
+    @Bean(name = &#34;asyncRestTemplate&#34;)
+    @ConditionalOnMissingBean(AsyncRestTemplate.class)
+    public AsyncRestTemplate asyncRestTemplate(RestTemplate restTemplate) {
+        final Netty4ClientHttpRequestFactory factory = new Netty4ClientHttpRequestFactory();
+        factory.setConnectTimeout(this.connectionTimeout);
+        factory.setReadTimeout(this.readTimeout);
+        return new AsyncRestTemplate(factory, restTemplate);
+    }
+
+    private ClientHttpRequestFactory createClientHttpRequestFactory(int connectionTimeout, int readTimeout) {
+        //maxTotalConnection 和 maxConnectionPerRoute 必须要配
+        if (this.maxTotalConnection &lt;= 0) {
+            throw new IllegalArgumentException(&#34;invalid maxTotalConnection: &#34; + maxTotalConnection);
+        }
+        if (this.maxConnectionPerRoute &lt;= 0) {
+            throw new IllegalArgumentException(&#34;invalid maxConnectionPerRoute: &#34; + maxTotalConnection);
+        }
+
+        //全局默认的header头配置
+        List&lt;Header&gt; headers = new LinkedList&lt;&gt;();
+        headers.add(new BasicHeader(&#34;Accept-Encoding&#34;, &#34;gzip,deflate&#34;));
+        headers.add(new BasicHeader(&#34;Accept-Language&#34;, &#34;zh-CN,zh;q=0.8,en;q=0.6&#34;));
+
+        //禁用自动重试，需要重试时，请自行控制
+        HttpRequestRetryHandler retryHandler = new DefaultHttpRequestRetryHandler(0, false);
+
+        PoolingHttpClientConnectionManager cm = new PoolingHttpClientConnectionManager();
+        cm.setMaxTotal(maxTotalConnection);
+        cm.setDefaultMaxPerRoute(maxConnectionPerRoute);
+
+        //创建真正处理http请求的httpClient实例
+        CloseableHttpClient httpClient = HttpClients.custom()
+                .setDefaultHeaders(headers)
+                .setRetryHandler(retryHandler)
+                .setConnectionManager(cm)
+                .build();
+
+        HttpComponentsClientHttpRequestFactory factory = new HttpComponentsClientHttpRequestFactory(
+                httpClient);
+        factory.setConnectTimeout(connectionTimeout);
+        factory.setReadTimeout(readTimeout);
+        return factory;
+    }
+
+    private RestTemplate createRestTemplate(ClientHttpRequestFactory factory) {
+        RestTemplate restTemplate = new RestTemplate(factory);
+
+        //我们采用RestTemplate内部的MessageConverter
+        //重新设置StringHttpMessageConverter字符集，解决中文乱码问题
+        modifyDefaultCharset(restTemplate);
+
+        //设置错误处理器
+        restTemplate.setErrorHandler(new DefaultResponseErrorHandler());
+
+        return restTemplate;
+    }
+
+    private void modifyDefaultCharset(RestTemplate restTemplate) {
+        List&lt;HttpMessageConverter&lt;?&gt;&gt; converterList = restTemplate.getMessageConverters();
+        HttpMessageConverter&lt;?&gt; converterTarget = null;
+        for (HttpMessageConverter&lt;?&gt; item : converterList) {
+            if (StringHttpMessageConverter.class == item.getClass()) {
+                converterTarget = item;
+                break;
+            }
+        }
+        if (null != converterTarget) {
+            converterList.remove(converterTarget);
+        }
+        Charset defaultCharset = Charset.forName(charset);
+        converterList.add(1, new StringHttpMessageConverter(defaultCharset));
+    }
+
+}
+</code></pre><p>做完上述配置，就生成了可用的RestTemplate实例</p>
+<p>采用上述配置，可以做到开箱即用；自己配，可能会踩些坑，比如：<a href="http://doc.dz11.com/ddse/preview/share/9c0f4c855b09e2b1cf33?sid=187">spring boot 配置技巧</a></p>
+<h2 id="3-rest-template基本用法">3. rest template基本用法 <a href="#3-rest-template%e5%9f%ba%e6%9c%ac%e7%94%a8%e6%b3%95" class="anchor">🔗</a></h2><h3 id="31-get演示">3.1. get演示 <a href="#31-get%e6%bc%94%e7%a4%ba" class="anchor">🔗</a></h3><ul>
+<li>演示代码</li>
+</ul>
+<pre tabindex="0"><code>import com.douyu.wsd.framework.common.lang.StringUtils;
+
+import java.net.URLEncoder;
+import java.util.HashMap;
+import java.util.Map;
+import javax.annotation.Resource;
+
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.client.AsyncRestTemplate;
+import org.springframework.web.client.RestTemplate;
+
+@RestController
+@Slf4j
+public class TestController {
+
+    @Resource
+    private RestTemplate restTemplate;
+
+    @Resource
+    private AsyncRestTemplate asyncRestTemplate;
+
+    //最简单的get操作
+    @RequestMapping(&#34;/get&#34;)
+    public String testGet(String keyword) throws Exception {
+        String kw = StringUtils.defaultString(URLEncoder.encode(keyword, &#34;UTF-8&#34;));
+        String html = restTemplate.getForObject(&#34;https://www.douyu.com/search/?kw=&#34; + kw, String.class);
+        return html;//返回的是斗鱼主站的html
+    }
+
+    //需要自定义header头的get操作
+    @RequestMapping(&#34;/get2&#34;)
+    public String testGet2(String keyword) throws Exception {
+        HttpHeaders headers = new HttpHeaders();
+        headers.set(&#34;MyHeaderKey&#34;, &#34;MyHeaderValue&#34;);
+        HttpEntity entity = new HttpEntity(headers);
+
+        String kw = StringUtils.defaultString(URLEncoder.encode(keyword, &#34;UTF-8&#34;));
+        ResponseEntity&lt;String&gt; response = restTemplate.exchange(&#34;https://www.douyu.com/search/?kw=&#34; + kw, HttpMethod.GET, entity, String.class);
+        return response.getBody();//返回的是斗鱼主站的html
+    }
+    
+}
+</code></pre><h3 id="32-post表单演示">3.2. post表单演示 <a href="#32-post%e8%a1%a8%e5%8d%95%e6%bc%94%e7%a4%ba" class="anchor">🔗</a></h3><ul>
+<li>演示代码</li>
+</ul>
+<pre tabindex="0"><code>import com.douyu.wsd.framework.common.lang.StringUtils;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.annotation.Resource;
+
+import com.google.common.collect.ImmutableMap;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.client.RestTemplate;
+
+@RestController
+public class TestController {
+
+    @Resource
+    private RestTemplate restTemplate;
+
+    @RequestMapping(&#34;/postForm&#34;)
+    public String testPostForm(String posid) throws Exception {//测试用例：posid=804009
+        String url = &#34;http://www.douyu.com/lapi/sign/app/getinfo?aid=android1&amp;client_sys=android&amp;mdid=phone&amp;time=1524495658&amp;token=&amp;auth=789c4f732d6aa4d0a5c8fb33765af8cf&#34;;
+        MultiValueMap&lt;String, String&gt; form = new LinkedMultiValueMap&lt;String, String&gt;();
+        form.add(&#34;app&#34;, &#34;{\&#34;aname\&#34;:\&#34;斗鱼直播\&#34;,\&#34;pname\&#34;:\&#34;air.tv.douyu.android\&#34;}&#34;);
+        form.add(&#34;mdid&#34;, &#34;phone&#34;);
+        form.add(&#34;cate1&#34;, &#34;0&#34;);
+        form.add(&#34;client_sys&#34;, &#34;ios&#34;);
+        form.add(&#34;cate2&#34;, &#34;0&#34;);
+        form.add(&#34;auth&#34;, &#34;789c4f732d6aa4d0a5c8fb33765af8cf&#34;);
+        form.add(&#34;roomid&#34;, &#34;0&#34;);
+        form.add(&#34;posid&#34;, posid);
+        form.add(&#34;imei&#34;, &#34;863254010282712&#34;);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+        //headers.add(&#34;xx&#34;, &#34;yy&#34;);//可以加入自定义的header头
+        HttpEntity&lt;MultiValueMap&lt;String, String&gt;&gt; formEntity = new HttpEntity&lt;&gt;(form, headers);
+        String json = restTemplate.postForObject(url, formEntity, String.class);
+        return json;//返回的是广告api的json
+    }
+}
+</code></pre><h3 id="33-post请求体演示">3.3. post请求体演示 <a href="#33-post%e8%af%b7%e6%b1%82%e4%bd%93%e6%bc%94%e7%a4%ba" class="anchor">🔗</a></h3><ul>
+<li>演示代码</li>
+</ul>
+<pre tabindex="0"><code>import com.douyu.wsd.framework.common.lang.StringUtils;
+
+import java.util.HashMap;
+import java.util.Map;
+import javax.annotation.Resource;
+
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.client.RestTemplate;
+
+@RestController
+public class TestController {
+
+    @Resource
+    private RestTemplate restTemplate;
+
+    @RequestMapping(&#34;/postBody&#34;)
+    public String testPostBody() throws Exception {
+        String url = &#34;https://venus.dz11.com/venus/release/pc/checkUpdate&#34;;
+        String jsonBody = &#34;{\n&#34;
+                + &#34;    \&#34;channelCode\&#34;: \&#34;official\&#34;,\n&#34;
+                + &#34;    \&#34;appCode\&#34;: \&#34;Douyu_Live_PC_Client\&#34;,\n&#34;
+                + &#34;    \&#34;versionCode\&#34;: \&#34;201804121\&#34;,\n&#34;
+                + &#34;    \&#34;versionName\&#34;: \&#34;V5.1.9\&#34;,\n&#34;
+                + &#34;    \&#34;deviceUid\&#34;: \&#34;02-15-03-59-5C-E2\&#34;,\n&#34;
+                + &#34;    \&#34;deviceResolution\&#34;: \&#34;1920*1080\&#34;,\n&#34;
+                + &#34;    \&#34;token\&#34;: \&#34;token\&#34;,\n&#34;
+                + &#34;    \&#34;webView\&#34;: \&#34;\&#34;,\n&#34;
+                + &#34;    \&#34;osInfo\&#34;: \&#34;10.0\&#34;,\n&#34;
+                + &#34;    \&#34;osType\&#34;: \&#34;64\&#34;,\n&#34;
+                + &#34;    \&#34;cpuInfo\&#34;:\n&#34;
+                + &#34;    {\n&#34;
+                + &#34;        \&#34;OemId\&#34;: \&#34;0\&#34;,\n&#34;
+                + &#34;        \&#34;ProcessorArchitecture\&#34;: \&#34;0\&#34;,\n&#34;
+                + &#34;        \&#34;PageSize\&#34;: \&#34;4096\&#34;,\n&#34;
+                + &#34;        \&#34;MinimumApplicationAddress\&#34;: \&#34;00010000\&#34;,\n&#34;
+                + &#34;        \&#34;MaximumApplicationAddress\&#34;: \&#34;7FFEFFFF\&#34;,\n&#34;
+                + &#34;        \&#34;ActiveProcessorMask\&#34;: \&#34;15\&#34;,\n&#34;
+                + &#34;        \&#34;NumberOfProcessors\&#34;: \&#34;4\&#34;,\n&#34;
+                + &#34;        \&#34;ProcessorType\&#34;: \&#34;586\&#34;,\n&#34;
+                + &#34;        \&#34;AllocationGranularity\&#34;: \&#34;65536\&#34;,\n&#34;
+                + &#34;        \&#34;ProcessorLevel\&#34;: \&#34;6\&#34;,\n&#34;
+                + &#34;        \&#34;ProcessorRevision\&#34;: \&#34;40457\&#34;\n&#34;
+                + &#34;    },\n&#34;
+                + &#34;    \&#34;diskInfo\&#34;: \&#34;931.507GB\&#34;,\n&#34;
+                + &#34;    \&#34;memoryInfo\&#34;: \&#34;15.8906GB\&#34;,\n&#34;
+                + &#34;    \&#34;driveInfo\&#34;: \&#34;Intel(R) HD Graphics 630:23.20.16.4973;\&#34;,\n&#34;
+                + &#34;    \&#34;startTime\&#34;: \&#34;-501420357\&#34;\n&#34;
+                + &#34;}\n&#34;;
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        //headers.add(&#34;xx&#34;, &#34;yy&#34;);//可以加入自定义的header头
+        HttpEntity&lt;String&gt; bodyEntity = new HttpEntity&lt;&gt;(jsonBody, headers);
+        
+        //1.直接拿原始json串
+        String json = restTemplate.postForObject(url, bodyEntity, String.class);
+        
+        //2.将原始的json传转成java对象，rest template可以自动完成
+        ResultVo resultVo = restTemplate.postForObject(url, bodyEntity, ResultVo.class);
+        if (resultVo != null &amp;&amp; resultVo.success()) {
+            Object res = resultVo.getData();//data节点的实际类型是java.util.LinkedHashMap
+            logger.info(&#34;处理成功，返回数据: {}&#34;, resultVo.getData());
+        } else {
+            logger.info(&#34;处理失败，响应结果: {}&#34;, resultVo);
+        }
+
+        return json;//返回的是分包api的json
+    }
+}
+</code></pre><h3 id="34-post文件上传">3.4. post文件上传 <a href="#34-post%e6%96%87%e4%bb%b6%e4%b8%8a%e4%bc%a0" class="anchor">🔗</a></h3><blockquote>
+<p>场景说明：只适合小文件（20MB以内）上传</p>
+</blockquote>
+<ul>
+<li>演示代码</li>
+</ul>
+<pre tabindex="0"><code>import com.douyu.wsd.framework.common.codec.CodecUtils;
+import com.douyu.wsd.framework.common.lang.StringUtils;
+
+import java.io.File;
+import java.util.HashMap;
+import java.util.Map;
+import javax.annotation.Resource;
+
+import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.client.RestTemplate;
+
+@RestController
+@Slf4j
+public class TestController {
+
+    @Resource
+    private RestTemplate restTemplate;
+
+    @RequestMapping(&#34;/postFile&#34;)
+    public String testPostBody() throws Exception {
+        String filePath = &#34;D:/config.png&#34;;
+        
+        //通过磁盘文件上传，如果产生了临时文件，一定要记得删除，否则，临时文件越积越多，磁盘会爆
+        FileSystemResource resource = new FileSystemResource(new File(filePath));
+	
+        String url = &#34;http://dev.resuploader.dz11.com/Resource/Dss/put&#34;;
+        String appId = &#34;***&#34;;//测试的时候换成自己的配置
+        String secureKey = &#34;***&#34;;
+        String time = String.valueOf(System.currentTimeMillis());
+        String pubStr = &#34;1&#34;;
+        String tempStr = String.format(&#34;app_id=%s&amp;is_public=%s&amp;time=%s&amp;vframe=0%s&#34;, appId, pubStr, time, secureKey);
+        MultiValueMap&lt;String, Object&gt; form = new LinkedMultiValueMap&lt;&gt;();
+        form.add(&#34;is_public&#34;, pubStr);
+        form.add(&#34;vframe&#34;, &#34;0&#34;);
+        form.add(&#34;file&#34;, resource);
+        form.add(&#34;app_id&#34;, appId);
+        form.add(&#34;time&#34;, time);
+        form.add(&#34;sign&#34;, CodecUtils.md5(tempStr));
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+        //headers.add(&#34;xx&#34;, &#34;yy&#34;);//可以加入自定义的header头
+        HttpEntity&lt;MultiValueMap&lt;String, Object&gt;&gt; formEntity = new HttpEntity&lt;&gt;(form, headers);
+        String json = restTemplate.postForObject(url, formEntity, String.class);
+        return json;
+    }
+}
+</code></pre><h3 id="35-文件下载">3.5. 文件下载 <a href="#35-%e6%96%87%e4%bb%b6%e4%b8%8b%e8%bd%bd" class="anchor">🔗</a></h3><blockquote>
+<p>场景说明：只适合小文件（10MB以内）下载</p>
+</blockquote>
+<ul>
+<li>演示代码</li>
+</ul>
+<pre tabindex="0"><code>import com.douyu.wsd.framework.common.lang.StringUtils;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URLEncoder;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import javax.annotation.Resource;
+
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.client.RestTemplate;
+
+@RestController
+@Slf4j
+public class TestController {
+
+    @Resource
+    private RestTemplate restTemplate;
+
+    @RequestMapping(&#34;/downloadFile&#34;)
+    public ResponseEntity testDownloadFile() throws Exception {
+        String url = &#34;http://editor.baidu.com/editor/download/BaiduEditor(Online)_5-9-16.exe&#34;;
+        HttpHeaders headers = new HttpHeaders();
+        headers.setAccept(Collections.singletonList(MediaType.APPLICATION_OCTET_STREAM));
+        HttpEntity&lt;String&gt; entity = new HttpEntity&lt;&gt;(headers);
+        ResponseEntity&lt;byte[]&gt; response = restTemplate.exchange(url, HttpMethod.GET, entity, byte[].class);
+        byte[] bytes = response.getBody();
+        long contentLength = bytes != null ? bytes.length : 0;
+        headers.setContentLength((int) contentLength);
+        headers.setContentDispositionFormData(&#34;baidu.exe&#34;, URLEncoder.encode(&#34;百度安装包.exe&#34;, &#34;UTF-8&#34;));
+        return new ResponseEntity&lt;&gt;(response.getBody(), headers, HttpStatus.OK);
+    }   
+}
+</code></pre><h3 id="36-更多api">3.6. 更多API <a href="#36-%e6%9b%b4%e5%a4%9aapi" class="anchor">🔗</a></h3><h4 id="361--resttemplate-api-与http动词的对象关系">3.6.1.  RestTemplate API 与http动词的对象关系： <a href="#361--resttemplate-api-%e4%b8%8ehttp%e5%8a%a8%e8%af%8d%e7%9a%84%e5%af%b9%e8%b1%a1%e5%85%b3%e7%b3%bb" class="anchor">🔗</a></h4><p>| HTTP动词  | 对应的RestTemplate API   |
+| ++++++-  |:++++++++++++-: |
+|DELETE|	delete(String, String&hellip;)
+|GET|	getForObject(String, Class, String&hellip;)
+|HEAD|	headForHeaders(String, String&hellip;)
+|OPTIONS|	optionsForAllow(String, String&hellip;)
+|POST|	postForLocation(String, Object, String&hellip;)
+|PUT|	put(String, Object, String&hellip;)</p>
+<h4 id="362--postgetforentity-api-和-postgetforobject-的区别">3.6.2.  (post|get)ForEntity API 和 (post|get)ForObject 的区别 <a href="#362--postgetforentity-api-%e5%92%8c-postgetforobject-%e7%9a%84%e5%8c%ba%e5%88%ab" class="anchor">🔗</a></h4><pre><code>ForEntity API拿到的是ResponseEntity，通过ResponseEntity可以拿到状态码，response header等信息
+
+ForObject API拿到的是java对象，用在不关心response状态码和header的场合中
+</code></pre>
+<h4 id="363-getxxxpostxxx-和-exchange-方法的区别">3.6.3. getXXX、postXXX 和 exchange 方法的区别 <a href="#363-getxxxpostxxx-%e5%92%8c-exchange-%e6%96%b9%e6%b3%95%e7%9a%84%e5%8c%ba%e5%88%ab" class="anchor">🔗</a></h4><pre><code>getXXX、postXXX 用于比较简单的调用
+
+exchange 用于比较复杂的调用
+</code></pre>
+<h2 id="4-rest-template高阶用法">4. rest template高阶用法 <a href="#4-rest-template%e9%ab%98%e9%98%b6%e7%94%a8%e6%b3%95" class="anchor">🔗</a></h2><h3 id="41-带泛型的响应解码">4.1. 带泛型的响应解码 <a href="#41-%e5%b8%a6%e6%b3%9b%e5%9e%8b%e7%9a%84%e5%93%8d%e5%ba%94%e8%a7%a3%e7%a0%81" class="anchor">🔗</a></h3><pre tabindex="0"><code>
+import com.douyu.wsd.framework.common.lang.StringUtils;
+
+import java.util.HashMap;
+import java.util.Map;
+import javax.annotation.Resource;
+
+import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.client.RestTemplate;
+
+@RestController
+@Slf4j
+public class TestController {
+
+    private static final Logger logger = LoggerFactory.getLogger(TestController.class);
+
+    @Resource
+    private RestTemplate restTemplate;
+
+    @RequestMapping(&#34;/postBody&#34;)
+    public String testPostBody() throws Exception {//测试用例：posid=804009
+        String url = &#34;https://venus.dz11.com/venus/release/pc/checkUpdate&#34;;
+        String jsonBody = &#34;{\n&#34;
+                + &#34;    \&#34;channelCode\&#34;: \&#34;official\&#34;,\n&#34;
+                + &#34;    \&#34;appCode\&#34;: \&#34;Douyu_Live_PC_Client\&#34;,\n&#34;
+                + &#34;    \&#34;versionCode\&#34;: \&#34;201804121\&#34;,\n&#34;
+                + &#34;    \&#34;versionName\&#34;: \&#34;V5.1.9\&#34;,\n&#34;
+                + &#34;    \&#34;deviceUid\&#34;: \&#34;02-15-03-59-5C-E2\&#34;,\n&#34;
+                + &#34;    \&#34;deviceResolution\&#34;: \&#34;1920*1080\&#34;,\n&#34;
+                + &#34;    \&#34;token\&#34;: \&#34;token\&#34;,\n&#34;
+                + &#34;    \&#34;webView\&#34;: \&#34;\&#34;,\n&#34;
+                + &#34;    \&#34;osInfo\&#34;: \&#34;10.0\&#34;,\n&#34;
+                + &#34;    \&#34;osType\&#34;: \&#34;64\&#34;,\n&#34;
+                + &#34;    \&#34;cpuInfo\&#34;:\n&#34;
+                + &#34;    {\n&#34;
+                + &#34;        \&#34;OemId\&#34;: \&#34;0\&#34;,\n&#34;
+                + &#34;        \&#34;ProcessorArchitecture\&#34;: \&#34;0\&#34;,\n&#34;
+                + &#34;        \&#34;PageSize\&#34;: \&#34;4096\&#34;,\n&#34;
+                + &#34;        \&#34;MinimumApplicationAddress\&#34;: \&#34;00010000\&#34;,\n&#34;
+                + &#34;        \&#34;MaximumApplicationAddress\&#34;: \&#34;7FFEFFFF\&#34;,\n&#34;
+                + &#34;        \&#34;ActiveProcessorMask\&#34;: \&#34;15\&#34;,\n&#34;
+                + &#34;        \&#34;NumberOfProcessors\&#34;: \&#34;4\&#34;,\n&#34;
+                + &#34;        \&#34;ProcessorType\&#34;: \&#34;586\&#34;,\n&#34;
+                + &#34;        \&#34;AllocationGranularity\&#34;: \&#34;65536\&#34;,\n&#34;
+                + &#34;        \&#34;ProcessorLevel\&#34;: \&#34;6\&#34;,\n&#34;
+                + &#34;        \&#34;ProcessorRevision\&#34;: \&#34;40457\&#34;\n&#34;
+                + &#34;    },\n&#34;
+                + &#34;    \&#34;diskInfo\&#34;: \&#34;931.507GB\&#34;,\n&#34;
+                + &#34;    \&#34;memoryInfo\&#34;: \&#34;15.8906GB\&#34;,\n&#34;
+                + &#34;    \&#34;driveInfo\&#34;: \&#34;Intel(R) HD Graphics 630:23.20.16.4973;\&#34;,\n&#34;
+                + &#34;    \&#34;startTime\&#34;: \&#34;-501420357\&#34;\n&#34;
+                + &#34;}\n&#34;;
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity&lt;String&gt; bodyEntity = new HttpEntity&lt;&gt;(jsonBody, headers);
+        
+        //1. 直接拿原始的json串
+        String json = restTemplate.postForObject(url, bodyEntity, String.class);
+
+        //2. 将原始json传转java对象，跟上文不同的是，这个java对象里面有泛型（ResultVo&lt;PcUpdateRes&gt;）
+        //大家实际使用的时候，把ResultVo&lt;PcUpdateRes&gt;换成自己的类，比如：List&lt;MemberInfo&gt;
+        ResponseEntity&lt;ResultVo&lt;PcUpdateRes&gt;&gt; response = restTemplate
+                .exchange(url, HttpMethod.POST, bodyEntity, new ParameterizedTypeReference&lt;ResultVo&lt;PcUpdateRes&gt;&gt;() {});
+        if (response.getStatusCode().is2xxSuccessful() &amp;&amp; response.getBody() != null &amp;&amp; response.getBody().success()) {
+            ResultVo&lt;PcUpdateRes data = &gt; resultVo = response.getBody();
+            PcUpdateRes data = resultVo.getData();
+            logger.info(&#34;处理成功，返回数据: {}&#34;, data);
+        } else {
+            logger.info(&#34;处理失败，响应结果: {}&#34;, response);
+        }
+
+        return json;
+    }
+}
+</code></pre><h3 id="42-上传文件流">4.2. 上传文件流 <a href="#42-%e4%b8%8a%e4%bc%a0%e6%96%87%e4%bb%b6%e6%b5%81" class="anchor">🔗</a></h3><pre tabindex="0"><code>import com.douyu.wsd.framework.common.codec.CodecUtils;
+import com.douyu.wsd.framework.common.io.IOUtils;
+import com.douyu.wsd.framework.common.lang.StringUtils;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.Map;
+import javax.annotation.Resource;
+
+import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.client.RestTemplate;
+
+@RestController
+@Slf4j
+public class TestController {
+
+    @Resource
+    private RestTemplate restTemplate;
+
+    @RequestMapping(&#34;/postFile&#34;)
+    public String testPostBody() throws Exception {
+        String filePath = &#34;D:/config.png&#34;;
+        MultipartFileResource resource = new MultipartFileResource(new FileInputStream(new File(filePath)), &#34;config.png&#34;);
+        String url = &#34;http://dev.resuploader.dz11.com/Resource/Dss/put&#34;;
+        String appId = &#34;***&#34;;//测试的时候换成自己的配置
+        String secureKey = &#34;***&#34;;
+        String time = String.valueOf(System.currentTimeMillis());
+        String pubStr = &#34;1&#34;;
+        String tempStr = String.format(&#34;app_id=%s&amp;is_public=%s&amp;time=%s&amp;vframe=0%s&#34;, appId, pubStr, time, secureKey);
+        MultiValueMap&lt;String, Object&gt; form = new LinkedMultiValueMap&lt;&gt;();
+        form.add(&#34;is_public&#34;, pubStr);
+        form.add(&#34;vframe&#34;, &#34;0&#34;);
+        form.add(&#34;file&#34;, resource);
+        form.add(&#34;app_id&#34;, appId);
+        form.add(&#34;time&#34;, time);
+        form.add(&#34;sign&#34;, CodecUtils.md5(tempStr));
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+        //headers.add(&#34;xx&#34;, &#34;yy&#34;);//可以加入自定义的header头
+        HttpEntity&lt;MultiValueMap&lt;String, Object&gt;&gt; formEntity = new HttpEntity&lt;&gt;(form, headers);
+        String json = restTemplate.postForObject(url, formEntity, String.class);
+        return json;
+    }
+
+    private class MultipartFileResource extends InputStreamResource {
+
+        private String filename;
+
+        public MultipartFileResource(InputStream inputStream, String filename) {
+            super(inputStream);
+            this.filename = filename;
+        }
+
+        @Override
+        public String getFilename() {
+            return this.filename;
+        }
+
+        @Override
+        public long contentLength() throws IOException {
+            return -1; // we do not want to generally read the whole stream into memory ...
+        }
+    }
+}
+</code></pre><h3 id="43-异步操作">4.3 异步操作 <a href="#43-%e5%bc%82%e6%ad%a5%e6%93%8d%e4%bd%9c" class="anchor">🔗</a></h3><ul>
+<li>AsyncRestTemplate 可支持异步，与同步API基本一致，返回的是future:</li>
+</ul>
+<pre tabindex="0"><code>import com.douyu.wsd.framework.common.lang.StringUtils;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import javax.annotation.Resource;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.util.concurrent.ListenableFuture;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.client.AsyncRestTemplate;
+
+@RestController
+public class TestController {
+
+    @Resource
+    private AsyncRestTemplate asyncRestTemplate;
+
+    @RequestMapping(&#34;/douyu&#34;)
+    public String douyu() throws Exception {
+        ListenableFuture&lt;ResponseEntity&lt;String&gt;&gt; future = asyncRestTemplate
+                .getForEntity(&#34;http://www.douyu.com&#34;, String.class);
+        return future.get(2 * 1000, TimeUnit.SECONDS).getBody();
+    }
+}
+</code></pre><h3 id="44-不同的超时时间">4.4. 不同的超时时间 <a href="#44-%e4%b8%8d%e5%90%8c%e7%9a%84%e8%b6%85%e6%97%b6%e6%97%b6%e9%97%b4" class="anchor">🔗</a></h3><p>假如我碰到这种场景：</p>
+<pre><code>ServiceA | 10s
+
+ServiceB | 25s
+</code></pre>
+<p>有3个套路可解决：</p>
+<ul>
+<li>套路一，创建多个实例，每个实例有自己的超时时间，比如</li>
+</ul>
+<pre tabindex="0"><code>    // 超时时间短的实例
+    @Bean(name = &#34;clientHttpRequestFactoryA&#34;)
+    public ClientHttpRequestFactory clientHttpRequestFactoryA() {
+        return createClientHttpRequestFactory(2*1000, 10*1000);
+    }
+
+    @Bean(name = &#34;restTemplateA&#34;)
+    @ConditionalOnMissingBean(RestTemplate.class)
+    public RestTemplate restTemplateA() {
+        return createRestTemplate(clientHttpRequestFactoryA());
+    }
+    
+    // 超时时间长的实例
+    @Bean(name = &#34;clientHttpRequestFactoryB&#34;)
+    public ClientHttpRequestFactory clientHttpRequestFactoryB() {
+        return createClientHttpRequestFactory(5*1000, 25*1000);
+    }
+
+    @Bean(name = &#34;restTemplateB&#34;)
+    @ConditionalOnMissingBean(RestTemplate.class)
+    public RestTemplate restTemplateB() {
+        return createRestTemplate(clientHttpRequestFactoryB());
+    }
+</code></pre><ul>
+<li>套路二，AsyncRestTemplate</li>
+</ul>
+<pre tabindex="0"><code>ListenableFuture&lt;ResponseEntity&lt;String&gt;&gt; future = asyncRestTemplate
+                .getForEntity(&#34;http://www.douyu.com&#34;, String.class);
+return future.get(2 * 1000, TimeUnit.SECONDS).getBody();
+</code></pre><ul>
+<li>套路三，上<a href="https://spring.io/guides/gs/circuit-breaker/"> Circuit Breaker</a></li>
+</ul>
+<pre tabindex="0"><code>@EnableCircuitBreaker
+public class MyApp {
+    public static void main(String[] args) {
+        SpringApplication.run(MyApp .class, args);
+    }
+}
+
+@Service
+public class MyService {
+    private final RestTemplate restTemplate;
+
+    public BookService(RestTemplate rest) {
+        this.restTemplate = rest;
+    }
+
+    @HystrixCommand(
+        fallbackMethod = &#34;fooMethodFallback&#34;,
+        commandProperties = { 
+            @HystrixProperty(
+                 name = &#34;execution.isolation.thread.timeoutInMilliseconds&#34;, 
+                 value=&#34;5000&#34;
+            )
+        }
+    )
+    public String fooMethod() {
+        // Your logic here.
+        restTemplate.exchange(...); 
+    }
+
+    public String fooMethodFallback(Throwable t) {
+        log.error(&#34;Fallback happened&#34;, t);
+        return &#34;Sensible Default Here!&#34;
+    }
+}
+</code></pre><h3 id="45-如何设置连接池">4.5. 如何设置连接池 <a href="#45-%e5%a6%82%e4%bd%95%e8%ae%be%e7%bd%ae%e8%bf%9e%e6%8e%a5%e6%b1%a0" class="anchor">🔗</a></h3><ul>
+<li>连接池需要服务端支持长连接，并非所有服务端都支持，因此单独开了篇文章：<a href="http://doc.dz11.com/ddse/preview/space/14816?sid=29&amp;pid=12940">RestTemplate如何配置长连接</a></li>
+</ul>
+<h3 id="46-全局统一的异常处理">4.6. 全局统一的异常处理 <a href="#46-%e5%85%a8%e5%b1%80%e7%bb%9f%e4%b8%80%e7%9a%84%e5%bc%82%e5%b8%b8%e5%a4%84%e7%90%86" class="anchor">🔗</a></h3><pre tabindex="0"><code>//实现异常处理接口
+public class CustomErrorHandler extends DefaultResponseErrorHandler {  
+  
+    @Override  
+    public void handleError(ClientHttpResponse response) throws IOException {  
+  
+    }
+    
+}  
+
+//将自定义的异常处理器加进去
+@Configuration  
+public class RestClientConfig {  
+  
+    @Bean  
+    public RestTemplate restTemplate() {  
+        RestTemplate restTemplate = new RestTemplate();  
+        restTemplate.setErrorHandler(new CustomErrorHandler());  
+        return restTemplate;  
+    }  
+  
+}
+</code></pre><h2 id="5-小技巧">5. 小技巧 <a href="#5-%e5%b0%8f%e6%8a%80%e5%b7%a7" class="anchor">🔗</a></h2><h3 id="51-参数模板">5.1. 参数模板 <a href="#51-%e5%8f%82%e6%95%b0%e6%a8%a1%e6%9d%bf" class="anchor">🔗</a></h3><ul>
+<li>数组传参</li>
+</ul>
+<pre tabindex="0"><code>String result = restTemplate.getForObject(&#34;http://example.com/hotels/{hotel}/bookings/{booking}&#34;, 
+    String.class, &#34;42&#34;, &#34;21&#34;);
+//实际效果等同于：GET http://example.com/hotels/42/bookings/21
+</code></pre><ul>
+<li>map传参</li>
+</ul>
+<pre tabindex="0"><code>Map&lt;String, String&gt; vars = new HashMap&lt;String, String&gt;();
+vars.put(&#34;hotel&#34;, &#34;42&#34;);
+vars.put(&#34;booking&#34;, &#34;21&#34;);
+String result = restTemplate.getForObject(&#34;http://example.com/hotels/{hotel}/bookings/{booking}&#34;, 
+    String.class, vars);
+//实际效果等同于：GET http://example.com/hotels/42/rooms/42
+</code></pre><h3 id="52-文件上传注意点">5.2. 文件上传注意点 <a href="#52-%e6%96%87%e4%bb%b6%e4%b8%8a%e4%bc%a0%e6%b3%a8%e6%84%8f%e7%82%b9" class="anchor">🔗</a></h3><ul>
+<li>如果使用了本地临时文件，一定要在finally代码块中删除，否则可能会撑爆磁盘</li>
+</ul>
+<h2 id="6-faq">6. FAQ <a href="#6-faq" class="anchor">🔗</a></h2><h3 id="61-获取状态码">6.1. 获取状态码 <a href="#61-%e8%8e%b7%e5%8f%96%e7%8a%b6%e6%80%81%e7%a0%81" class="anchor">🔗</a></h3><p>使用xxForEntity类方法调用接口，将返回ResponseEntity对象，通过它能取到状态码。</p>
+<pre tabindex="0"><code>//判断接口返回是否为200
+public static Boolean ping(){
+    String url = &#34;xxx&#34;;
+    try{
+        ResponseEntity&lt;String&gt; responseEntity = restTemplate.getForEntity(url, String.class);
+        HttpStatus status = responseEntity.getStatusCode();//获取返回状态
+        return status.is2xxSuccessful();//判断状态码是否为2开头的
+    }catch(Exception e){
+        log.error(&#34;处理失败: {}&#34;, url, e);
+        return false; //502 ,500是不能正常返回结果的，需要catch住，返回一个false
+    }
+}
+</code></pre><h3 id="62-我需要手工释放连接吗">6.2. 我需要手工释放连接吗？ <a href="#62-%e6%88%91%e9%9c%80%e8%a6%81%e6%89%8b%e5%b7%a5%e9%87%8a%e6%94%be%e8%bf%9e%e6%8e%a5%e5%90%97" class="anchor">🔗</a></h3><ul>
+<li>不需要，rest template会帮我们释放，具体请看：<a href="https://stackoverflow.com/questions/40161117/spring-resttemplate-need-to-release-connection">spring-resttemplate-need-to-release-connection ?</a></li>
+</ul>
+<h3 id="62-如何调试rest-template">6.2. 如何调试rest template <a href="#62-%e5%a6%82%e4%bd%95%e8%b0%83%e8%af%95rest-template" class="anchor">🔗</a></h3><p>可以在logback里单独配一个debug级别的logger，把org.apache.http下面的日志定向到控制台：</p>
+<pre tabindex="0"><code>&lt;logger name=&#34;org.apache.http&#34; level=&#34;DEBUG&#34; additivity=&#34;false&#34;&gt;
+    &lt;appender-ref ref=&#34;STDOUT&#34; /&gt;
+&lt;/logger&gt;
+</code></pre>
+    </div>
+
+    
+</section>
+
+
+            </div>
+            <div class="side">
+                <div class="side-categories">
+    <h2>Categories</h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/categories/ai">ai(3)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/go">go(23)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E4%BB%A3%E7%A0%81">代码(2)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E5%B7%A5%E5%85%B7">工具(8)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E9%80%86%E5%90%91">逆向(3)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E9%9D%A2%E8%AF%95">面试(5)</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/note/">Recent Note</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/note/%E6%9E%B6%E6%9E%84%E8%80%83%E7%82%B9/">场景总结</a>
+            </li>
+        
+            <li>
+                <a href="/note/rdis-%E7%BC%93%E5%AD%98%E7%A9%BF%E9%80%8F%E9%9B%AA%E5%B4%A9%E5%87%BB%E7%A9%BF%E7%9A%84%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95/">缓存穿透、雪崩、击穿的解决方法</a>
+            </li>
+        
+            <li>
+                <a href="/note/redis-%E5%8D%95%E7%BA%BF%E7%A8%8B%E7%9A%84redis%E4%B8%BA%E4%BB%80%E4%B9%88%E5%BF%AB/">单线程的redis为什么快</a>
+            </li>
+        
+            <li>
+                <a href="/note/redis-%E6%80%BB%E7%BB%93/">redis总结</a>
+            </li>
+        
+            <li>
+                <a href="/note/mysql-%E6%80%BB%E7%BB%93/">mysql总结</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/android/">Recent Android</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/android/redroid%E4%BD%BF%E7%94%A8/">Redroid安卓容器</a>
+            </li>
+        
+            <li>
+                <a href="/android/%E5%85%A5%E9%97%A8/">逆向环境-杂</a>
+            </li>
+        
+            <li>
+                <a href="/android/frida%E6%95%99%E7%A8%8B/">frida教程</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/tool/">Recent Tool</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/tool/linux-almalinux%E4%BC%98%E5%8C%96/">AlmaLinux10</a>
+            </li>
+        
+            <li>
+                <a href="/tool/almalinux-k8s/">AlmaLinux-k8s安装</a>
+            </li>
+        
+            <li>
+                <a href="/tool/vscode%E6%8A%98%E8%85%BE/">vscode折腾</a>
+            </li>
+        
+            <li>
+                <a href="/tool/linux-ubuntu%E4%BC%98%E5%8C%96/">Ubuntu开机优化</a>
+            </li>
+        
+            <li>
+                <a href="/tool/shell-ssh_script/">ssh常用脚本</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/llm/">Recent Llm</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/llm/transformers-%E5%85%A5%E9%97%A8%E7%AF%87/">Transformers-入门篇</a>
+            </li>
+        
+            <li>
+                <a href="/llm/%E6%A8%A1%E5%9E%8Bvllm%E9%83%A8%E7%BD%B2/">AI模型VLLM部署</a>
+            </li>
+        
+            <li>
+                <a href="/llm/%E6%A8%A1%E5%9E%8B%E5%BE%AE%E8%B0%83/">AI模型微调</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/go/">Recent Go</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/go/go%E4%B8%89%E8%89%B2%E6%A0%87%E8%AE%B0%E6%B7%B7%E5%90%88%E5%86%99%E5%B1%8F%E9%9A%9Cgc%E6%A8%A1%E5%BC%8F%E5%85%A8%E6%80%BB%E7%BB%93/">Go三色标记混合写屏障GC模式全总结</a>
+            </li>
+        
+            <li>
+                <a href="/go/go%E4%B8%ADmake%E4%B8%8Enew%E5%8C%BA%E5%88%AB/">Go中make与new区别</a>
+            </li>
+        
+            <li>
+                <a href="/go/go%E5%B8%B8%E7%94%A8bug%E5%92%8C%E6%80%A7%E8%83%BD%E9%97%AE%E9%A2%98%E7%9A%84%E5%AE%9E%E8%B7%B5%E6%96%B9%E6%B3%95/">Go常用bug和性能问题的实践方法</a>
+            </li>
+        
+            <li>
+                <a href="/go/grpc%E6%80%BB%E7%BB%93/">GRPC笔记</a>
+            </li>
+        
+            <li>
+                <a href="/go/go%E7%9A%84defer%E6%80%BB%E7%BB%93/">Go的defer总结</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+            </div>
+        </main>
+        <footer class="footer">
+    <div class="footer-row">
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/note/index.xml">
+                    Feed of Note
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/android/index.xml">
+                    Feed of Android
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/tool/index.xml">
+                    Feed of Tool
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/llm/index.xml">
+                    Feed of Llm
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/go/index.xml">
+                    Feed of Go
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+
+        
+            
+            
+        
+    </div>
+
+    
+</footer>
+
+    </body>
+</html>

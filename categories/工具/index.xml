@@ -1,0 +1,1554 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>工具 on Abner的博客</title>
+    <link>https://abnerxc.github.io/categories/%E5%B7%A5%E5%85%B7/</link>
+    <description>Recent content in 工具 on Abner的博客</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-CN</language>
+    <lastBuildDate>Mon, 21 Jul 2025 18:35:11 +0800</lastBuildDate><atom:link href="https://abnerxc.github.io/categories/%E5%B7%A5%E5%85%B7/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>AlmaLinux-k8s安装</title>
+      <link>https://abnerxc.github.io/tool/almalinux-k8s/</link>
+      <pubDate>Mon, 21 Jul 2025 18:35:11 +0800</pubDate>
+      
+      <guid>https://abnerxc.github.io/tool/almalinux-k8s/</guid>
+      <description>&lt;blockquote&gt;
+&lt;p&gt;&lt;a href=&#34;https://juejin.cn/post/7369865018764984354&#34;&gt;https://juejin.cn/post/7369865018764984354&lt;/a&gt;
+&lt;a href=&#34;https://developer.aliyun.com/article/1463360&#34;&gt;https://developer.aliyun.com/article/1463360&lt;/a&gt;&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h1 id=&#34;环境准备所有节点执行&#34;&gt;环境准备（所有节点执行） &lt;a href=&#34;#%e7%8e%af%e5%a2%83%e5%87%86%e5%a4%87%e6%89%80%e6%9c%89%e8%8a%82%e7%82%b9%e6%89%a7%e8%a1%8c&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;h2 id=&#34;网络配置&#34;&gt;网络配置 &lt;a href=&#34;#%e7%bd%91%e7%bb%9c%e9%85%8d%e7%bd%ae&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;master=192.168.122.10,node=192.168.122.11,192.168.122.12&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;#进入网络配置文件目录&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;vi /etc/NetworkManager/system-connections/enp1s0.nmconnection
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;将&lt;span style=&#34;color:#f92672&#34;&gt;[&lt;/span&gt;ipv4&lt;span style=&#34;color:#f92672&#34;&gt;]&lt;/span&gt;的method&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;auto改为method&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;manual，即改为配置静态ip
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;[&lt;/span&gt;ipv4&lt;span style=&#34;color:#f92672&#34;&gt;]&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;method&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;manual
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;address1&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;192.168.122.10  
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;#address2=192.168.122.10&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;gateway&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;192.168.122.1
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;route1&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;192.168.100.1
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;dns&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;114.114.114.114;8.8.8.8
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;#重启网络&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;systemctl restart NetworkManager
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;替换源&#34;&gt;替换源 &lt;a href=&#34;#%e6%9b%bf%e6%8d%a2%e6%ba%90&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# 1. 配置&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# 注意：“# baseurl” 中间有个空格（AlmaLinux 专有）&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;sed -e &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;s|^mirrorlist=|#mirrorlist=|g&amp;#39;&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;&lt;/span&gt;    -e &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;s|^# baseurl=https://repo.almalinux.org|baseurl=https://mirrors.aliyun.com|g&amp;#39;&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;&lt;/span&gt;    -i.bak &lt;span style=&#34;color:#ae81ff&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;&lt;/span&gt;    /etc/yum.repos.d/almalinux*.repo
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# 恢复 (sysin)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;sed -e &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;s|^#mirrorlist=|mirrorlist=|g&amp;#39;&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;&lt;/span&gt;    -e &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;s|^baseurl=https://mirrors.aliyun.com|# baseurl=https://repo.almalinux.org|g&amp;#39;&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;&lt;/span&gt;    -i.bak &lt;span style=&#34;color:#ae81ff&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;&lt;/span&gt;    /etc/yum.repos.d/almalinux*.repo
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# 2. 清理缓存并重建&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;dnf clean all
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;dnf makecache
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;关闭防火墙和-selinux&#34;&gt;关闭防火墙和 SELinux &lt;a href=&#34;#%e5%85%b3%e9%97%ad%e9%98%b2%e7%81%ab%e5%a2%99%e5%92%8c-selinux&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# 关闭防火墙&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;systemctl stop firewalld &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; systemctl disable firewalld
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# 关闭 SELinux&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;setenforce &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;sed -i &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;s/^SELINUX=enforcing$/SELINUX=permissive/&amp;#39;&lt;/span&gt; /etc/selinux/config
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;配置时间同步&#34;&gt;配置时间同步 &lt;a href=&#34;#%e9%85%8d%e7%bd%ae%e6%97%b6%e9%97%b4%e5%90%8c%e6%ad%a5&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# 安装 chrony&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;dnf install -y chrony
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# 启动并设置开机自启&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;systemctl enable --now chronyd
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# 查看时间同步状态&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;chronyc sources
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;设置主机名&#34;&gt;设置主机名 &lt;a href=&#34;#%e8%ae%be%e7%bd%ae%e4%b8%bb%e6%9c%ba%e5%90%8d&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;k8s-master,k8s-node1,k8s-node2&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;hostnamectl set-hostname k8s-master
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;配置主机名和-etchosts&#34;&gt;配置主机名和 /etc/hosts &lt;a href=&#34;#%e9%85%8d%e7%bd%ae%e4%b8%bb%e6%9c%ba%e5%90%8d%e5%92%8c-etchosts&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;在所有三个节点上，执行以下命令，添加 hosts 解析&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;cat &amp;gt;&amp;gt; /etc/hosts &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;lt;&amp;lt;EOF
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;192.168.122.10 k8s-master
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;192.168.122.11 k8s-node1
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;192.168.122.12 k8s-node2
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;EOF&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;k8s关闭swap&#34;&gt;k8s关闭swap &lt;a href=&#34;#k8s%e5%85%b3%e9%97%adswap&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;Kubernetes 要求禁用 Swap，以保证 kubelet 的性能和稳定性。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;swapoff -a
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;sed -ri &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;s/.*swap.*/#&amp;amp;/&amp;#39;&lt;/span&gt; /etc/fstab
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;配置内核参数&#34;&gt;配置内核参数 &lt;a href=&#34;#%e9%85%8d%e7%bd%ae%e5%86%85%e6%a0%b8%e5%8f%82%e6%95%b0&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;加载必要的内核模块并配置网络参数，让 iptables 能够正确地处理桥接流量。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# 安装额外的内核模块包&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;dnf install -y kernel-modules-extra
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# 添加 br_netfilter modules&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;cat &amp;gt; /etc/modules-load.d/k8s.conf &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;lt;&amp;lt;EOF
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;overlay
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;br_netfilter
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;EOF&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# 添加 iptables 配置&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;cat &amp;gt; /etc/sysctl.d/k8s.conf &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;lt;&amp;lt; EOF
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;net.bridge.bridge-nf-call-ip6tables = 1
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;net.bridge.bridge-nf-call-iptables = 1
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;net.ipv4.ip_forward = 1
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;vm.swappiness = 0
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;EOF&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# 应用配置&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;sysctl --system
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;#重启机器&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;reboot
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# 查看网桥过滤模块是否加载成功&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;lsmod | grep -e br_netfilter -e overlay
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;安装-containerd&#34;&gt;安装 containerd &lt;a href=&#34;#%e5%ae%89%e8%a3%85-containerd&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# 安装 dnf-plugins-core&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;dnf install -y dnf-plugins-core
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# 添加 Docker CE 仓库 (阿里云源)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;dnf config-manager --add-repo&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;https://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# 安装 containerd&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;dnf install -y containerd.io
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# 创建默认配置文件&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;mkdir -p /etc/containerd
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;containerd config default | tee /etc/containerd/config.toml
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# 修改配置文件&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# 1. 使用 systemd cgroup 驱动&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# 2. 配置阿里云镜像仓库加速器&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;sed -i &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;s/SystemdCgroup = false/SystemdCgroup = true/&amp;#39;&lt;/span&gt; /etc/containerd/config.toml
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;#在配置文件的最后添加以下内容&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;vi /etc/containerd/config.toml
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;查找pause镜像 ，将&lt;span style=&#34;color:#f92672&#34;&gt;[&lt;/span&gt;registry.k8s.io&lt;span style=&#34;color:#f92672&#34;&gt;]&lt;/span&gt;替换为&lt;span style=&#34;color:#f92672&#34;&gt;[&lt;/span&gt;registry.aliyuncs.com/google_containers&lt;span style=&#34;color:#f92672&#34;&gt;]&lt;/span&gt;，并修改版本3.9，因为kubeadm config images list 获取的版本是3.19
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;查找io.containerd.grpc.v1.cri，在里面添加以下内容，注意缩进2个空格
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  &lt;span style=&#34;color:#f92672&#34;&gt;[&lt;/span&gt;plugins.&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;io.containerd.grpc.v1.cri&amp;#34;&lt;/span&gt;.registry&lt;span style=&#34;color:#f92672&#34;&gt;]&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#f92672&#34;&gt;[&lt;/span&gt;plugins.&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;io.containerd.grpc.v1.cri&amp;#34;&lt;/span&gt;.registry.mirrors&lt;span style=&#34;color:#f92672&#34;&gt;]&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;      &lt;span style=&#34;color:#f92672&#34;&gt;[&lt;/span&gt;plugins.&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;io.containerd.grpc.v1.cri&amp;#34;&lt;/span&gt;.registry.mirrors.&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;docker.io&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;]&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        endpoint &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;[&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;https://registry.aliyuncs.com&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;]&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# 启动并设置 containerd 开机自启&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;systemctl enable --now containerd
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# 检查 containerd 状态&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;systemctl status containerd
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;kubernetes镜像&#34;&gt;Kubernetes镜像 &lt;a href=&#34;#kubernetes%e9%95%9c%e5%83%8f&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;#添加 Kubernetes Yum 仓库 (阿里云源),镜像会落后官网版本&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;cat &amp;gt; /etc/yum.repos.d/kubernetes.repo &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;lt;&amp;lt;EOF
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;[kubernetes]
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;name=Kubernetes
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;baseurl=https://mirrors.aliyun.com/kubernetes/yum/repos/kubernetes-el7-x86_64/
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;enabled=1
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;gpgcheck=0
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;repo_gpgcheck=0
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;gpgkey=https://mirrors.aliyun.com/kubernetes/yum/doc/yum-key.gpg https://mirrors.aliyun.com/kubernetes/yum/doc/rpm-package-key.gpg
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;EOF&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# 官网版本(如果要求新版本可以选这个)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;[&lt;/span&gt;kubernetes&lt;span style=&#34;color:#f92672&#34;&gt;]&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;name&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;Kubernetes
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;baseurl&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;https://pkgs.k8s.io/core:/stable:/v1.30/rpm/
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;enabled&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;gpgcheck&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;gpgkey&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;https://pkgs.k8s.io/core:/stable:/v1.30/rpm/repodata/repomd.xml.key
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;exclude&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;kubelet kubeadm kubectl cri-tools kubernetes-cni
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# 清理旧的缓存&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;dnf clean all
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# 重建缓存&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;dnf makecache
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# 再次验证可用版本&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;dnf list --showduplicates kubeadm --disableexcludes&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;kubernetes
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;安装-kubernetes&#34;&gt;安装 Kubernetes &lt;a href=&#34;#%e5%ae%89%e8%a3%85-kubernetes&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;#排除kubernetes的升级安装&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;dnf install -y kubelet-1.28.2-0 kubeadm-1.28.2-0 kubectl-1.28.2-0 --disableexcludes&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;kubernetes
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;systemctl enable --now kubelet
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;#重启机器&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;reboot
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&amp;mdash;&amp;mdash;&amp;mdash;&amp;mdash;&amp;mdash;&amp;ndash;克隆节点&amp;mdash;&amp;mdash;&amp;mdash;&amp;mdash;&amp;mdash;&amp;mdash;&amp;mdash;&amp;mdash;&amp;mdash;&amp;mdash;&amp;ndash;&lt;/p&gt;
+&lt;h1 id=&#34;初始化-master-节点-仅在-k8s-master-执行&#34;&gt;初始化 Master 节点 (仅在 k8s-master 执行) &lt;a href=&#34;#%e5%88%9d%e5%a7%8b%e5%8c%96-master-%e8%8a%82%e7%82%b9-%e4%bb%85%e5%9c%a8-k8s-master-%e6%89%a7%e8%a1%8c&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;h2 id=&#34;使用-kubeadm-初始化&#34;&gt;使用 kubeadm 初始化 &lt;a href=&#34;#%e4%bd%bf%e7%94%a8-kubeadm-%e5%88%9d%e5%a7%8b%e5%8c%96&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kubeadm reset -f
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;systemctl restart kubelet
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# 查看版本&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kubeadm config images list
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# 可以先拉取集群所需要的images&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kubeadm config images pull --image-repository&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;registry.aliyuncs.com/google_containers
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;如果提示缺少镜像，请执行类似如下命令
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;crictl pull registry.aliyuncs.com/google_containers/pause:3.9
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# 初始化Kubeadm&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kubeadm init &lt;span style=&#34;color:#ae81ff&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;&lt;/span&gt;  --apiserver-advertise-address&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;192.168.122.10 &lt;span style=&#34;color:#ae81ff&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;&lt;/span&gt;  --control-plane-endpoint&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;192.168.122.10 &lt;span style=&#34;color:#ae81ff&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;&lt;/span&gt;  --kubernetes-version&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;v1.28.2 &lt;span style=&#34;color:#ae81ff&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;&lt;/span&gt;  --service-cidr&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;10.96.0.0/12 &lt;span style=&#34;color:#ae81ff&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;&lt;/span&gt;  --pod-network-cidr&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;10.244.0.0/16 &lt;span style=&#34;color:#ae81ff&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;&lt;/span&gt;  --image-repository&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;registry.aliyuncs.com/google_containers
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# 初始化报错查看&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;journalctl -xeu kubelet -f
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;配置-kubectl&#34;&gt;配置 kubectl &lt;a href=&#34;#%e9%85%8d%e7%bd%ae-kubectl&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;为了在Master节点上能方便地使用kubectl命令，执行以下操作：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# 针对 root 用户&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;export KUBECONFIG&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;/etc/kubernetes/admin.conf
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;echo &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;export KUBECONFIG=/etc/kubernetes/admin.conf&amp;#34;&lt;/span&gt; &amp;gt;&amp;gt; /etc/bashrc
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# 或者针对普通用户 (推荐)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;mkdir -p $HOME/.kube
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;chown &lt;span style=&#34;color:#66d9ef&#34;&gt;$(&lt;/span&gt;id -u&lt;span style=&#34;color:#66d9ef&#34;&gt;)&lt;/span&gt;:&lt;span style=&#34;color:#66d9ef&#34;&gt;$(&lt;/span&gt;id -g&lt;span style=&#34;color:#66d9ef&#34;&gt;)&lt;/span&gt; $HOME/.kube/config
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h1 id=&#34;添加-worker-节点-在-k8s-node1-和-k8s-node2-执行&#34;&gt;添加 Worker 节点 (在 k8s-node1 和 k8s-node2 执行) &lt;a href=&#34;#%e6%b7%bb%e5%8a%a0-worker-%e8%8a%82%e7%82%b9-%e5%9c%a8-k8s-node1-%e5%92%8c-k8s-node2-%e6%89%a7%e8%a1%8c&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;分别在k8s-node1和k8s-node2上执行&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;添加master节点（多个master执行，单个不需要执行）
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kubeadm join 192.168.122.10:6443 --token lk9wh5.cu3batvd0axv4622 &lt;span style=&#34;color:#ae81ff&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;&lt;/span&gt;--discovery-token-ca-cert-hash sha256:50d0019950338860872fd3ea1acd0bb92f1174c8520fdfda5d539de3036a2c4d &lt;span style=&#34;color:#ae81ff&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;&lt;/span&gt;--control-plane  
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;添加node1节点
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kubeadm join 192.168.122.10:6443 --token lk9wh5.cu3batvd0axv4622 &lt;span style=&#34;color:#ae81ff&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;&lt;/span&gt;--discovery-token-ca-cert-hash sha256:50d0019950338860872fd3ea1acd0bb92f1174c8520fdfda5d539de3036a2c4d
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h1 id=&#34;安装-calico-网络插件-仅在-k8s-master-执行&#34;&gt;安装 Calico 网络插件 (仅在 k8s-master 执行) &lt;a href=&#34;#%e5%ae%89%e8%a3%85-calico-%e7%bd%91%e7%bb%9c%e6%8f%92%e4%bb%b6-%e4%bb%85%e5%9c%a8-k8s-master-%e6%89%a7%e8%a1%8c&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# 下载文件(偶尔会下载不了，多试几次)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;curl https://docs.tigera.io/archive/v3.25/manifests/calico.yaml -O
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# 修改docker.io地址&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;sed -i &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;s#docker.io/#m.daocloud.io/docker.io/#g&amp;#39;&lt;/span&gt; calico.yaml
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;或者
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;sed -i &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;s#docker.io/#docker.1ms.run/#g&amp;#39;&lt;/span&gt; calico.yaml
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# 修改IP_AUTODETECTION_METHOD,注意enp1s0 需要是你自己网卡的名称&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;sed -i &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;/value: &amp;#34;autodetect&amp;#34;/a\\            - name: IP_AUTODETECTION_METHOD\n              value: &amp;#34;interface=enp1s0&amp;#34;&amp;#39;&lt;/span&gt; calico.yaml
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# 应用配置&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kubectl apply -f calico.yaml
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# 验证&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kubectl get pods -n kube-system | grep calico
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# 报错处理完成后删除配置重新操作：&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kubectl delete -f calico.yaml
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;token和hash丢失过期处理&#34;&gt;token和hash丢失过期处理 &lt;a href=&#34;#token%e5%92%8chash%e4%b8%a2%e5%a4%b1%e8%bf%87%e6%9c%9f%e5%a4%84%e7%90%86&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kubeadm token list
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;#当前的token值，如果为空表示前集群中没有有效的token值&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;#重新申请token值&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kubeadm token create
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kubeadm token list
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;#根据实际情况来删除当前有效的token值&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kubeadm token delete xpcpuh.mxbspj5lyyskofu1
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;-discovery-token-ca-cert-hash 值被保存到 Kubemetes 集群的根证书文件中，默认情况下，根证书位于 /etc/kubemetes/pki/ca.cr
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;下，可通过如下命令获取，但需要在得到的hash值前面拼接上 sha256:才算完整。
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;#使用0penSSL工具计算证书文件的SHA256哈希值&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;openssl x509 -pubkey -in /etc/kubernetes/pki/ca.crt | &lt;span style=&#34;color:#ae81ff&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;&lt;/span&gt;openssl rsa -pubin -outform der 2&amp;gt;/dev/null | &lt;span style=&#34;color:#ae81ff&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;&lt;/span&gt;openssl dgst -sha256 -hex | sed &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;s/^.* //&amp;#39;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h1 id=&#34;集群验证&#34;&gt;集群验证 &lt;a href=&#34;#%e9%9b%86%e7%be%a4%e9%aa%8c%e8%af%81&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;h2 id=&#34;在-master-节点验证&#34;&gt;在 Master 节点验证 &lt;a href=&#34;#%e5%9c%a8-master-%e8%8a%82%e7%82%b9%e9%aa%8c%e8%af%81&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;回到k8s-master节点，执行以下命令查看新加入的节点。
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kubectl get nodes
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;稍等片刻（等待kubelet在node上拉取flannel镜像并启动CNI），你会看到所有节点的状态都变为 Ready。
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;NAME         STATUS     ROLES           AGE     VERSION
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;k8s-master   NotReady   control-plane   2m40s   v1.28.2
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;k8s-node1    NotReady   &amp;lt;none&amp;gt;          15s     v1.28.2 
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;k8s-node2    NotReady   &amp;lt;none&amp;gt;          7s      v1.28.2
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;集群功能验证&#34;&gt;集群功能验证 &lt;a href=&#34;#%e9%9b%86%e7%be%a4%e5%8a%9f%e8%83%bd%e9%aa%8c%e8%af%81&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;#部署 Nginx&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kubectl create deployment nginx --image&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;registry.cn-guangzhou.aliyuncs.com/xuchen/proxy:nginx-1.27.1
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;#暴露端口&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kubectl expose deployment nginx --port&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;80&lt;/span&gt; --type&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;NodePort
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;#检查状态&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# 查看 Pod&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kubectl get pods -o wide
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# 查看 Service&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kubectl get svc nginx
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kubectl get svc nginx 的输出会显示一个 NodePort 类型的服务，例如 80:31234/TCP。这意味着你可以通过任意一个节点的IP + 31234端口来访问Nginx。
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;访问测试&#34;&gt;访问测试 &lt;a href=&#34;#%e8%ae%bf%e9%97%ae%e6%b5%8b%e8%af%95&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;在Master节点或任何能访问集群网络的地方，使用curl测试。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# 访问 Master 节点&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;curl http://192.168.122.10:30963
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# 访问 Node1 节点&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;curl http://192.168.122.11:30963
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# 访问 Node2 节点&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;curl http://192.168.122.12:31234
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;</description>
+    </item>
+    
+    <item>
+      <title>AlmaLinux10</title>
+      <link>https://abnerxc.github.io/tool/linux-almalinux%E4%BC%98%E5%8C%96/</link>
+      <pubDate>Mon, 21 Jul 2025 18:35:11 +0800</pubDate>
+      
+      <guid>https://abnerxc.github.io/tool/linux-almalinux%E4%BC%98%E5%8C%96/</guid>
+      <description>&lt;h1 id=&#34;网络配置&#34;&gt;网络配置 &lt;a href=&#34;#%e7%bd%91%e7%bb%9c%e9%85%8d%e7%bd%ae&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;#进入网络配置文件目录&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;cd /etc/NetworkManager/system-connections
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;vi /etc/NetworkManager/system-connections/ens33.nmconnection
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;将&lt;span style=&#34;color:#f92672&#34;&gt;[&lt;/span&gt;ipv4&lt;span style=&#34;color:#f92672&#34;&gt;]&lt;/span&gt;的method&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;auto改为method&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;manual，即改为配置静态ip
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;[&lt;/span&gt;ipv4&lt;span style=&#34;color:#f92672&#34;&gt;]&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;method&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;manual
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;address1&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;192.168.122.10
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;#address2=192.168.122.10&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;gateway&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;192.168.122.1
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;route1&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;192.168.100.1
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;dns&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;114.114.114.114;8.8.8.8
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;#重启网络&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;systemctl restart NetworkManager
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h1 id=&#34;设置主机名&#34;&gt;设置主机名 &lt;a href=&#34;#%e8%ae%be%e7%bd%ae%e4%b8%bb%e6%9c%ba%e5%90%8d&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;sudo hostnamectl set-hostname k8s-master
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h1 id=&#34;selinux关闭&#34;&gt;selinux关闭 &lt;a href=&#34;#selinux%e5%85%b3%e9%97%ad&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;sed -i &amp;#39;s/SELINUX=enforcing/SELINUX=disabled/g&amp;#39; /etc/sysconfig/selinux
+sed -i &amp;#39;s/SELINUX=enforcing/SELINUX=disabled/g&amp;#39; /etc/selinux/config
+setenforce 0
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;关闭firewalld&#34;&gt;关闭firewalld &lt;a href=&#34;#%e5%85%b3%e9%97%adfirewalld&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;systemctl disable firewalld
+systemctl stop firewalld
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;替换源&#34;&gt;替换源 &lt;a href=&#34;#%e6%9b%bf%e6%8d%a2%e6%ba%90&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;# 1. 配置
+# 注意：“# baseurl” 中间有个空格（AlmaLinux 专有）
+sed -e &amp;#39;s|^mirrorlist=|#mirrorlist=|g&amp;#39; \
+    -e &amp;#39;s|^# baseurl=https://repo.almalinux.org|baseurl=https://mirrors.aliyun.com|g&amp;#39; \
+    -i.bak \
+    /etc/yum.repos.d/almalinux*.repo
+# 恢复 (sysin)
+sed -e &amp;#39;s|^#mirrorlist=|mirrorlist=|g&amp;#39; \
+    -e &amp;#39;s|^baseurl=https://mirrors.aliyun.com|# baseurl=https://repo.almalinux.org|g&amp;#39; \
+    -i.bak \
+    /etc/yum.repos.d/almalinux*.repo
+
+# 2. 清理缓存并重建
+sudo dnf clean all
+sudo dnf makecache
+&lt;/code&gt;&lt;/pre&gt;</description>
+    </item>
+    
+    <item>
+      <title>Docker搭建可一键部署的多域名LNMP环境</title>
+      <link>https://abnerxc.github.io/tool/docker-%E6%90%AD%E5%BB%BA%E5%8F%AF%E4%B8%80%E9%94%AE%E9%83%A8%E7%BD%B2%E7%9A%84%E5%A4%9A%E5%9F%9F%E5%90%8Dlnmp%E7%8E%AF%E5%A2%83/</link>
+      <pubDate>Thu, 21 Jul 2022 18:35:11 +0800</pubDate>
+      
+      <guid>https://abnerxc.github.io/tool/docker-%E6%90%AD%E5%BB%BA%E5%8F%AF%E4%B8%80%E9%94%AE%E9%83%A8%E7%BD%B2%E7%9A%84%E5%A4%9A%E5%9F%9F%E5%90%8Dlnmp%E7%8E%AF%E5%A2%83/</guid>
+      <description>&lt;h1 id=&#34;docker搭建可一键部署的多域名lnmp环境&#34;&gt;Docker搭建可一键部署的多域名LNMP环境 &lt;a href=&#34;#docker%e6%90%ad%e5%bb%ba%e5%8f%af%e4%b8%80%e9%94%ae%e9%83%a8%e7%bd%b2%e7%9a%84%e5%a4%9a%e5%9f%9f%e5%90%8dlnmp%e7%8e%af%e5%a2%83&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;h2 id=&#34;特点&#34;&gt;特点 &lt;a href=&#34;#%e7%89%b9%e7%82%b9&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;ol&gt;
+&lt;li&gt;完全开源&lt;/li&gt;
+&lt;li&gt;支持多版本PHP切换（PHP5.4、PHP5.6、PHP7.2&amp;hellip;)&lt;/li&gt;
+&lt;li&gt;支持绑定任意多个域名&lt;/li&gt;
+&lt;li&gt;支持HTTPS和HTTP/2&lt;/li&gt;
+&lt;li&gt;PHP源代码位于host中&lt;/li&gt;
+&lt;li&gt;MySQL data位于host中&lt;/li&gt;
+&lt;li&gt;所有配置文件可在host中直接修改&lt;/li&gt;
+&lt;li&gt;所有日志文件可在host中直接查看&lt;/li&gt;
+&lt;li&gt;内置完整PHP扩展安装命令&lt;/li&gt;
+&lt;li&gt;实际使用，确保100%可行&lt;/li&gt;
+&lt;li&gt;实现一次配置，可在任何支持Docker系统使用&lt;/li&gt;
+&lt;/ol&gt;
+&lt;hr&gt;
+&lt;h2 id=&#34;安装步骤&#34;&gt;安装步骤 &lt;a href=&#34;#%e5%ae%89%e8%a3%85%e6%ad%a5%e9%aa%a4&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;h2 id=&#34;docker安装&#34;&gt;docker安装 &lt;a href=&#34;#docker%e5%ae%89%e8%a3%85&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;h3 id=&#34;1--centos7安装方法&#34;&gt;1.  Centos7安装方法 &lt;a href=&#34;#1--centos7%e5%ae%89%e8%a3%85%e6%96%b9%e6%b3%95&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h3&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;sudo yum install -y yum-utils device-mapper-persistent-data lvm2
+sudo yum-config-manager --add-repo http://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo
+sudo yum makecache fast
+sudo yum -y install docker-ce
+sudo service docker start
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;2--ubuntu安装方法&#34;&gt;2.  Ubuntu安装方法 &lt;a href=&#34;#2--ubuntu%e5%ae%89%e8%a3%85%e6%96%b9%e6%b3%95&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h3&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;sudo apt-get update
+sudo apt-get -y install apt-transport-https ca-certificates curl software-properties-common
+curl -fsSL http://mirrors.aliyun.com/docker-ce/linux/ubuntu/gpg | sudo apt-key add -
+sudo add-apt-repository &amp;#34;deb [arch=amd64] http://mirrors.aliyun.com/docker-ce/linux/ubuntu $(lsb_release -cs) stable&amp;#34;
+sudo apt-get -y update
+sudo apt-get -y install docker-ce
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;docker-compose安装&#34;&gt;docker-compose安装 &lt;a href=&#34;#docker-compose%e5%ae%89%e8%a3%85&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;sudo curl -L https://get.daocloud.io/docker/compose/releases/download/1.18.0/docker-compose-`uname -s`-`uname -m` -o /usr/local/bin/docker-compose
+sudo chmod +x /usr/local/bin/docker-compose
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;查看版本加入到docker组&#34;&gt;查看版本，加入到docker组 &lt;a href=&#34;#%e6%9f%a5%e7%9c%8b%e7%89%88%e6%9c%ac%e5%8a%a0%e5%85%a5%e5%88%b0docker%e7%bb%84&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;$ docker -v
+$ docker-compose -v
+$ sudo gpasswd -a ${USER} docker     
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;就不用每次启动Docker都得加sudo了，注意，执行gpasswd命令之后要重新登陆才有效。&lt;/p&gt;
+&lt;h2 id=&#34;使用国内镜像仓库&#34;&gt;使用国内镜像仓库 &lt;a href=&#34;#%e4%bd%bf%e7%94%a8%e5%9b%bd%e5%86%85%e9%95%9c%e5%83%8f%e4%bb%93%e5%ba%93&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;ul&gt;
+&lt;li&gt;首先注册一个阿里云账号，然后访问阿里云的&lt;a href=&#34;https://cr.console.aliyun.com/&#34;&gt;Docker镜像仓库&lt;/a&gt;，能找到加速器地址。&lt;/li&gt;
+&lt;li&gt;对于Docker 1.10+，打开配置文件 /etc/docker/daemon.json（没有时新建该文件）：&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;sudo mkdir -p /etc/docker
+echo &amp;#39;{ &amp;#34;registry-mirrors&amp;#34;: [&amp;#34;https://l714mp7z.mirror.aliyuncs.com&amp;#34;] }&amp;#39; &amp;gt;  /etc/docker/daemon.json
+sudo systemctl daemon-reload
+sudo systemctl restart docker
+sudo systemctl enable docker
+
+#开机启动centos7
+systemctl enable docker
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Docker 1.10以下请看：https://yq.aliyun.com/articles/29941。&lt;/p&gt;
+&lt;h2 id=&#34;安装容器和镜像&#34;&gt;安装容器和镜像 &lt;a href=&#34;#%e5%ae%89%e8%a3%85%e5%ae%b9%e5%99%a8%e5%92%8c%e9%95%9c%e5%83%8f&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;docker-compose up -d
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;如果是windows下基于virtualbox挂载目录到linux&#34;&gt;如果是windows下基于virtualbox挂载目录到linux &lt;a href=&#34;#%e5%a6%82%e6%9e%9c%e6%98%afwindows%e4%b8%8b%e5%9f%ba%e4%ba%8evirtualbox%e6%8c%82%e8%bd%bd%e7%9b%ae%e5%bd%95%e5%88%b0linux&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;h3 id=&#34;安装增强工具centos7版本&#34;&gt;安装增强工具(centos7版本) &lt;a href=&#34;#%e5%ae%89%e8%a3%85%e5%a2%9e%e5%bc%ba%e5%b7%a5%e5%85%b7centos7%e7%89%88%e6%9c%ac&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h3&gt;&lt;p&gt;&lt;img src=&#34;https://abnerxc.github.io/img/docker-win-a.jpeg&#34; alt=&#34;&#34;&gt;&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;yum install -y gcc gcc-devel gcc-c++ gcc-c++-devel make kernel kernel-devel bzip2 vim wget  
+sudo reboot  #重启
+ln -s /usr/src/kernels/3.10.0（注意内核版本号自动补全） /usr/src/linux　   ## 增加软连接
+#点击虚拟机设备-&amp;gt;安装增强
+mount /dev/cdrom /mnt  #挂载增强光盘到系统，提示只读不用管
+cd /mnt &amp;amp;&amp;amp;  ./VBoxLinuxAdditions.run
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;配置共享目录&#34;&gt;配置共享目录 &lt;a href=&#34;#%e9%85%8d%e7%bd%ae%e5%85%b1%e4%ba%ab%e7%9b%ae%e5%bd%95&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h3&gt;&lt;p&gt;&lt;img src=&#34;https://abnerxc.github.io/img/docker-win-b.jpeg&#34; alt=&#34;&#34;&gt;&lt;/p&gt;
+&lt;h3 id=&#34;手动挂载&#34;&gt;手动挂载 &lt;a href=&#34;#%e6%89%8b%e5%8a%a8%e6%8c%82%e8%bd%bd&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h3&gt;&lt;h4 id=&#34;ubuntu&#34;&gt;ubuntu &lt;a href=&#34;#ubuntu&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h4&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;sudo mkdir /home/abner/server  &amp;amp;&amp;amp; chmod -R 777 /home/abner/server 
+sudo mount -t vboxsf docker /home/abner/server   #手动挂载 （这里挂载的目录最好不要和共享文件夹名称一样）
+&lt;/code&gt;&lt;/pre&gt;&lt;h4 id=&#34;centos7&#34;&gt;centos7 &lt;a href=&#34;#centos7&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h4&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;sudo mkdir /root/server  &amp;amp;&amp;amp; chmod -R 777 /root/server 
+sudo mount -t vboxsf docker /root/server
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;开机自动挂载&#34;&gt;开机自动挂载 &lt;a href=&#34;#%e5%bc%80%e6%9c%ba%e8%87%aa%e5%8a%a8%e6%8c%82%e8%bd%bd&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h3&gt;&lt;p&gt;&lt;em&gt;&lt;strong&gt;&lt;code&gt;virbox自动挂载不能勾选&lt;/code&gt;&lt;/strong&gt;&lt;/em&gt;&lt;/p&gt;
+&lt;h4 id=&#34;ubuntu-1&#34;&gt;ubuntu &lt;a href=&#34;#ubuntu-1&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h4&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;sudo vim /etc/rc.local
+##exit 0 前增加如下命令
+sleep 1
+sudo mount -t vboxsf docker /home/abner/server
+&lt;/code&gt;&lt;/pre&gt;&lt;h4 id=&#34;centos7-1&#34;&gt;centos7 &lt;a href=&#34;#centos7-1&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h4&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;mkdir /root/server &amp;amp;&amp;amp; chmod -R 777 /root/server
+mount -t vboxsf docker /root/server   #手动挂载
+## 此时如果提示/sbin/mount.vboxsf: mounting failed with the error: No such device，说明内核模块vboxsf未加载，可通过lsmod | grep vboxsf查看（无结果说明未加载）。执行 `modprobe vboxsf` #加载vboxsf模块
+#自动挂载
+sudo vim /etc/fstab
+docker /root/server   vboxsf rw,gid=100,uid=1000,auto 0 0
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;若走的端口转发按图如下配置&#34;&gt;若走的端口转发按图如下配置 &lt;a href=&#34;#%e8%8b%a5%e8%b5%b0%e7%9a%84%e7%ab%af%e5%8f%a3%e8%bd%ac%e5%8f%91%e6%8c%89%e5%9b%be%e5%a6%82%e4%b8%8b%e9%85%8d%e7%bd%ae&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h3&gt;&lt;p&gt;&lt;img src=&#34;https://abnerxc.github.io/img/docker-win-c.jpeg&#34; alt=&#34;&#34;&gt;&lt;/p&gt;
+&lt;h3 id=&#34;若走的桥接网卡正常ip地址连接即可&#34;&gt;若走的桥接网卡，正常IP地址连接即可 &lt;a href=&#34;#%e8%8b%a5%e8%b5%b0%e7%9a%84%e6%a1%a5%e6%8e%a5%e7%bd%91%e5%8d%a1%e6%ad%a3%e5%b8%b8ip%e5%9c%b0%e5%9d%80%e8%bf%9e%e6%8e%a5%e5%8d%b3%e5%8f%af&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h3&gt;&lt;h1 id=&#34;以下部分属于扩展&#34;&gt;以下部分属于扩展 &lt;a href=&#34;#%e4%bb%a5%e4%b8%8b%e9%83%a8%e5%88%86%e5%b1%9e%e4%ba%8e%e6%89%a9%e5%b1%95&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;h2 id=&#34;目录说明&#34;&gt;目录说明 &lt;a href=&#34;#%e7%9b%ae%e5%bd%95%e8%af%b4%e6%98%8e&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;h4 id=&#34;大致框架&#34;&gt;大致框架 &lt;a href=&#34;#%e5%a4%a7%e8%87%b4%e6%a1%86%e6%9e%b6&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h4&gt;&lt;p&gt;&lt;img src=&#34;https://abnerxc.github.io/img/docker-win-d.jpeg&#34; alt=&#34;&#34;&gt;&lt;/p&gt;
+&lt;h4 id=&#34;目录结构&#34;&gt;目录结构 &lt;a href=&#34;#%e7%9b%ae%e5%bd%95%e7%bb%93%e6%9e%84&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h4&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;├── docker-compose.yml          容器启动配置文件
+├── Dockerfile                  PHP-FPM构建配置文件
+├── conf                        配置目录
+│   ├── mysql                   MySQL配置文件目录
+│   │   └── my.cnf              MySQL配置文件
+│   ├── nginx                   Nginx配置文件目录
+│   │   ├── conf.d              站点配置文件目录
+│   │   │   ├── certs           SSL认证文件、密钥和加密文件目录
+│   │   │   │   └── site2       站点2的认证文件目录
+│   │   │   ├── site1.conf      站点1 Nginx配置文件
+│   │   │   └── site2.conf      站点2 Nginx配置文件
+│   │   └── nginx.conf          Nginx通用配置文件
+│   └── php                     PHP配置目录
+│       ├── php-fpm.d           PHP-FPM配置目录
+│       │   └── www.conf        PHP-FPM配置文件
+│       └── php.ini             PHP配置文件
+├── log                         日志目录
+│   ├── mysql                   MySQL日志目录
+│   ├── nginx                   Nginx日志目录
+│   └── php-fpm                 PHP-FPM日志目录
+├── mysql                       MySQL数据文件目录
+└── www                         站点根目录
+    ├── site1                   站点1根目录
+    └── site2                   站点2根目录
+&lt;/code&gt;&lt;/pre&gt;&lt;h4 id=&#34;nginx配置&#34;&gt;nginx配置 &lt;a href=&#34;#nginx%e9%85%8d%e7%bd%ae&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h4&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;server {
+    listen  80;
+    server_name www.site1.com;
+    root /var/www/html/site1;
+    index index.shtml index.php index.html;
+    location ~* \.(css|js)$ {
+        sendfile  off;
+        break;
+    }
+    expires off;
+    client_max_body_size 2M;
+    client_body_temp_path /var/www/html;
+
+    location / {
+            index index.shtml index.php index.html;
+            if (!-e $request_filename){
+                 rewrite ^/(.+)$ /index.php?_url=https://abnerxc.github.io/$1 last;
+            }
+    }
+
+    location ~ ^/.+\.php(/|$) {
+        fastcgi_pass [容器的ip或者名称]:9000;  
+        include fastcgi_params;
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        fastcgi_read_timeout 600; 
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h4 id=&#34;站点部署&#34;&gt;站点部署 &lt;a href=&#34;#%e7%ab%99%e7%82%b9%e9%83%a8%e7%bd%b2&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h4&gt;&lt;p&gt;本文有默认加了两个站点：www.site1.com（同localhost）和www.site2.com。&lt;br&gt;
+要在本地访问这两个域名，需要修改你的hosts文件，添加以下两行：&lt;br&gt;
+127.0.0.1 &lt;a href=&#34;https://www.site1.com&#34;&gt;www.site1.com&lt;/a&gt;&lt;br&gt;
+127.0.0.1 &lt;a href=&#34;https://www.site2.com&#34;&gt;www.site2.com&lt;/a&gt;&lt;br&gt;
+其中，www.site2.com为支持SSL/https和HTTP/2的示例站点。&lt;br&gt;
+因为站点2的SSL采用自签名方式，所以浏览器有安全提示，继续访问就可以了，自己的站点用第三方SSL认证证书替换即可。&lt;br&gt;
+如果只用到站点1，把站点2相关的目录和配置文件删除：&lt;br&gt;
+./conf/nginx/conf.d/certs/site2/&lt;br&gt;
+./conf/nginx/conf.d/site2.conf&lt;br&gt;
+./www/site2/&lt;br&gt;
+重启容器内的Nginx生效：&lt;br&gt;
+docker exec -it dlnmp_nginx_1 nginx -s reload&lt;/p&gt;
+&lt;h4 id=&#34;https使用&#34;&gt;HTTPS使用 &lt;a href=&#34;#https%e4%bd%bf%e7%94%a8&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h4&gt;&lt;p&gt;./conf/nginx/conf.d/site2.conf&lt;br&gt;
+如果是自签名，可以用廖雪峰提供的一个自动生成认证文件、私钥脚本：gencert.sh，
+这个脚本已经放在项目中，在这个目录下：&lt;br&gt;
+./conf/nginx/conf.d/certs/site2/&lt;br&gt;
+在Bash中输入：&lt;br&gt;
+$ ./gencert.sh&lt;br&gt;
+输入一次域名，和几次密码（内容随意）后，就会生成几个认证文件。&lt;br&gt;
+其中自签名情况不需要.csr和.origin.key后缀的文件。&lt;br&gt;
+然后修改Nginx配置文件，配置SSL支持就可以了。&lt;/p&gt;
+&lt;h4 id=&#34;docker-composeyml文件&#34;&gt;docker-compose.yml文件 &lt;a href=&#34;#docker-composeyml%e6%96%87%e4%bb%b6&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h4&gt;&lt;p&gt;如下是docker容器的运行配置docker-compose.yml的内容：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;nginx:
+  image: nginx:alpine
+  ports:
+    - &amp;#34;80:80&amp;#34;
+    - &amp;#34;443:443&amp;#34;
+  volumes:
+    - ./www/:/var/www/html/:rw
+    - ./conf/nginx/conf.d:/etc/nginx/conf.d/:ro
+    - ./conf/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    - ./log/nginx/:/var/log/nginx/:rw
+  links:
+    - php-fpm:fpm
+
+php-fpm:
+  build: .
+  expose:
+    - &amp;#34;9000&amp;#34;
+  volumes:
+    - ./www/:/var/www/html/:rw
+    - ./conf/php/php.ini:/usr/local/etc/php/php.ini:ro
+    - ./conf/php/php-fpm.d/www.conf:/usr/local/etc/php-fpm.d/www.conf:rw
+    - ./log/php-fpm/:/var/log/php-fpm/:rw
+  links:
+    - mysql:mysql
+    - redis:redis
+
+mysql:
+  image: mysql:latest
+  ports:
+    - &amp;#34;3306:3306&amp;#34;
+  volumes:
+    - ./conf/mysql/my.cnf:/etc/mysql/my.cnf:ro
+    - ./mysql/:/var/lib/mysql/:rw
+    - ./log/mysql/:/var/log/mysql/:rw
+  environment:
+    MYSQL_ROOT_PASSWORD: &amp;#34;123456&amp;#34;
+
+redis:
+  image: redis:latest
+  ports:
+    - &amp;#34;6379:6379&amp;#34;
+&lt;/code&gt;&lt;/pre&gt;&lt;h4 id=&#34;站点根目录写权限&#34;&gt;站点根目录写权限 &lt;a href=&#34;#%e7%ab%99%e7%82%b9%e6%a0%b9%e7%9b%ae%e5%bd%95%e5%86%99%e6%9d%83%e9%99%90&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h4&gt;&lt;p&gt;默认的，容器中的/var/www/html目录属于root，我们需要修改为www-data，PHP才能正常写目录。&lt;br&gt;
+先进入到容器中：&lt;br&gt;
+$ docker exec -it dlnmp_php-fpm_1 /bin/bash&lt;br&gt;
+然后修改目录权限：&lt;br&gt;
+$ chown -R www-data:www-data /var/www/html&lt;/p&gt;
+&lt;h4 id=&#34;mysql连接&#34;&gt;MYSQL连接 &lt;a href=&#34;#mysql%e8%bf%9e%e6%8e%a5&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h4&gt;&lt;ol&gt;
+&lt;li&gt;$ mysql -h 127.0.0.1 -u root -p
+&lt;ul&gt;
+&lt;li&gt;说明：这里MySQL的连接主机不能用localhost，因为MySQL客户端默认使用unix socket方式连接，应该直接用本地IP。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;$pdo = new PDO(&amp;lsquo;mysql:host=mysql;dbname=site1&amp;rsquo;, &amp;lsquo;root&amp;rsquo;, &amp;lsquo;123456&amp;rsquo;);
+&lt;ul&gt;
+&lt;li&gt;说明：，host的值就是在指定的MySQL容器的名称。 redis,memcaced等类似&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h4 id=&#34;一键安装脚本&#34;&gt;一键安装脚本 &lt;a href=&#34;#%e4%b8%80%e9%94%ae%e5%ae%89%e8%a3%85%e8%84%9a%e6%9c%ac&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h4&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;#!/bin/bash
+
+function getVersionNum(){
+    version=`cat /proc/version`
+    cut=${version%%(*}
+    dd=${cut:14}
+}
+
+function dockerAlis() {
+    dps=&amp;#34;\$(docker ps -aq)&amp;#34;
+    dcup=&amp;#34;ztth=&amp;#39;docker-compose -f /root/docker/ztth.yml up -d&amp;#39;&amp;#34;
+    dcrs=&amp;#34;ztth-rs=&amp;#39;docker-compose -f /root/docker/ztth.yml restart&amp;#39;&amp;#34;
+    dcrm=&amp;#34;ztth-rm=&amp;#39;docker-compose -f /root/docker/ztth.yml stop &amp;amp;&amp;amp; docker-compose -f /root/docker/ztth.yml rm&amp;#39;&amp;#34;
+    dcps=&amp;#34;ztth-ps=&amp;#39;docker-compose -f /root/docker/ztth.yml ps&amp;#39;&amp;#34;
+    dcip=&amp;#34;docker-ips=&amp;#39;docker inspect --format=&amp;#39;\&amp;#34;&amp;#39;\&amp;#34;&amp;#39;{{.Name}} - {{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}&amp;#39;\&amp;#34;&amp;#39;\&amp;#34;&amp;#39; $dps&amp;#39;&amp;#34;
+}
+
+function main(){
+	while [ True ];do
+		echo -e &amp;#34;\033[33m CentOs7 docker安装步骤: \033[0m&amp;#34;
+		echo -e &amp;#34;\033[33m The #1 docker服务安装 \033[0m&amp;#34;
+		echo -e &amp;#34;\033[33m The #2 virtual box挂载安装，请保证安装增加工具和挂载目录已经添加 \033[0m&amp;#34;
+		echo -e &amp;#34;\033[33m q键退出 \033[0m&amp;#34;
+		read -p &amp;#39;选择安装: &amp;#39; number
+		case $number in
+          1)
+            echo -e &amp;#34;\033[31m docker install starting \033[0m&amp;#34; \
+            &amp;amp;&amp;amp; yum install -y wget \
+            &amp;amp;&amp;amp; mv /etc/yum.repos.d/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo.backup \
+            &amp;amp;&amp;amp; wget -O /etc/yum.repos.d/CentOS-Base.repo http://mirrors.aliyun.com/repo/Centos-7.repo \
+            &amp;amp;&amp;amp; yum install -y yum-utils \
+            &amp;amp;&amp;amp; yum-config-manager --add-repo http://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo \
+            &amp;amp;&amp;amp; yum install -y gcc gcc-devel gcc-c++ gcc-c++-devel make kernel kernel-devel bzip2 vim wget device-mapper-persistent-data lvm2 docker-ce \
+            &amp;amp;&amp;amp; yum makecache fast \
+            &amp;amp;&amp;amp; service docker start \
+            &amp;amp;&amp;amp; curl -L  https://ghproxy.com/https://github.com/docker/compose/releases/download/v2.16.0/docker-compose-`uname -s`-`uname -m` -o /usr/local/bin/docker-compose \
+            &amp;amp;&amp;amp; chmod +x /usr/local/bin/docker-compose\
+            &amp;amp;&amp;amp; gpasswd -a $USER docker \
+            &amp;amp;&amp;amp; mkdir -p /etc/docker \
+            &amp;amp;&amp;amp; echo &amp;#39;{&amp;#34;registry-mirrors&amp;#34;:[&amp;#34;https://l714mp7z.mirror.aliyuncs.com&amp;#34;]}&amp;#39;&amp;gt;&amp;gt; /etc/docker/daemon.json \
+            &amp;amp;&amp;amp; systemctl daemon-reload \
+            &amp;amp;&amp;amp; systemctl restart docker \
+            &amp;amp;&amp;amp; systemctl enable docker \
+            &amp;amp;&amp;amp; echo -e &amp;#34;\033[31m docker安装完成，请重启电脑，执行步骤2 \033[0m&amp;#34; &amp;amp;&amp;amp; exit
+            ;;
+
+          2)
+            echo -e &amp;#34;\033[31m virtual box增强工具 install starting \033[0m&amp;#34; \
+            &amp;amp;&amp;amp; getVersionNum &amp;amp;&amp;amp; rm -rf /usr/src/linux &amp;amp;&amp;amp; ln -s /usr/src/kernels/$dd /usr/src/linux \
+            &amp;amp;&amp;amp; mount /dev/cdrom /mnt \
+            &amp;amp;&amp;amp; cd /mnt &amp;amp;&amp;amp;  ./VBoxLinuxAdditions.run \
+            &amp;amp;&amp;amp; mkdir -p /root/docker  &amp;amp;&amp;amp; chmod -R 777 /root/docker \
+            &amp;amp;&amp;amp; echo &amp;#39;docker /root/docker   vboxsf rw,gid=100,uid=1000,auto 0 0&amp;#39;&amp;gt;&amp;gt; /etc/fstab \
+            &amp;amp;&amp;amp; dockerAlis \
+            &amp;amp;&amp;amp; echo &amp;#34;alias $dcup&amp;#34;&amp;gt;&amp;gt; /root/.bashrc \
+            &amp;amp;&amp;amp; echo &amp;#34;alias $dcrs&amp;#34;&amp;gt;&amp;gt; /root/.bashrc \
+            &amp;amp;&amp;amp; echo &amp;#34;alias $dcrm&amp;#34;&amp;gt;&amp;gt; /root/.bashrc \
+            &amp;amp;&amp;amp; echo &amp;#34;alias $dcps&amp;#34;&amp;gt;&amp;gt; /root/.bashrc \
+            &amp;amp;&amp;amp; echo &amp;#34;alias $dcip&amp;#34;&amp;gt;&amp;gt; /root/.bashrc \
+            &amp;amp;&amp;amp; source /root/.bashrc \
+            &amp;amp;&amp;amp; echo -e &amp;#34;\033[31m 请服务器重启 \033[0m&amp;#34;] &amp;amp;&amp;amp; exit
+            ;;
+
+		 &amp;#34;q&amp;#34;|&amp;#34;quit&amp;#34;)
+            exit
+            ;;
+
+         *)
+            echo &amp;#34;Input error!!&amp;#34;
+             ;;
+
+		esac
+	done
+}
+
+main
+&lt;/code&gt;&lt;/pre&gt;&lt;h4 id=&#34;常用操作&#34;&gt;常用操作 &lt;a href=&#34;#%e5%b8%b8%e7%94%a8%e6%93%8d%e4%bd%9c&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h4&gt;&lt;p&gt;别名配置&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;alias docker-ips=&amp;#39;docker inspect --format=&amp;#39;&amp;#34;&amp;#39;&amp;#34;&amp;#39;{{.Name}} - {{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}&amp;#39;&amp;#34;&amp;#39;&amp;#34;&amp;#39; $(docker ps -aq)&amp;#39;
+alias ztth=&amp;#39;docker-compose --compatibility -f /root/docker/ztth.yml up -d&amp;#39;
+alias ztth-rs=&amp;#39;docker-compose --compatibility -f /root/docker/ztth.yml restart&amp;#39;
+alias ztth-rm=&amp;#39;docker-compose --compatibility -f /root/docker/ztth.yml down -v&amp;#39;
+alias ztth-ps=&amp;#39;docker-compose --compatibility -f /root/docker/ztth.yml ps&amp;#39;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;批量操作&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;批量删除镜像
+docker rmi -f $(docker images -aq)
+清理所有未使用资源
+docker system prune -a --volumes
+删除未使用镜像
+docker image prune -a -f
+删除未使用容器
+docker rm -vf $(docker ps -aq)
+批量删除卷
+docker volume rm $(docker volume ls -qf dangling=true)
+删除所有关闭的容器
+docker ps -a | grep Exit | cut -d &amp;#39; &amp;#39; -f 1 | xargs docker rm
+删除所有dangling镜像（即无tag的镜像）
+docker rmi $(docker images | grep &amp;#34;^&amp;lt;none&amp;gt;&amp;#34; | awk &amp;#34;{print $3}&amp;#34;)
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;自动脚本&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;挂载到目录`/docker-entrypoint-initdb.d/`,首次创建容器会执行，但是多脚本必须是`01\02\03\04\05`这样的顺序开头，否则会报错。
+&lt;/code&gt;&lt;/pre&gt;&lt;blockquote&gt;
+&lt;p&gt;docker pull docker.1ms.run/apache/rocketmq:5.3.2&lt;/p&gt;
+&lt;/blockquote&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>git命令大全</title>
+      <link>https://abnerxc.github.io/tool/git-%E5%91%BD%E4%BB%A4%E5%A4%A7%E5%85%A8/</link>
+      <pubDate>Thu, 21 Jul 2022 18:35:11 +0800</pubDate>
+      
+      <guid>https://abnerxc.github.io/tool/git-%E5%91%BD%E4%BB%A4%E5%A4%A7%E5%85%A8/</guid>
+      <description>&lt;h3 id=&#34;查看添加提交删除找回重置修改文件&#34;&gt;查看、添加、提交、删除、找回，重置修改文件 &lt;a href=&#34;#%e6%9f%a5%e7%9c%8b%e6%b7%bb%e5%8a%a0%e6%8f%90%e4%ba%a4%e5%88%a0%e9%99%a4%e6%89%be%e5%9b%9e%e9%87%8d%e7%bd%ae%e4%bf%ae%e6%94%b9%e6%96%87%e4%bb%b6&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h3&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;git help &amp;lt;command&amp;gt; # 显示command的help
+git show # 显示某次提交的内容 git show $id
+git checkout -- &amp;lt;file&amp;gt; # 抛弃工作区修改
+git checkout . # 抛弃工作区修改
+git add &amp;lt;file&amp;gt; # 将工作文件修改提交到本地暂存区
+git add . # 将所有修改过的工作文件提交暂存区
+git rm &amp;lt;file&amp;gt; # 从版本库中删除文件
+git rm &amp;lt;file&amp;gt; --cached # 从版本库中删除文件，但不删除文件
+git reset &amp;lt;file&amp;gt; # 从暂存区恢复到工作文件
+git reset -- . # 从暂存区恢复到工作文件
+git reset --hard # 恢复最近一次提交过的状态，即放弃上次提交后的所有本次修改
+git commit &amp;lt;file&amp;gt; 
+git commit . 
+git commit -a # 将git add, git rm和git ci等操作都合并在一起做　　
+git commit -am &amp;#34;some comments&amp;#34;
+git commit --amend # 修改最后一次提交记录
+git revert &amp;lt;$id&amp;gt; # 恢复某次提交的状态，恢复动作本身也创建次提交对象
+git revert HEAD # 恢复最后一次提交的状态
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;查看文件diff&#34;&gt;查看文件diff &lt;a href=&#34;#%e6%9f%a5%e7%9c%8b%e6%96%87%e4%bb%b6diff&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h3&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;git diff &amp;lt;file&amp;gt; # 比较当前文件和暂存区文件差异 git diff
+git diff &amp;lt;id1&amp;gt;&amp;lt;id1&amp;gt;&amp;lt;id2&amp;gt; # 比较两次提交之间的差异
+git diff &amp;lt;branch1&amp;gt;..&amp;lt;branch2&amp;gt; # 在两个分支之间比较
+git diff --staged # 比较暂存区和版本库差异
+git diff --cached # 比较暂存区和版本库差异
+git diff --stat # 仅仅比较统计信息
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;查看提交记录&#34;&gt;查看提交记录 &lt;a href=&#34;#%e6%9f%a5%e7%9c%8b%e6%8f%90%e4%ba%a4%e8%ae%b0%e5%bd%95&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h3&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;git log  # 查看分支的提交记录
+git log &amp;lt;file&amp;gt; # 查看该文件每次提交记录
+git log -p &amp;lt;file&amp;gt; # 查看每次详细修改内容的diff
+git log -p -2 # 查看最近两次详细修改内容的diff
+git log --stat #查看提交统计信息
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;查看切换创建和删除分支&#34;&gt;查看、切换、创建和删除分支 &lt;a href=&#34;#%e6%9f%a5%e7%9c%8b%e5%88%87%e6%8d%a2%e5%88%9b%e5%bb%ba%e5%92%8c%e5%88%a0%e9%99%a4%e5%88%86%e6%94%af&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h3&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;git branch -r # 查看远程分支
+git branch &amp;lt;new_branch&amp;gt; # 创建新的分支
+git branch -v # 查看各个分支最后提交信息
+git branch --merged # 查看已经被合并到当前分支的分支
+git branch --no-merged # 查看尚未被合并到当前分支的分支
+git checkout &amp;lt;branch&amp;gt; # 切换到某个分支
+git checkout -b &amp;lt;new_branch&amp;gt; # 创建新的分支，并且切换过去
+git checkout -b &amp;lt;new_branch&amp;gt; &amp;lt;branch&amp;gt; # 基于branch创建新的new_branch
+git checkout $id # 把某次历史提交记录checkout出来，但无分支信息，切换到其他分支会自动删除
+git checkout $id -b &amp;lt;new_branch&amp;gt; # 把某次历史提交记录checkout出来，创建成一个分支
+git checkout develop --patch 文件路径 #合并单个文件到当前分支
+git branch -d &amp;lt;branch&amp;gt; # 删除某个分支
+git branch -D &amp;lt;branch&amp;gt; # 强制删除某个分支 (未被合并的分支被删除的时候需要强制)
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;分支合并和rebase&#34;&gt;分支合并和rebase &lt;a href=&#34;#%e5%88%86%e6%94%af%e5%90%88%e5%b9%b6%e5%92%8crebase&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h3&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-cgo&#34; data-lang=&#34;cgo&#34;&gt;git merge &amp;lt;branch&amp;gt; # 将branch分支合并到当前分支
+git merge origin/master --no-ff # 不要Fast-Foward合并，这样可以生成merge提交
+git rebase master &amp;lt;branch&amp;gt; # 将master rebase到branch，相当于： git co &amp;lt;branch&amp;gt; &amp;amp;&amp;amp; git rebase master &amp;amp;&amp;amp; git co master &amp;amp;&amp;amp; git merge &amp;lt;branch&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;同步远程分支目录到本地&#34;&gt;同步远程分支目录到本地 &lt;a href=&#34;#%e5%90%8c%e6%ad%a5%e8%bf%9c%e7%a8%8b%e5%88%86%e6%94%af%e7%9b%ae%e5%bd%95%e5%88%b0%e6%9c%ac%e5%9c%b0&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h3&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-cgo&#34; data-lang=&#34;cgo&#34;&gt;git remote update origin --prune
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;git补丁管理方便在多台机器上开发同步时用&#34;&gt;Git补丁管理(方便在多台机器上开发同步时用) &lt;a href=&#34;#git%e8%a1%a5%e4%b8%81%e7%ae%a1%e7%90%86%e6%96%b9%e4%be%bf%e5%9c%a8%e5%a4%9a%e5%8f%b0%e6%9c%ba%e5%99%a8%e4%b8%8a%e5%bc%80%e5%8f%91%e5%90%8c%e6%ad%a5%e6%97%b6%e7%94%a8&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h3&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-cgo&#34; data-lang=&#34;cgo&#34;&gt;git diff &amp;gt; ../sync.patch # 生成补丁
+git apply ../sync.patch # 打补丁
+git apply --check ../sync.patch #测试补丁能否成功
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;git暂存管理&#34;&gt;Git暂存管理 &lt;a href=&#34;#git%e6%9a%82%e5%ad%98%e7%ae%a1%e7%90%86&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h3&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-cgo&#34; data-lang=&#34;cgo&#34;&gt;git stash # 暂存
+git stash list # 列所有stash
+git stash apply # 恢复暂存的内容
+git stash drop # 删除暂存区
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;git远程分支管理&#34;&gt;Git远程分支管理 &lt;a href=&#34;#git%e8%bf%9c%e7%a8%8b%e5%88%86%e6%94%af%e7%ae%a1%e7%90%86&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h3&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-cgo&#34; data-lang=&#34;cgo&#34;&gt;git pull # 抓取远程仓库所有分支更新并合并到本地
+git pull --no-ff # 抓取远程仓库所有分支更新并合并到本地，不要快进合并
+git fetch origin # 抓取远程仓库更新
+git merge origin/master # 将远程主分支合并到本地当前分支
+git checkout --track origin/branch # 跟踪某个远程分支创建相应的本地分支
+git checkout -b &amp;lt;local_branch&amp;gt; origin/&amp;lt;remote_branch&amp;gt; # 基于远程分支创建本地分支，功能同上
+git push # push所有分支
+git push origin master # 将本地主分支推到远程主分支
+git push -u origin master # 将本地主分支推到远程(如无远程主分支则创建，用于初始化远程仓库)
+git push origin &amp;lt;local_branch&amp;gt; # 创建远程分支， origin是远程仓库名
+git push origin &amp;lt;local_branch&amp;gt;:&amp;lt;remote_branch&amp;gt; # 创建远程分支
+git push origin :&amp;lt;remote_branch&amp;gt; #先删除本地分支(git br -d &amp;lt;branch&amp;gt;)，然后再push删除远程分支
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;git远程仓库管理&#34;&gt;Git远程仓库管理 &lt;a href=&#34;#git%e8%bf%9c%e7%a8%8b%e4%bb%93%e5%ba%93%e7%ae%a1%e7%90%86&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h3&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-cgo&#34; data-lang=&#34;cgo&#34;&gt;git remote -v # 查看远程服务器地址和仓库名称
+git remote show origin # 查看远程服务器仓库状态
+git remote add origin git@ github:robbin/robbin_site.git # 添加远程仓库地址
+git remote set-url origin git@ github.com:robbin/robbin_site.git # 设置远程仓库地址(用于修改远程仓库地址) git remote rm &amp;lt;repository&amp;gt; # 删除远程仓库
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;创建远程仓库&#34;&gt;创建远程仓库 &lt;a href=&#34;#%e5%88%9b%e5%bb%ba%e8%bf%9c%e7%a8%8b%e4%bb%93%e5%ba%93&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h3&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-cgo&#34; data-lang=&#34;cgo&#34;&gt;git clone --bare robbin_site robbin_site.git # 用带版本的项目创建纯版本仓库
+scp -r my_project.git git@ git.csdn.net:~ # 将纯仓库上传到服务器上
+mkdir robbin_site.git &amp;amp;&amp;amp; cd robbin_site.git &amp;amp;&amp;amp; git --bare init # 在服务器创建纯仓库
+
+git remote add origin git@ github.com:robbin/robbin_site.git # 设置远程仓库地址
+git push -u origin master # 客户端首次提交
+git push -u origin develop # 首次将本地develop分支提交到远程develop分支，并且track
+git remote set-head origin master # 设置远程仓库的HEAD指向master分支
+也可以命令设置跟踪远程库和本地库
+
+git branch --set-upstream master origin/master
+git branch --set-upstream develop origin/develop
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;git-init&#34;&gt;git init &lt;a href=&#34;#git-init&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h3&gt;&lt;p&gt;在本地新建一个repo,进入一个项目目录,执行git init,会初始化一个repo,并在当前文件夹下创建一个.git文件夹.&lt;/p&gt;
+&lt;h3 id=&#34;git-clone&#34;&gt;git clone &lt;a href=&#34;#git-clone&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h3&gt;&lt;p&gt;获取一个url对应的远程Git repo, 创建一个local copy.
+一般的格式是git clone [url].
+clone下来的repo会以url最后一个斜线后面的名称命名,创建一个文件夹,如果想要指定特定的名称,可以git clone [url] newname指定.&lt;/p&gt;
+&lt;h3 id=&#34;git-status&#34;&gt;git status &lt;a href=&#34;#git-status&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h3&gt;&lt;p&gt;查询repo的状态.
+git status -s: -s表示short, -s的输出标记会有两列,第一列是对staging区域而言,第二列是对working目录而言.&lt;/p&gt;
+&lt;h3 id=&#34;git-log&#34;&gt;git log &lt;a href=&#34;#git-log&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h3&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-cgo&#34; data-lang=&#34;cgo&#34;&gt;在当前分支上查看提交日志
+git log --oneline --number: 每条log只显示一行,显示number条.
+git log --oneline --graph:可以图形化地表示出分支合并历史.
+git log branchname可以显示特定分支的log.
+git log --oneline branch1 ^branch2,可以查看在分支1,却不在分支2中的提交.^表示排除这个分支(Window下可能要给^branch2加上引号).
+git log --decorate会显示出tag信息.
+git log --author=[author name] 可以指定作者的提交历史.
+git log --since --before --until --after 根据提交时间筛选log.
+--no-merges可以将merge的commits排除在外.
+git log --grep 根据commit信息过滤log: git log --grep=keywords
+默认情况下, git log --grep --author是OR的关系,即满足一条即被返回,如果你想让它们是AND的关系,可以加上--all-match的option.
+git log -S: filter by introduced diff.
+比如: git log -SmethodName (注意S和后面的词之间没有等号分隔).
+git log -p: show patch introduced at each commit.
+每一个提交都是一个快照(snapshot),Git会把每次提交的diff计算出来,作为一个patch显示给你看.
+另一种方法是git show [SHA].
+git log --stat: show diffstat of changes introduced at each commit.
+同样是用来看改动的相对信息的,--stat比-p的输出更简单一些.
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;git-commit&#34;&gt;git commit &lt;a href=&#34;#git-commit&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h3&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-cgo&#34; data-lang=&#34;cgo&#34;&gt;提交已经被add进来的改动.
+git commit -m “the commit message&amp;#34;
+git commit -a 会先把所有已经track的文件的改动add进来,然后提交(有点像svn的一次提交,不用先暂存). 对于没有track的文件,还是需要git add一下.
+git commit --amend 增补提交. 会使用与当前提交节点相同的父节点进行一次新的提交,旧的提交将会被取消.
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;git-reset&#34;&gt;git reset &lt;a href=&#34;#git-reset&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h3&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-cgo&#34; data-lang=&#34;cgo&#34;&gt;undo changes and commits.
+这里的HEAD关键字指的是当前分支最末梢最新的一个提交.也就是版本库中该分支上的最新版本.
+git reset HEAD: unstage files from index and reset pointer to HEAD
+这个命令用来把不小心add进去的文件从staged状态取出来,可以单独针对某一个文件操作: git reset HEAD - - filename, 这个- - 也可以不加.
+git reset --soft
+move HEAD to specific commit reference, index and staging are untouched.
+git reset --hard
+unstage files AND undo any changes in the working directory since last commit.
+使用git reset —hard HEAD进行reset,即上次提交之后,所有staged的改动和工作目录的改动都会消失,还原到上次提交的状态.
+这里的HEAD可以被写成任何一次提交的SHA-1.
+不带soft和hard参数的git reset,实际上带的是默认参数mixed.
+
+总结:
+git reset --mixed id,是将git的HEAD变了(也就是提交记录变了),但文件并没有改变，(也就是working tree并没有改变). 取消了commit和add的内容.
+git reset --soft id. 实际上，是git reset –mixed id 后,又做了一次git add.即取消了commit的内容.
+git reset --hard id.是将git的HEAD变了,文件也变了.
+按改动范围排序如下:
+soft (commit) &amp;lt; mixed (commit + add) &amp;lt; hard (commit + add + local working)
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;git-revert&#34;&gt;git revert &lt;a href=&#34;#git-revert&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h3&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-cgo&#34; data-lang=&#34;cgo&#34;&gt;反转撤销提交.只要把出错的提交(commit)的名字(reference)作为参数传给命令就可以了.
+git revert HEAD: 撤销最近的一个提交.
+git revert会创建一个反向的新提交,可以通过参数-n来告诉Git先不要提交.
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;git-rm&#34;&gt;git rm &lt;a href=&#34;#git-rm&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h3&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-cgo&#34; data-lang=&#34;cgo&#34;&gt;git rm file: 从staging区移除文件,同时也移除出工作目录.
+git rm --cached: 从staging区移除文件,但留在工作目录中.
+git rm --cached从功能上等同于git reset HEAD,清除了缓存区,但不动工作目录树.
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;git-clean&#34;&gt;git clean &lt;a href=&#34;#git-clean&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h3&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-cgo&#34; data-lang=&#34;cgo&#34;&gt;git clean是从工作目录中移除没有track的文件.
+通常的参数是git clean -df:
+-d表示同时移除目录,-f表示force,因为在git的配置文件中, clean.requireForce=true,如果不加-f,clean将会拒绝执行.
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;git-rebase&#34;&gt;git rebase &lt;a href=&#34;#git-rebase&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h3&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-cgo&#34; data-lang=&#34;cgo&#34;&gt;--rebase不会产生合并的提交,它会将本地的所有提交临时保存为补丁(patch),放在”.git/rebase”目录中,然后将当前分支更新到最新的分支尖端,最后把保存的补丁应用到分支上.
+rebase的过程中,也许会出现冲突,Git会停止rebase并让你解决冲突,在解决完冲突之后,用git add去更新这些内容,然后无需执行commit,只需要:
+git rebase --continue就会继续打余下的补丁.
+git rebase --abort将会终止rebase,当前分支将会回到rebase之前的状态.
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;git-reflog&#34;&gt;git reflog &lt;a href=&#34;#git-reflog&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h3&gt;&lt;p&gt;git reflog是对reflog进行管理的命令,reflog是git用来记录引用变化的一种机制,比如记录分支的变化或者是HEAD引用的变化.
+当git reflog不指定引用的时候,默认列出HEAD的reflog.
+HEAD@{0}代表HEAD当前的值,HEAD@{3}代表HEAD在3次变化之前的值.
+git会将变化记录到HEAD对应的reflog文件中,其路径为.git/logs/HEAD, 分支的reflog文件都放在.git/logs/refs目录下的子目录中.&lt;/p&gt;
+&lt;h3 id=&#34;cherry-pick&#34;&gt;cherry-pick &lt;a href=&#34;#cherry-pick&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h3&gt;&lt;p&gt;它会获取某一个分支的单笔提交，并作为一个新的提交引入到你当前分支上
+git cherry-pick [&lt;options&gt;] &lt;commit-ish&gt;&amp;hellip;
+常用options:
+&amp;ndash;quit                退出当前的chery-pick序列
+&amp;ndash;continue            继续当前的chery-pick序列
+&amp;ndash;abort               取消当前的chery-pick序列，恢复当前分支
+-n, &amp;ndash;no-commit       不自动提交
+-e, &amp;ndash;edit            编辑提交信息&lt;/p&gt;
+&lt;h3 id=&#34;git-代理设置&#34;&gt;git 代理设置 &lt;a href=&#34;#git-%e4%bb%a3%e7%90%86%e8%ae%be%e7%bd%ae&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h3&gt;&lt;ul&gt;
+&lt;li&gt;http&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;git config --global http.proxy &amp;#34;socks5://127.0.0.1:1086&amp;#34;
+git config --global https.proxy &amp;#34;socks5://127.0.0.1:1086&amp;#34;
+&lt;/code&gt;&lt;/pre&gt;&lt;ul&gt;
+&lt;li&gt;ssh 方式
+在用户文件夹下，打开/.ssh/config文件（如果没有就自己创建一个touch ~/.ssh/config）&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Host github.com
+	Port 443
+	Hostname ssh.github.com
+	IdentityFile /Users/abner/.ssh/id_rsa
+	TCPKeepAlive yes
+	ProxyCommand nc -X 5 -x 127.0.0.1:1086 %h %p
+	ServerAliveInterval 30
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;git使用对比工具&#34;&gt;git使用对比工具 &lt;a href=&#34;#git%e4%bd%bf%e7%94%a8%e5%af%b9%e6%af%94%e5%b7%a5%e5%85%b7&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h3&gt;&lt;p&gt;.gitconfig 添加 如下配置&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;[diff]
+    tool = bcomp
+[difftool]
+    prompt = false
+[difftool &amp;#34;bcomp&amp;#34;]
+    trustExitCode = true
+    cmd = &amp;#34;/usr/local/bin/bcomp&amp;#34; &amp;#34;$LOCAL&amp;#34; &amp;#34;$REMOTE&amp;#34;
+[merge]
+    tool = bcomp
+[mergetool]
+    prompt = false
+    keepBackup = false
+[mergetool &amp;#34;bcomp&amp;#34;]
+    trustExitCode = true
+    cmd = &amp;#34;/usr/local/bin/bcomp&amp;#34; &amp;#34;$LOCAL&amp;#34; &amp;#34;$REMOTE&amp;#34; &amp;#34;$BASE&amp;#34; &amp;#34;$MERGED&amp;#34;
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;windows-crlf&#34;&gt;windows CRLF &lt;a href=&#34;#windows-crlf&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h3&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-cgo&#34; data-lang=&#34;cgo&#34;&gt;#提交时转换为LF，检出时转换为CRLF
+git config --global core.autocrlf true
+适用于Windows系统，且一般为Windows默认设置，会在提交时对换行符进行CRLF - LF的转换，检出时又会进行LF - CRLF的转换。
+
+#提交时转换为LF，检出时不转换
+git config --global core.autocrlf input
+适用于Linux系统，所有换行符都会进行CRLF - LF转换，但操作时不会转换回CRLF。
+
+#提交检出均不转换
+git config --global core.autocrlf false
+*适用于Windows系统，且只在Windows上开发的情况。在提交、检出时不会对CRLF/LF换行符进行转换
+&lt;/code&gt;&lt;/pre&gt;</description>
+    </item>
+    
+    <item>
+      <title>Mac优化</title>
+      <link>https://abnerxc.github.io/tool/mac-%E4%BC%98%E5%8C%96/</link>
+      <pubDate>Thu, 21 Jul 2022 18:35:11 +0800</pubDate>
+      
+      <guid>https://abnerxc.github.io/tool/mac-%E4%BC%98%E5%8C%96/</guid>
+      <description>&lt;p&gt;全局设置代理&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;export ALL_PROXY=socks5://127.0.0.1:1086
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;git-ssh&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;git config --global user.name &amp;#34;xuchen&amp;#34;
+git config --global user.email &amp;#34;abner510@126.com&amp;#34;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;brew&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;ruby -e &amp;#34;$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)&amp;#34;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;或者
+/bin/zsh -c &amp;ldquo;$(curl -fsSL &lt;a href=&#34;https://gitee.com/cunkai/HomebrewCN/raw/master/Homebrew.sh)%22&#34;&gt;https://gitee.com/cunkai/HomebrewCN/raw/master/Homebrew.sh)&amp;quot;&lt;/a&gt;
+选择1 中科大源&lt;/p&gt;
+&lt;p&gt;oh-my-zsh&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;curl -L https://raw.github.com/robbyrussell/oh-my-zsh/master/tools/install.sh | sh
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;zsh-autosuggestions 自动补全插件&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;下载该插件到.oh-my-zsh的插件目录 &lt;code&gt;git clone git://github.com/zsh-users/zsh-autosuggestions $ZSH_CUSTOM/plugins/zsh-autosuggestions&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;编辑.zshrc： &lt;code&gt;plugins=(git zsh-autosuggestions)&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;重启命令行工具&lt;/li&gt;
+&lt;li&gt;下载自动补全插件 &lt;code&gt;http://mimosa-pudica.net/src/incr-0.2.zsh&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;放到oh-my-zsh的插件库中 &lt;code&gt;.oh-my-zsh/plugins/创建incr文件夹放到该文件夹中&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;.zshrc末尾添加：&lt;code&gt;source ~/.oh-my-zsh/plugins/incr/incr*.zsh&lt;/code&gt; 重启命令行&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>ssh常用脚本</title>
+      <link>https://abnerxc.github.io/tool/shell-ssh_script/</link>
+      <pubDate>Thu, 21 Jul 2022 18:35:11 +0800</pubDate>
+      
+      <guid>https://abnerxc.github.io/tool/shell-ssh_script/</guid>
+      <description>&lt;h1 id=&#34;ssh登陆脚本&#34;&gt;ssh登陆脚本 &lt;a href=&#34;#ssh%e7%99%bb%e9%99%86%e8%84%9a%e6%9c%ac&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;h2 id=&#34;1mainsh&#34;&gt;1.main.sh &lt;a href=&#34;#1mainsh&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-config&#34; data-lang=&#34;config&#34;&gt;#!/bin/bash
+# 获取脚本绝对路径
+SOURCE=&amp;#34;${BASH_SOURCE[0]}&amp;#34;
+while [ -h &amp;#34;$SOURCE&amp;#34; ]; do # resolve $SOURCE until the file is no longer a symlink
+  DIR=&amp;#34;$(cd -P &amp;#34;$(dirname &amp;#34;$SOURCE&amp;#34;)&amp;#34; &amp;amp;&amp;amp; pwd)&amp;#34;
+  SOURCE=&amp;#34;$(readlink &amp;#34;$SOURCE&amp;#34;)&amp;#34;
+  [[ $SOURCE != /* ]] &amp;amp;&amp;amp; SOURCE=&amp;#34;$DIR/$SOURCE&amp;#34; # if relative, re resolve it
+done
+direc=&amp;#34;$(cd -P &amp;#34;$(dirname &amp;#34;$SOURCE&amp;#34;)&amp;#34; &amp;amp;&amp;amp; pwd)&amp;#34;
+
+# 颜色输出函数
+function color(){
+    blue=&amp;#34;\033[0;36m&amp;#34;
+    red=&amp;#34;\033[0;31m&amp;#34;
+    green=&amp;#34;\033[0;32m&amp;#34;
+    close=&amp;#34;\033[m&amp;#34;
+    case $1 in
+        blue)
+            echo -e &amp;#34;$blue $2 $close&amp;#34;
+        ;;
+        red)
+            echo -e &amp;#34;$red $2 $close&amp;#34;
+        ;;
+        green)
+            echo -e &amp;#34;$green $2 $close&amp;#34;
+        ;;
+        *)
+            echo &amp;#34;Input color error!!&amp;#34;
+        ;;
+    esac
+}
+
+# 版权信息
+function copyright(){
+    echo &amp;#34;#####################&amp;#34;
+    color blue &amp;#34;   SSH Login Platform   &amp;#34;
+    echo &amp;#34;#####################&amp;#34;
+    echo
+}
+
+# 下划线分隔符
+function underline(){
+    echo &amp;#34;-----------------------------------------&amp;#34;
+}
+
+# 获取服务器配置
+function get_server_config() {
+    local id=&amp;#34;$1&amp;#34;
+    awk -v server_id=&amp;#34;server$id&amp;#34; -F &amp;#39;=&amp;#39; &amp;#39;
+    BEGIN {
+        current_section = &amp;#34;&amp;#34;
+        ip = port = username = login_type = credential = label = &amp;#34;&amp;#34;
+    }
+    /^\[/ {
+        current_section = substr($0, 2, length($0)-2)
+        if(current_section == server_id) in_section=1
+        else in_section=0
+    }
+    in_section &amp;amp;&amp;amp; NF&amp;gt;0 {
+        gsub(/^[ \t]+|[ \t]+$/, &amp;#34;&amp;#34;, $1)
+        gsub(/^[ \t]+|[ \t]+$/, &amp;#34;&amp;#34;, $2)
+        
+        if ($1 == &amp;#34;ip&amp;#34;) ip = $2
+        if ($1 == &amp;#34;port&amp;#34;) port = $2
+        if ($1 == &amp;#34;username&amp;#34;) username = $2
+        if ($1 == &amp;#34;login_type&amp;#34;) login_type = $2
+        if ($1 == &amp;#34;credential&amp;#34;) credential = $2
+        if ($1 == &amp;#34;label&amp;#34;) label = $2
+    }
+    END {
+        if (ip != &amp;#34;&amp;#34;) {
+            printf &amp;#34;%s:%s:%s:%s:%s:%s&amp;#34;, ip, port, username, login_type, credential, label
+        }
+    }
+    &amp;#39; &amp;#34;$direc/config.ini&amp;#34;
+}
+
+# 列出所有服务器
+function list_servers() {
+    awk -F &amp;#39;=&amp;#39; &amp;#39;
+    BEGIN {
+        print &amp;#34;序号 |       主机      | 登录方式 | 说明&amp;#34;
+    }
+    /^\[server/ {
+        match($0, /server[0-9]+/)
+        server_id = substr($0, RSTART+6, RLENGTH-6)
+        ip = login_type = label = &amp;#34;&amp;#34;
+    }
+    !/^\[/ &amp;amp;&amp;amp; $1 ~ /[[:space:]]*ip/ {
+        gsub(/^[ \t]+|[ \t]+$/, &amp;#34;&amp;#34;, $2)
+        ip = $2
+    }
+    !/^\[/ &amp;amp;&amp;amp; $1 ~ /[[:space:]]*login_type/ {
+        gsub(/^[ \t]+|[ \t]+$/, &amp;#34;&amp;#34;, $2)
+        login_type = $2
+    }
+    !/^\[/ &amp;amp;&amp;amp; $1 ~ /[[:space:]]*label/ {
+        gsub(/^[ \t]+|[ \t]+$/, &amp;#34;&amp;#34;, $2)
+        label = $2
+    }
+    ip != &amp;#34;&amp;#34; &amp;amp;&amp;amp; login_type != &amp;#34;&amp;#34; &amp;amp;&amp;amp; label != &amp;#34;&amp;#34; {
+        printf &amp;#34;\033[0;31m% 3s \033[m | %15s | %8s | %s\n&amp;#34;, server_id, ip, login_type, label
+        server_id = ip = login_type = label = &amp;#34;&amp;#34;
+    }
+    &amp;#39; &amp;#34;$direc/config.ini&amp;#34;
+}
+
+# 主函数
+function main(){
+    while true; do
+        clear
+        copyright
+        
+        echo &amp;#34;序号 |       主机      | 登录方式 | 说明&amp;#34;
+        underline
+        list_servers
+        underline
+        
+        read -p &amp;#39;[*] 选择主机: &amp;#39; number
+        
+        if [[ &amp;#34;$number&amp;#34; == &amp;#34;q&amp;#34; || &amp;#34;$number&amp;#34; == &amp;#34;quit&amp;#34; ]]; then
+            exit
+        fi
+        
+        config=$(get_server_config &amp;#34;$number&amp;#34;)
+        
+        if [ -z &amp;#34;$config&amp;#34; ]; then
+            color red &amp;#34;[!] 无效的主机序号: $number&amp;#34;
+            sleep 1
+            continue
+        fi
+        
+        IFS=&amp;#39;:&amp;#39; read -r ipaddr port username login_type credential label &amp;lt;&amp;lt;&amp;lt; &amp;#34;$config&amp;#34;
+        
+        # 显示调试信息
+        color blue &amp;#34;[*] 解析配置：&amp;#34;
+        echo &amp;#34;路径前缀: $direc&amp;#34;
+        echo &amp;#34;IP地址: $ipaddr&amp;#34;
+        echo &amp;#34;端口: $port&amp;#34;
+        echo &amp;#34;用户名: $username&amp;#34;
+        echo &amp;#34;登录类型: $login_type&amp;#34;
+        echo &amp;#34;证书文件: $credential&amp;#34;
+        
+        if [[ &amp;#34;$login_type&amp;#34; == &amp;#34;pem&amp;#34; ]]; then
+            pem_path=&amp;#34;$direc/keys/$credential&amp;#34;
+            color green &amp;#34;[*] 使用证书: $credential&amp;#34;
+            echo &amp;#34;证书路径: $pem_path&amp;#34;
+            
+            if [ ! -f &amp;#34;$pem_path&amp;#34; ]; then
+                color red &amp;#34;[!] 证书文件不存在: $pem_path&amp;#34;
+                sleep 2
+                continue
+            elif [ ! -r &amp;#34;$pem_path&amp;#34; ]; then
+                color red &amp;#34;[!] 无权限读取证书文件&amp;#34;
+                sleep 2
+                continue
+            fi
+            
+            ssh -i &amp;#34;$pem_path&amp;#34; &amp;#34;$username@$ipaddr&amp;#34; -p &amp;#34;$port&amp;#34;
+            
+        elif [[ &amp;#34;$login_type&amp;#34; == &amp;#34;pwd&amp;#34; ]]; then
+            exp_path=&amp;#34;$direc/login.exp&amp;#34;
+            
+            if [ ! -f &amp;#34;$exp_path&amp;#34; ]; then
+                color red &amp;#34;[!] expect脚本不存在: $exp_path&amp;#34;
+                sleep 2
+                continue
+            elif [ ! -x &amp;#34;$exp_path&amp;#34; ]; then
+                color red &amp;#34;[!] expect脚本不可执行&amp;#34;
+                sleep 2
+                continue
+            fi
+            
+            expect -f &amp;#34;$exp_path&amp;#34; &amp;#34;$ipaddr&amp;#34; &amp;#34;$username&amp;#34; &amp;#34;$credential&amp;#34; &amp;#34;$port&amp;#34;
+        else
+            color red &amp;#34;[!] 未知的登录类型: $login_type&amp;#34;
+            sleep 2
+        fi
+    done
+}
+
+main
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;2loginexp&#34;&gt;2.login.exp &lt;a href=&#34;#2loginexp&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-config&#34; data-lang=&#34;config&#34;&gt;#!/usr/bin/expect -f
+proc abort {msg} {
+    puts stderr $msg
+    exit 1
+}
+
+if {$argc != 4} {
+    abort &amp;#34;Usage: $argv0 host user password port&amp;#34;
+}
+
+set TARGET [lindex $argv 0]
+set USER [lindex $argv 1]
+set PASSWD [lindex $argv 2]
+set PORT [lindex $argv 3]
+set timeout 10
+
+spawn ssh -o StrictHostKeyChecking=no -p $PORT $USER@$TARGET
+match_max 100000
+
+expect {
+    &amp;#34;*yes/no&amp;#34; {
+        send &amp;#34;yes\r&amp;#34;
+        exp_continue
+    }
+    &amp;#34;*assword:&amp;#34; {
+        send &amp;#34;$PASSWD\r&amp;#34;
+        exp_continue
+    }
+    eof {
+        puts &amp;#34;Connection closed.&amp;#34;
+    }
+    timeout {
+        abort &amp;#34;Connection timeout&amp;#34;
+    }
+}
+
+interact
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;3configini&#34;&gt;3.config.ini &lt;a href=&#34;#3configini&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-config&#34; data-lang=&#34;config&#34;&gt;[server1] 
+ip=127.0.0.1
+port=22
+username=root
+login_type=pwd
+credential=123456
+label=本地test
+
+[server2] 
+ip=127.0.0.1
+port=22
+username=root
+login_type=pwd
+credential=123456
+label=本地test
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;4在mainsh目录下新建keys文件夹将证书文件放在keys文件夹下证书权限为600&#34;&gt;4.在main.sh目录下新建keys文件夹，将证书文件放在keys文件夹下,证书权限为600 &lt;a href=&#34;#4%e5%9c%a8mainsh%e7%9b%ae%e5%bd%95%e4%b8%8b%e6%96%b0%e5%bb%bakeys%e6%96%87%e4%bb%b6%e5%a4%b9%e5%b0%86%e8%af%81%e4%b9%a6%e6%96%87%e4%bb%b6%e6%94%be%e5%9c%a8keys%e6%96%87%e4%bb%b6%e5%a4%b9%e4%b8%8b%e8%af%81%e4%b9%a6%e6%9d%83%e9%99%90%e4%b8%ba600&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h2&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-config&#34; data-lang=&#34;config&#34;&gt;chmod 600 a.pem
+&lt;/code&gt;&lt;/pre&gt;</description>
+    </item>
+    
+    <item>
+      <title>Ubuntu开机优化</title>
+      <link>https://abnerxc.github.io/tool/linux-ubuntu%E4%BC%98%E5%8C%96/</link>
+      <pubDate>Thu, 21 Jul 2022 18:35:11 +0800</pubDate>
+      
+      <guid>https://abnerxc.github.io/tool/linux-ubuntu%E4%BC%98%E5%8C%96/</guid>
+      <description>&lt;h1 id=&#34;安装openssh-server&#34;&gt;安装openssh-server &lt;a href=&#34;#%e5%ae%89%e8%a3%85openssh-server&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;sudo apt-get install openssh-server vim git
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h1 id=&#34;内核升级&#34;&gt;内核升级 &lt;a href=&#34;#%e5%86%85%e6%a0%b8%e5%8d%87%e7%ba%a7&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;1、查看内核：uname -a
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;2、查询指定版本内核：apt-cache search linux| grep inux-headers-6.5
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;3、下载内核：sudo apt-get install linux-headers-6.5.0-45-generic linux-image-6.5.0-45-generic
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;4、查看已安装的内核版本：dpkg --get-selections | grep linux-image
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;5、安装各种网卡显卡驱动：sudo apt-get install linux-tools-6.5.0-45-generic  linux-modules-extra-6.5.0-45-generic
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;6、再次查看驱动：dpkg --get-selections  | grep linux
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;7、修改内核启动顺序：
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#75715e&#34;&gt;#备份&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    sudo cp /etc/default/grub /etc/default/grub.bak
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#75715e&#34;&gt;# 修改&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    sudo vim /etc/default/grub
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#75715e&#34;&gt;#GRUB_DEFAULT=&amp;#34;1&amp;gt; 3&amp;#34; 其中&amp;#34;1&amp;gt; 3&amp;#34;表示在第一级菜单中序号为1的条目，在该条目的第二级菜单中我们选择序号为3的条目。也就是我们上面讲过的Ubuntu 高级选项（序号1）下的Ubuntu，Linux 4.8.0-36-generic（序号3）。请注意&amp;gt;号后面有空格。&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    GRUB_DEFAULT&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;1&amp;gt; 5&amp;#34;&lt;/span&gt; &lt;span style=&#34;color:#75715e&#34;&gt;# 或者 GRUB_DEFAULT=&amp;#34;Advanced options for Ubuntu&amp;gt;Ubuntu, Linux 5.8.0-41-generic&amp;#34;    &lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#75715e&#34;&gt;# 更新配置&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    sudo update-grub
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;8、重启电脑
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h1 id=&#34;开启root&#34;&gt;开启root &lt;a href=&#34;#%e5%bc%80%e5%90%afroot&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;ul&gt;
+&lt;li&gt;sudo vi /etc/ssh/sshd_config(33行)， #PermitRootLogin prohibit-password 修改为 &lt;code&gt;PermitRootLogin yes&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;//使用sudo获得root权限 &lt;code&gt;sudo su&lt;/code&gt; //输入新密码并确认 &lt;code&gt;passwd root&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h1 id=&#34;替换国内源&#34;&gt;替换国内源 &lt;a href=&#34;#%e6%9b%bf%e6%8d%a2%e5%9b%bd%e5%86%85%e6%ba%90&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;sudo cp /etc/apt/sources.list /etc/apt/sources.list.bak
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;echo &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;deb http://mirrors.aliyun.com/ubuntu/ &lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;$(&lt;/span&gt;lsb_release -sc&lt;span style=&#34;color:#66d9ef&#34;&gt;)&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt; main restricted universe multiverse&amp;#34;&lt;/span&gt; | sudo tee /etc/apt/sources.list
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;echo &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;deb-src http://mirrors.aliyun.com/ubuntu/ &lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;$(&lt;/span&gt;lsb_release -sc&lt;span style=&#34;color:#66d9ef&#34;&gt;)&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt; main restricted universe multiverse&amp;#34;&lt;/span&gt; | sudo tee -a /etc/apt/sources.list
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;echo &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;deb http://mirrors.aliyun.com/ubuntu/ &lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;$(&lt;/span&gt;lsb_release -sc&lt;span style=&#34;color:#66d9ef&#34;&gt;)&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;-updates main restricted universe multiverse&amp;#34;&lt;/span&gt; | sudo tee -a /etc/apt/sources.list
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;echo &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;deb-src http://mirrors.aliyun.com/ubuntu/ &lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;$(&lt;/span&gt;lsb_release -sc&lt;span style=&#34;color:#66d9ef&#34;&gt;)&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;-updates main restricted universe multiverse&amp;#34;&lt;/span&gt; | sudo tee -a /etc/apt/sources.list
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;echo &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;deb http://mirrors.aliyun.com/ubuntu/ &lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;$(&lt;/span&gt;lsb_release -sc&lt;span style=&#34;color:#66d9ef&#34;&gt;)&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;-security main restricted universe multiverse&amp;#34;&lt;/span&gt; | sudo tee -a /etc/apt/sources.list
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;echo &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;deb-src http://mirrors.aliyun.com/ubuntu/ &lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;$(&lt;/span&gt;lsb_release -sc&lt;span style=&#34;color:#66d9ef&#34;&gt;)&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;-security main restricted universe multiverse&amp;#34;&lt;/span&gt; | sudo tee -a /etc/apt/sources.list
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;sudo apt update
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;sudo apt upgrade
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h1 id=&#34;删除无用软件&#34;&gt;删除无用软件 &lt;a href=&#34;#%e5%88%a0%e9%99%a4%e6%97%a0%e7%94%a8%e8%bd%af%e4%bb%b6&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;sudo apt-get remove libreoffice
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;sudo apt-get remove unity-webapps-common  &lt;span style=&#34;color:#75715e&#34;&gt;#删除Amazon的链接&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;sudo apt-get  remove   libreoffice-common   unity-webapps-common thunderbird totem rhythmbox  simple-scan gnome-mahjongg aisleriot gnome-mines cheese transmission-common gnome-orca gnome-sudoku webbrowser-app onboard deja-dup &lt;span style=&#34;color:#75715e&#34;&gt;#无用软件&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;sudo apt-get remove software-center &lt;span style=&#34;color:#75715e&#34;&gt;#删除自带的软件中心&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;sudo apt-get remove imagemagick &lt;span style=&#34;color:#75715e&#34;&gt;#自带图片编辑&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;gsettings set com.canonical.Unity.Lenses remote-content-search &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;none&amp;#39;&lt;/span&gt;  &lt;span style=&#34;color:#75715e&#34;&gt;#关闭dash在线资源搜索&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;hr&gt;
+&lt;h1 id=&#34;常用安装和卸载&#34;&gt;常用安装和卸载 &lt;a href=&#34;#%e5%b8%b8%e7%94%a8%e5%ae%89%e8%a3%85%e5%92%8c%e5%8d%b8%e8%bd%bd&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;sudo apt-get install alien &lt;span style=&#34;color:#75715e&#34;&gt;##alien默认没有安装，所以首先要安装它&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;sudo alien xxxx.rpm &lt;span style=&#34;color:#75715e&#34;&gt;##将rpm转换位deb，完成后会生成一个同名的xxxx.deb&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;sudo dpkg -i xxxx.deb &lt;span style=&#34;color:#75715e&#34;&gt;##安装&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;sudo dpkg -l | grep netease &lt;span style=&#34;color:#75715e&#34;&gt;#查找包&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;sudo apt-get remove --purge  netease-cloud-music  &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; sudo apt-get autoremove  &lt;span style=&#34;color:#75715e&#34;&gt;#干净的卸载&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h1 id=&#34;设置时间使用utc&#34;&gt;设置时间使用UTC &lt;a href=&#34;#%e8%ae%be%e7%bd%ae%e6%97%b6%e9%97%b4%e4%bd%bf%e7%94%a8utc&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;sudo vim /etc/default/rcS  &lt;span style=&#34;color:#75715e&#34;&gt;###将UTC=no改为UTC=yes&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h1 id=&#34;自定义dhcp网络的dns-server-ip地址&#34;&gt;自定义DHCP网络的DNS Server IP地址 &lt;a href=&#34;#%e8%87%aa%e5%ae%9a%e4%b9%89dhcp%e7%bd%91%e7%bb%9c%e7%9a%84dns-server-ip%e5%9c%b0%e5%9d%80&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;sudo vim /etc/dhcp/dhclient.conf文件，在第21行#prepend domain-name-servers 127.0.0.1;下一行添加如下2行使用aliyun和114的DNS
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;prepend domain-name-servers 114.114.114.114;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;prepend domain-name-servers 223.5.5.5;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;这样可以优先使用aliyun的dns，次要使用114的DNS。
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h1 id=&#34;snap删除脚本-win字符替换&#34;&gt;snap删除脚本 win字符替换 &lt;a href=&#34;#snap%e5%88%a0%e9%99%a4%e8%84%9a%e6%9c%ac-win%e5%ad%97%e7%ac%a6%e6%9b%bf%e6%8d%a2&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# 停用 &lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;sudo systemctl stop snapd
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;#删除和遗留文件&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;sudo apt purge snapd -y  &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; sudo  rm  -rf  ~/snap /snap /var/snap /var/lib/snapd &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; sudo apt autoremove --purge -y &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; sudo apt clean
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;vim delsnap 
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# 输入下面内容:&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;#!/bin/bash&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;function&lt;/span&gt; ubuntu_remove_snap&lt;span style=&#34;color:#f92672&#34;&gt;()&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;{&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    sudo systemctl disable snapd.service
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    sudo systemctl disable snapd.socket
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    sudo systemctl disable snapd.seeded.service
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#66d9ef&#34;&gt;for&lt;/span&gt; snap in &lt;span style=&#34;color:#66d9ef&#34;&gt;$(&lt;/span&gt;snap list | awk &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;{print $1}&amp;#39;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;)&lt;/span&gt;; &lt;span style=&#34;color:#66d9ef&#34;&gt;do&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        echo &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;正在移除: &lt;/span&gt;$snap&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        snap remove &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;$snap&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#66d9ef&#34;&gt;done&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    sudo apt autoremove --purge snapd
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    sudo rm -rf /var/cache/snapd
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    sudo rm -rf ~/snap
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt; sudo apt update
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;}&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;ubuntu_remove_snap
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;#修改权限&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;sed -i &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;s/\r$//&amp;#39;&lt;/span&gt; delsnap.sh &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; chmod +x delsnap.sh
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h1 id=&#34;软件图标&#34;&gt;软件图标 &lt;a href=&#34;#%e8%bd%af%e4%bb%b6%e5%9b%be%e6%a0%87&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;#创建桌面图标&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;桌面创建文件  xx.desktop ，并填入下面配置
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;[&lt;/span&gt;Desktop Entry&lt;span style=&#34;color:#f92672&#34;&gt;]&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;Version&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;1.0
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;Type&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;Application
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;Name&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;xxx
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;Icon&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;/&lt;span style=&#34;color:#f92672&#34;&gt;{&lt;/span&gt;软件路径&lt;span style=&#34;color:#f92672&#34;&gt;}&lt;/span&gt;/xxx/icon.png
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;Exec&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;/&lt;span style=&#34;color:#f92672&#34;&gt;{&lt;/span&gt;软件路径&lt;span style=&#34;color:#f92672&#34;&gt;}&lt;/span&gt;/xxx/xx.appimage
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;Terminal&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;false
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;Categories&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;Development;IDE;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;#权限添加&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;sudo chmod +x xxx.appimage
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# 添加到应用程序中&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;sudo cp xxx.desktop ~/.local/share/applications
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h1 id=&#34;gnome桌面美化&#34;&gt;gnome桌面美化 &lt;a href=&#34;#gnome%e6%a1%8c%e9%9d%a2%e7%be%8e%e5%8c%96&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# 安装Tweaks 和 Extensions&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;sudo apt-get update
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;sudo apt install -y gnome-tweaks gnome-shell-extensions git
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# 访问&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;extensions.gnome.org，开启&lt;span style=&#34;color:#e6db74&#34;&gt;`&lt;/span&gt;Click here to install browser extension&lt;span style=&#34;color:#e6db74&#34;&gt;`&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;安装User Themes
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# Big Sur 主题&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;git clone https://gh-proxy.com/github.com/vinceliuice/WhiteSur-gtk-theme.git --depth&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;cd WhiteSur-gtk-theme  &lt;span style=&#34;color:#75715e&#34;&gt;# 进入主题目录&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;./install.sh  &lt;span style=&#34;color:#75715e&#34;&gt;# 运行安装脚本&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;sudo ./tweaks.sh -g  &lt;span style=&#34;color:#75715e&#34;&gt;# 添加主题&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# Big Sur 应用图标&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;wget https://gh-proxy.com/github.com/zayronxio/Mkos-Big-Sur/releases/download/0.3/Mkos-Big-Sur.tar.xz
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;mkdir ~/.icons  &lt;span style=&#34;color:#75715e&#34;&gt;# 创建 ~/.icons 目录&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;tar -xJvf Mkos-Big-Sur.tar.xz -C ~/.icons  &lt;span style=&#34;color:#75715e&#34;&gt;# 将图标文件解压到 ~/.icons 目录&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# Big Sur 字体&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;## 界面字体&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;git clone https://gh-proxy.com/https://github.com/sahibjotsaggu/San-Francisco-Pro-Fonts.git --depth&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;  &lt;span style=&#34;color:#75715e&#34;&gt;# 下载字体库&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;sudo mkdir /usr/local/share/fonts/SF-Pro  &lt;span style=&#34;color:#75715e&#34;&gt;# 新建字体文件夹&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;cd San-Francisco-Pro-Fonts
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;sudo mv SF-Pro* /usr/local/share/fonts/SF-Pro  &lt;span style=&#34;color:#75715e&#34;&gt;# 安装字体&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;sudo fc-cache -fv  &lt;span style=&#34;color:#75715e&#34;&gt;# 刷新字体列表缓存&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;## 文档字体&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;wget https://font.download/dl/font/helvetica-255.zip
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;sudo mkdir /usr/local/share/fonts/Helvetica
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;sudo unzip helvetica-255.zip -d /usr/local/share/fonts/Helvetica
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;sudo fc-cache -fv
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;## 代码字体&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;wget https://gh-proxy.com/github.com/ryanoasis/nerd-fonts/releases/download/v3.2.0/Meslo.tar.xz
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;sudo mkdir Meslo
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;sudo tar -xJvf Meslo.tar.xz -C Meslo
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;sudo mkdir /usr/local/share/fonts/Meslo
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;cd Meslo
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;sudo mv MesloLG* /usr/local/share/fonts/Meslo
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;sudo fc-cache -fv
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;#  壁纸下载&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;git clone https://gh-proxy.com/github.com/vinceliuice/WhiteSur-wallpapers.git --depth&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;#设置主题、图标和壁纸&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;打开 GNOME Tweaks。GNOME Tweaks 位于 Utilities 文件夹里面。 新版本叫&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;优化&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;选择外观
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;- 图标，选择：Mkos-Big-sur
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;- 过时应用程序：WhiteSur-Light
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;- Shell: WhiteSur-Light
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;选择字体
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;- 界面文本&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;Interface Text&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt;：SF Pro Regular &lt;span style=&#34;color:#ae81ff&#34;&gt;11&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;- 文档文本&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;Dodument Text&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt;: Helvetica 常规体 &lt;span style=&#34;color:#ae81ff&#34;&gt;11&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;- 等宽文本&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;Monospace Text&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt;: MesloLGM Nerd Font Regular &lt;span style=&#34;color:#ae81ff&#34;&gt;13&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;窗口
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;- 标题栏按钮，放置：左
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# 系统设置&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;在系统设置中选择，Appearance（桌面）调整如下配置
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;- 桌面图标：Size选择小，Position of New Icons选择顶部右侧
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;- Dock：Panel Model选择关闭，Icon Size选择40，Position on Screen选择底部
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# 毛玻璃效果&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;- 添加毛玻璃效果，我们需要安装 Blur my Shell 插件。打开 GNOME 的官网 extensions.gnome.org，搜索并启用 Blur my Shell 插件
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;- 最小化窗口时的神奇效果，我们需要安装 Compiz alike magic lamp effect 插件。打开 GNOME 的官网 extensions.gnome.org，搜索并启用 Compiz alike magic lamp effect 插件：
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# Ubuntu 的程序坞默认只能点击展开，不能点击隐藏窗口，可以使用如下命令开启点击隐藏&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;gsettings set org.gnome.shell.extensions.dash-to-dock click-action &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;minimize&amp;#39;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;#gnome快捷键冲突&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;查看快捷键
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;gsettings get org.gnome.desktop.wm.keybindings switch-to-workspace-left
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;设置快捷键
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;gsettings set org.gnome.desktop.wm.keybindings switch-to-workspace-left &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;[&amp;#39;&amp;lt;Super&amp;gt;&amp;lt;Alt&amp;gt;Left&amp;#39;]&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;gsettings set org.gnome.desktop.wm.keybindings switch-to-workspace-right &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;[&amp;#39;&amp;lt;Super&amp;gt;&amp;lt;Alt&amp;gt;Right&amp;#39;]&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h1 id=&#34;wsl2&#34;&gt;wsl2 &lt;a href=&#34;#wsl2&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;安装wsl2
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;wsl.exe --install -d Ubuntu-24.04
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;查看: wsl --list --verbose
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;注销: wsl --unregister Ubuntu-24.04
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;删除：C:&lt;span style=&#34;color:#ae81ff&#34;&gt;\U&lt;/span&gt;sers&lt;span style=&#34;color:#ae81ff&#34;&gt;\&amp;lt;&lt;/span&gt;用户名&amp;gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;\A&lt;/span&gt;ppData&lt;span style=&#34;color:#ae81ff&#34;&gt;\L&lt;/span&gt;ocal&lt;span style=&#34;color:#ae81ff&#34;&gt;\P&lt;/span&gt;ackages&lt;span style=&#34;color:#ae81ff&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;&lt;/span&gt;导入: wsl --import Ubuntu-24.04 D:&lt;span style=&#34;color:#ae81ff&#34;&gt;\v&lt;/span&gt;mos&lt;span style=&#34;color:#ae81ff&#34;&gt;\U&lt;/span&gt;buntu-24.04 D:&lt;span style=&#34;color:#ae81ff&#34;&gt;\v&lt;/span&gt;mos&lt;span style=&#34;color:#ae81ff&#34;&gt;\U&lt;/span&gt;buntu-24.04.tar
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;导出: wsl --export Ubuntu-24.04 D:&lt;span style=&#34;color:#ae81ff&#34;&gt;\v&lt;/span&gt;mos&lt;span style=&#34;color:#ae81ff&#34;&gt;\U&lt;/span&gt;buntu-24.04.tar
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;重启：wsl --shutdown
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h1 id=&#34;宿主机无法通过ip连接wsl2解决方案&#34;&gt;宿主机无法通过ip连接wsl2解决方案 &lt;a href=&#34;#%e5%ae%bf%e4%b8%bb%e6%9c%ba%e6%97%a0%e6%b3%95%e9%80%9a%e8%bf%87ip%e8%bf%9e%e6%8e%a5wsl2%e8%a7%a3%e5%86%b3%e6%96%b9%e6%a1%88&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;wsl2的默认网络模式是NAT，建议修改为镜像模式。在C:\Users&amp;lt;UserName&amp;gt;.wslconfig中添加下列代码:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;[wsl2]
+#镜像网络
+networkingMode=mirrored
+#如果使用代理可以在后面添加
+autoProxy=true
+还可以使用DNS隧道提高与 VPN 和其他复杂网络设置的兼容性:
+dnsTunneling=true
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;win11防火墙&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;获取wsl GUID:&lt;code&gt;Get-NetFirewallHyperVVMCreator&lt;/code&gt;,得到id通常是40ExxE90&lt;/li&gt;
+&lt;li&gt;查看Hyper-V防火墙状态&lt;code&gt;Get-NetFirewallHyperVVMSetting -PolicyStore ActiveStore -Name &#39;{40E0AC32-46A5-438A-A0B2-2B479E8F2E90}&#39;&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;关闭Hyper-V防火墙&lt;code&gt;Set-NetFirewallHyperVVMSetting -Name &#39;{40E0AC32-46A5-438A-A0B2-2B479E8F2E90}&#39; -Enabled False&lt;/code&gt;
+Ubuntu关闭防火墙&lt;/li&gt;
+&lt;/ol&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;ufw disable
+apt-get remove iptables
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;linux-mint22-优化&#34;&gt;linux-mint22 优化 &lt;a href=&#34;#linux-mint22-%e4%bc%98%e5%8c%96&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;#linuxmint 卸载&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;sudo apt-get remove --purge libreoffice*  &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; sudo apt-get autoremove   &lt;span style=&#34;color:#75715e&#34;&gt;#office&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;sudo apt-get remove --purge thingy*  &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; sudo apt-get autoremove  &lt;span style=&#34;color:#75715e&#34;&gt;#书库&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;sudo apt-get remove --purge warpinator*  &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; sudo apt-get autoremove &lt;span style=&#34;color:#75715e&#34;&gt;#局域网轻松文件共享新利器&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;sudo apt-get remove --purge hypnotix*  &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; sudo apt-get autoremove &lt;span style=&#34;color:#75715e&#34;&gt;#tv&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;sudo apt-get remove --purge webapp-manager*  &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; sudo apt-get autoremove &lt;span style=&#34;color:#75715e&#34;&gt;#web应用&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;sudo apt-get remove --purge mintchat*  &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; sudo apt-get autoremove &lt;span style=&#34;color:#75715e&#34;&gt;#聊天&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;sudo apt-get remove --purge thunderbird*  &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; sudo apt-get autoremove &lt;span style=&#34;color:#75715e&#34;&gt;#邮件&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;sudo apt-get remove --purge transmission*  &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; sudo apt-get autoremove &lt;span style=&#34;color:#75715e&#34;&gt;#下载工具&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;sudo apt-get remove --purge drawing*  &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; sudo apt-get autoremove &lt;span style=&#34;color:#75715e&#34;&gt;#绘图工具&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;sudo apt-get remove --purge sticky*  &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; sudo apt-get autoremove &lt;span style=&#34;color:#75715e&#34;&gt;#便签&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;sudo apt-get remove --purge gucharmap*  &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; sudo apt-get autoremove &lt;span style=&#34;color:#75715e&#34;&gt;#字符映射表&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;sudo apt-get remove --purge firefox*  &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; sudo apt-get autoremove &lt;span style=&#34;color:#75715e&#34;&gt;#火狐&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;sudo apt-get remove --purge onboard*  &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; sudo apt-get autoremove &lt;span style=&#34;color:#75715e&#34;&gt;#软键盘&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;#sudo apt-get remove --purge celluloid*  &amp;amp;&amp;amp; sudo apt-get autoremove #视频播放器&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;#sudo apt-get remove --purge rhythmbox*  &amp;amp;&amp;amp; sudo apt autoremove --purge  #音乐播放器&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;#2、桌面图标&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;ln -s /home/llane/program/Motrix.AppImage ~/Desktop  创建软链接的形式
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;#3、fcitx5中文输入法 (会导致idea卡死))&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;sudo apt update
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;sudo apt install fcitx5  fcitx5-chinese-addons fcitx5-frontend-gtk2 fcitx5-frontend-gtk3 fcitx5-frontend-qt5 
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;#然后编辑 &lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;sudo vim ~/.profile 或 ~/.xprofile，添加以下内容：完成后重启电脑
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;echo &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;export GTK_IM_MODULE=fcitx&amp;#39;&lt;/span&gt; &amp;gt;&amp;gt; ~/.profile
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;echo &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;export QT_IM_MODULE=fcitx&amp;#39;&lt;/span&gt; &amp;gt;&amp;gt; ~/.profile
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;echo &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;export QT5_IM_MODULE=fcitx&amp;#39;&lt;/span&gt; &amp;gt;&amp;gt; ~/.profile
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;echo &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;export XMODIFIERS=@im=fcitx&amp;#39;&lt;/span&gt; &amp;gt;&amp;gt; ~/.profile
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;#启动&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;将输入法Fcitx5添加为开机启
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# 下载词库文件&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;wget https://hk.gh-proxy.org/https://github.com/felixonmars/fcitx5-pinyin-zhwiki/releases/download/0.3.0/zhwiki-20251104.dict
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# 创建存储目录&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;mkdir -p ~/.local/share/fcitx5/pinyin/dictionaries/
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# 移动词库文件至该目录&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;mv zhwiki-20251104.dict ~/.local/share/fcitx5/pinyin/dictionaries/
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;#4、ibus输入法&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;sudo apt-get install ibus  ibus-pinyin
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;#最近打开的记录清理 &lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;rm -rf ~/.local/share/recently-used.xbel
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;#查看最后的关机日志&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;journalctl -b -1 | grep &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Failed to stop&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;#日期显示：&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;%Y-%m-%d&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;%A&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt;%H:%M
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;#设置显示周几和秒&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;系统-&amp;gt;区域与语言-&amp;gt;格式 ：选择中国
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;gsettings set org.gnome.desktop.interface clock-show-weekday true
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;gsettings set org.gnome.desktop.interface clock-show-seconds true
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;#游戏帧率监控&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;mangohud下载地址：https://github.com/flightlessmango/MangoHud/releases
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;goverlay下载地址：https://github.com/benjamimgois/goverlay/releases
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# 硬件信息查看&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;hardinfo2 或者 mission center
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;#截图软件&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;sudo apt install flameshot
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;无法截图解决
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;设置-&amp;gt;键盘-&amp;gt;自定义快捷键，添加 /bin/sh -c &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;flameshot gui&amp;#34;&lt;/span&gt; &amp;gt; /dev/null &amp;amp;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;添加开机启动
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;命令：flameshot  即可
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;</description>
+    </item>
+    
+    <item>
+      <title>vscode折腾</title>
+      <link>https://abnerxc.github.io/tool/vscode%E6%8A%98%E8%85%BE/</link>
+      <pubDate>Thu, 21 Jul 2022 18:35:11 +0800</pubDate>
+      
+      <guid>https://abnerxc.github.io/tool/vscode%E6%8A%98%E8%85%BE/</guid>
+      <description>&lt;h1 id=&#34;基本设置&#34;&gt;基本设置 &lt;a href=&#34;#%e5%9f%ba%e6%9c%ac%e8%ae%be%e7%bd%ae&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;0.使用快捷键组合【Ctrl+Shift+p】，在搜索框中输入“configure display language”，选择&lt;code&gt;install&lt;/code&gt; 安装简体中文&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Auto Close Tag ，自动添加 HTML/XML 的闭合标签，像 Visual Studio IDE 或 Sublime Text 一样。&lt;/li&gt;
+&lt;li&gt;Beautify，在 Visual Studio Code 中格式化 javascript 、JSON 、 CSS 、Sass，以及 HTML。&lt;/li&gt;
+&lt;li&gt;GitLens 可以增强 VSCode 内置 Git 的功能。例如 commits 搜索，历史记录和显示的代码作者身份具体功能可以查看Feature list&lt;/li&gt;
+&lt;li&gt;Git History  - 显示提交历史记录的美丽图表等等&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h1 id=&#34;php环境&#34;&gt;PHP环境 &lt;a href=&#34;#php%e7%8e%af%e5%a2%83&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;ol&gt;
+&lt;li&gt;php intelephense，PHP 的代码提示、补全、跳转定义、格式化插件，功能强大，无需配置；优秀，必装。 &lt;code&gt;setting.json&lt;/code&gt; 添加如下配置&lt;/li&gt;
+&lt;/ol&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;&amp;#34;php.suggest.basic&amp;#34;: false, //禁用基本建议
+    &amp;#34;editor.quickSuggestions&amp;#34;: {  //在评论/注释中启用自动完成功能
+        &amp;#34;comments&amp;#34;: true 
+    },
+&lt;/code&gt;&lt;/pre&gt;&lt;ol start=&#34;2&#34;&gt;
+&lt;li&gt;PHP DocBlocker，注释插件&lt;/li&gt;
+&lt;li&gt;PHP Snippets from PHPStrom,使用和 PHPStrom 一样的快捷代码片段，pubf + tab？&lt;/li&gt;
+&lt;li&gt;PHP Namespace Resolver,PHP 命名空间解析器；可以导入和扩展类；还可以排序。优秀，必装。&lt;/li&gt;
+&lt;li&gt;Better Align,可以实现变量和数组的等号对齐。优秀，必装。&lt;/li&gt;
+&lt;li&gt;php.validate.executablepath,配置成docker 容器中的php路径，办法
+&lt;ol&gt;
+&lt;li&gt;新建文件 Create a file named php in &lt;code&gt;你自己的路径&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;写入内容&lt;code&gt;#!/bin/bash docker exec -i --user=1000:1000 php7-vscode php &amp;quot;$@&amp;quot;&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;修改可执行&lt;code&gt;sudo chmod +x php&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;php.validate.executablepath=&lt;code&gt;你自己的路径&lt;/code&gt;/php&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h1 id=&#34;go环境&#34;&gt;go环境 &lt;a href=&#34;#go%e7%8e%af%e5%a2%83&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;ol&gt;
+&lt;li&gt;设置代理  set GOPROXY=&amp;ldquo;&lt;a href=&#34;https://goproxy.cn&#34;&gt;https://goproxy.cn&lt;/a&gt;&amp;rdquo;&lt;/li&gt;
+&lt;li&gt;vscode添加go插件&lt;/li&gt;
+&lt;li&gt;安装go-tools，command+shift+p，输入 go:install 选择 install/update tools&lt;/li&gt;
+&lt;li&gt;Code Runer,运行代码&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h1 id=&#34;settingjson&#34;&gt;setting.json &lt;a href=&#34;#settingjson&#34; class=&#34;anchor&#34;&gt;🔗&lt;/a&gt;&lt;/h1&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;{
+	&amp;#34;security.workspace.trust.untrustedFiles&amp;#34;: &amp;#34;open&amp;#34;,
+	//工作台
+	&amp;#34;workbench.iconTheme&amp;#34;: &amp;#34;material-icon-theme&amp;#34;,
+	&amp;#34;workbench.tree.indent&amp;#34;: 22,
+	&amp;#34;workbench.tree.renderIndentGuides&amp;#34;: &amp;#34;always&amp;#34;,
+	&amp;#34;workbench.tree.expandMode&amp;#34;: &amp;#34;doubleClick&amp;#34;,
+	&amp;#34;workbench.preferredHighContrastColorTheme&amp;#34;: &amp;#34;Monokai&amp;#34;,
+	&amp;#34;workbench.preferredDarkColorTheme&amp;#34;: &amp;#34;Monokai&amp;#34;,
+	&amp;#34;workbench.preferredLightColorTheme&amp;#34;: &amp;#34;Monokai&amp;#34;,
+	&amp;#34;workbench.startupEditor&amp;#34;: &amp;#34;none&amp;#34;,
+	&amp;#34;workbench.editor.untitled.hint&amp;#34;: &amp;#34;hidden&amp;#34;,
+	&amp;#34;workbench.colorTheme&amp;#34;: &amp;#34;Monokai&amp;#34;,
+	&amp;#34;workbench.tree.horizontalScrolling&amp;#34;: true,
+	&amp;#34;workbench.editor.enablePreview&amp;#34;: false,
+	&amp;#34;workbench.editorAssociations&amp;#34;: {
+		&amp;#34;*.html&amp;#34;: &amp;#34;default&amp;#34;
+	},
+	//git
+	&amp;#34;git.autofetch&amp;#34;: true,
+	&amp;#34;git.confirmSync&amp;#34;: false,
+	&amp;#34;git.ignoreMissingGitWarning&amp;#34;: true,
+	//终端
+	&amp;#34;terminal.integrated.fontSize&amp;#34;: 16,
+	&amp;#34;terminal.integrated.tabs.enabled&amp;#34;: true,
+	&amp;#34;terminal.external.osxExec&amp;#34;: &amp;#34;iTerm.app&amp;#34;,
+	&amp;#34;terminal.integrated.fontFamily&amp;#34;: &amp;#34;Monaco&amp;#34;,
+	&amp;#34;terminal.integrated.gpuAcceleration&amp;#34;: &amp;#34;off&amp;#34;,
+	&amp;#34;editor.suggest.snippetsPreventQuickSuggestions&amp;#34;: false,
+	&amp;#34;editor.snippetSuggestions&amp;#34;: &amp;#34;top&amp;#34;,
+	&amp;#34;editor.renderControlCharacters&amp;#34;: true,
+	&amp;#34;editor.rename.enablePreview&amp;#34;: false,
+	&amp;#34;editor.wordWrap&amp;#34;: &amp;#34;on&amp;#34;,
+	&amp;#34;editor.quickSuggestions&amp;#34;: {
+		//注释中启用自动完成功能
+		&amp;#34;comments&amp;#34;: true
+	},
+	&amp;#34;editor.minimap.renderCharacters&amp;#34;: false,
+	&amp;#34;editor.mouseWheelZoom&amp;#34;: true,
+	&amp;#34;editor.minimap.size&amp;#34;: &amp;#34;fit&amp;#34;,
+	&amp;#34;diffEditor.wordWrap&amp;#34;: &amp;#34;on&amp;#34;,
+	&amp;#34;alignment.operatorPadding&amp;#34;: &amp;#34;right&amp;#34;,
+	&amp;#34;alignment.indentBase&amp;#34;: &amp;#34;dontchange&amp;#34;,
+	&amp;#34;intelephense.telemetry.enabled&amp;#34;: true,
+	&amp;#34;debug.console.lineHeight&amp;#34;: 18,
+	&amp;#34;debug.console.fontSize&amp;#34;: 14,
+	//php
+	&amp;#34;[php]&amp;#34;: {
+		&amp;#34;editor.defaultFormatter&amp;#34;: &amp;#34;bmewburn.vscode-intelephense-client&amp;#34;
+	},
+	&amp;#34;php.suggest.basic&amp;#34;: false,
+	&amp;#34;intelephense.compatibility.correctForBaseClassStaticUnionTypes&amp;#34;: false,
+	&amp;#34;php-docblocker.gap&amp;#34;: false,
+	&amp;#34;php-docblocker.qualifyClassNames&amp;#34;: true,
+	&amp;#34;php-docblocker.author&amp;#34;: {
+		&amp;#34;name&amp;#34;: &amp;#34;abner&amp;#34;,
+		&amp;#34;email&amp;#34;: &amp;#34;abnerxc666@gmail.com&amp;#34;
+	},
+	//go
+	&amp;#34;go.autocompleteUnimportedPackages&amp;#34;: true,
+	&amp;#34;go.docsTool&amp;#34;: &amp;#34;gogetdoc&amp;#34;,
+	&amp;#34;go.testFlags&amp;#34;: [
+		&amp;#34;-v&amp;#34;,
+		&amp;#34;-count=1&amp;#34;
+	],
+	&amp;#34;go.languageServerFlags&amp;#34;: [
+		&amp;#34;-remote=auto&amp;#34;, &amp;#34;-logfile=auto&amp;#34;, &amp;#34;-debug=:0&amp;#34;, &amp;#34;-rpc.trace&amp;#34;,
+	],
+	&amp;#34;go.buildTags&amp;#34;: &amp;#34;&amp;#34;,
+	&amp;#34;go.buildFlags&amp;#34;: [],
+	&amp;#34;go.lintFlags&amp;#34;: [],
+	&amp;#34;go.vetFlags&amp;#34;: [],
+	&amp;#34;go.coverOnSave&amp;#34;: false,
+	&amp;#34;go.useCodeSnippetsOnFunctionSuggest&amp;#34;: false,
+	&amp;#34;go.useCodeSnippetsOnFunctionSuggestWithoutType&amp;#34;: true,
+	&amp;#34;go.useLanguageServer&amp;#34;: true,
+	&amp;#34;go.formatTool&amp;#34;: &amp;#34;goreturns&amp;#34;,
+	&amp;#34;go.gocodeAutoBuild&amp;#34;: false,
+	&amp;#34;go.gocodePackageLookupMode&amp;#34;: &amp;#34;go&amp;#34;,
+	&amp;#34;go.gotoSymbol.includeImports&amp;#34;: true,
+	&amp;#34;go.formatOnSave&amp;#34;: true,
+	&amp;#34;go.trace.server&amp;#34;: &amp;#34;verbose&amp;#34;,
+	&amp;#34;gopls&amp;#34;: {
+		&amp;#34;analyses&amp;#34;: {
+			&amp;#34;composites&amp;#34;: false
+		},
+		&amp;#34;usePlaceholders&amp;#34;: false,
+	},
+	&amp;#34;go.testTimeout&amp;#34;: &amp;#34;1800s&amp;#34;,
+	&amp;#34;go.toolsManagement.autoUpdate&amp;#34;: true,
+	&amp;#34;go.alternateTools&amp;#34;: { //禁用基本建议
+	},
+	&amp;#34;go.inferGopath&amp;#34;: true,
+	&amp;#34;[go]&amp;#34;: {
+		&amp;#34;editor.formatOnSave&amp;#34;: true,
+		&amp;#34;editor.codeActionsOnSave&amp;#34;: {
+			&amp;#34;source.organizeImports&amp;#34;: true,
+		},
+	},
+	&amp;#34;[go.mod]&amp;#34;: {
+		&amp;#34;editor.formatOnSave&amp;#34;: true,
+		&amp;#34;editor.codeActionsOnSave&amp;#34;: {
+			&amp;#34;source.organizeImports&amp;#34;: true,
+		},
+	},
+	&amp;#34;explorer.confirmDelete&amp;#34;: false,
+	&amp;#34;explorer.compactFolders&amp;#34;: false,
+	//排除文件
+	&amp;#34;files.exclude&amp;#34;: {
+		&amp;#34;/.classpath&amp;#34;: true,
+		&amp;#34;/.project&amp;#34;: true,
+		&amp;#34;/.settings&amp;#34;: true,
+		&amp;#34;/.factorypath&amp;#34;: true,
+		&amp;#34;/.idea&amp;#34;: true,
+		&amp;#34;/.metadata&amp;#34;: true,
+		&amp;#34;/.vscode&amp;#34;: true,
+		&amp;#34;/.svn&amp;#34;: true
+	},
+	&amp;#34;search.exclude&amp;#34;: {
+		&amp;#34;/idea&amp;#34;: true,
+		&amp;#34;/svn&amp;#34;: true,
+		&amp;#34;/node_modules&amp;#34;: true,
+		&amp;#34;/bower_components&amp;#34;: true,
+		&amp;#34;/env&amp;#34;: true,
+		&amp;#34;/venv&amp;#34;: true
+	},
+	&amp;#34;files.autoSave&amp;#34;: &amp;#34;afterDelay&amp;#34;,
+	&amp;#34;files.associations&amp;#34;: {
+		&amp;#34;*.vue&amp;#34;: &amp;#34;html&amp;#34;,
+		&amp;#34;*.module&amp;#34;: &amp;#34;php&amp;#34;
+	},
+	&amp;#34;files.watcherExclude&amp;#34;: {
+		&amp;#34;/.idea/&amp;#34;: true,
+		&amp;#34;/.svn/&amp;#34;: true,
+		&amp;#34;/.git/objects/&amp;#34;: true,
+		&amp;#34;/.git/subtree-cache/&amp;#34;: true,
+		&amp;#34;/node_modules/&amp;#34;: true,
+		&amp;#34;/env/&amp;#34;: true,
+		&amp;#34;/venv/&amp;#34;: true,
+		&amp;#34;env-*&amp;#34;: true
+	},
+	&amp;#34;editor.inlineSuggest.enabled&amp;#34;: true,
+	&amp;#34;auto-rename-tag.activationOnLanguage&amp;#34;: [
+		&amp;#34;html&amp;#34;,
+		&amp;#34;xml&amp;#34;,
+		&amp;#34;php&amp;#34;,
+		&amp;#34;javascript&amp;#34;
+	],
+	&amp;#34;editor.minimap.enabled&amp;#34;: false,
+	&amp;#34;window.zoomLevel&amp;#34;: -1,
+	&amp;#34;editor.fontSize&amp;#34;: 16,
+	&amp;#34;editor.bracketPairColorization.enabled&amp;#34;: true,
+}
+&lt;/code&gt;&lt;/pre&gt;</description>
+    </item>
+    
+  </channel>
+</rss>

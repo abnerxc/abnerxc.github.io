@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+<meta name="viewport" content="width=device-width,minimum-scale=1">
+
+
+
+
+<title>Go-GMP模型 | Abner的博客</title>
+<link rel="canonical" href="https://abnerxc.github.io/go/gmp%E6%A8%A1%E5%9E%8B/">
+<meta property="og:type" content="article" />
+<meta property="og:title" content="Go-GMP模型 | Abner的博客" />
+<meta property="og:url" content="https://abnerxc.github.io/go/gmp%E6%A8%A1%E5%9E%8B/" />
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/icofont/icofont.min.css" />
+<link rel="stylesheet" href="/css/syntax.css" />
+<link rel="stylesheet" href="/css/style.css" />
+<link rel="stylesheet" href="/css/custom.css" />
+<script src="/js/copy-code-block.js"></script>
+<link rel="shortcut icon" href="/images/favicon.ico" type="image/x-icon" />
+
+    </head>
+
+    <body>
+        <header class="header-wrapper">
+    <div class="header">
+        <a class="site-title" href="https://abnerxc.github.io/">Abner的博客</a>
+
+        <nav class="menu">
+            
+        </nav>
+    </div>
+</header>
+
+        <main class="main-wrapper">
+            <div class="main">
+                
+
+<section class="single">
+    <h1 class="title">Go-GMP模型</h1>
+
+    <div class="tip">
+        <time datetime="2021-06-13 18:35:11 &#43;0800 CST">2021/06/13</time>
+        <span class="split">·</span>
+        <span> 350 words </span>
+        <span class="split">·</span>
+        <span>
+            2 minutes to read
+        </span>
+    </div>
+
+    <div class="taxonomies">
+        
+        <div>
+            Categories:
+            
+                <a href="/categories/go">Go</a>
+            
+        </div>
+        
+
+        
+    </div>
+
+    
+    
+    <div class="post-toc">
+        <h3>目录</h3>
+        <nav id="TableOfContents">
+  <ul>
+    <li><a href="#gmp-模型">GMP 模型</a></li>
+    <li><a href="#有关-p-和-m-的个数问题">有关 P 和 M 的个数问题</a></li>
+    <li><a href="#p-和-m-何时会被创建">P 和 M 何时会被创建</a></li>
+    <li><a href="#调度器的设计策略">调度器的设计策略</a></li>
+    <li><a href="#go-func--调度流程">go func () 调度流程</a></li>
+    <li><a href="#调度器的生命周期">调度器的生命周期</a></li>
+    <li><a href="#特殊的-m0-和-g0">特殊的 M0 和 G0</a></li>
+    <li><a href="#可视化-gmp-编程">可视化 GMP 编程</a></li>
+  </ul>
+</nav>
+    </div>
+    
+
+    <hr />
+
+    <div class="content">
+        <blockquote>
+<p><a href="https://learnku.com/articles/41728">https://learnku.com/articles/41728</a></p>
+</blockquote>
+<h1 id="gmp-模型">GMP 模型 <a href="#gmp-%e6%a8%a1%e5%9e%8b" class="anchor">🔗</a></h1><p><img src="/img/go-gmp-a.jpeg" alt="1.jpeg"></p>
+<p><strong>G= Goroutine 协程，P=Processor 处理器， M=Thread 线程</strong></p>
+<ul>
+<li>全局队列（Global Queue）：存放等待运行的 G。</li>
+<li>P 的本地队列：同全局队列类似，存放的也是等待运行的 G，存的数量有限，不超过 256 个。新建 G’时，G’优先加入到 P 的本地队列，如果队列满了，则会把本地队列中一半的 G 移动到全局队列。</li>
+<li>P 列表：所有的 P 都在程序启动时创建，并保存在数组中，最多有 GOMAXPROCS(可配置) 个。</li>
+<li>M：线程想运行任务就得获取 P，从 P 的本地队列获取 G，P 队列为空时，M 也会尝试从全局队列拿一批 G 放到 P 的本地队列，或从其他 P 的本地队列偷一半放到自己 P 的本地队列。M 运行 G，G 执行之后，M 会从 P 获取下一个 G，不断重复下去。</li>
+</ul>
+<p><strong>Goroutine 调度器和 OS 调度器是通过 M 结合起来的，每个 M 都代表了 1 个内核线程，OS 调度器负责把内核线程分配到 CPU 的核上执行。</strong></p>
+<h1 id="有关-p-和-m-的个数问题">有关 P 和 M 的个数问题 <a href="#%e6%9c%89%e5%85%b3-p-%e5%92%8c-m-%e7%9a%84%e4%b8%aa%e6%95%b0%e9%97%ae%e9%a2%98" class="anchor">🔗</a></h1><ol>
+<li>P的数量： 由启动时环境变量 $GOMAXPROCS 或者是由 runtime 的方法 GOMAXPROCS() 决定。这意味着在程序执行的任意时刻都只有 $GOMAXPROCS 个 goroutine 在同时运行。</li>
+<li>M的数量：
+<ul>
+<li>go 语言本身的限制：go 程序启动时，会设置 M 的最大数量，默认 10000. 但是内核很难支持这么多的线程数，所以这个限制可以忽略。</li>
+<li>runtime/debug 中的 SetMaxThreads 函数，设置 M 的最大数量</li>
+<li>一个 M 阻塞了，会创建新的 M。</li>
+</ul>
+</li>
+</ol>
+<p><strong>M 与 P 的数量没有绝对关系，一个 M 阻塞，P 就会去创建或者切换另一个 M，所以，即使 P 的默认数量是 1，也有可能会创建很多个 M 出来。</strong></p>
+<h1 id="p-和-m-何时会被创建">P 和 M 何时会被创建 <a href="#p-%e5%92%8c-m-%e4%bd%95%e6%97%b6%e4%bc%9a%e8%a2%ab%e5%88%9b%e5%bb%ba" class="anchor">🔗</a></h1><ul>
+<li>P 何时创建：在确定了 P 的最大数量 n 后，运行时系统会根据这个数量创建 n 个 P。</li>
+<li>M 何时创建：没有足够的 M 来关联 P 并运行其中的可运行的 G。比如所有的 M 此时都阻塞住了，而 P 中还有很多就绪任务，就会去寻找空闲的 M，而没有空闲的，就会去创建新的 M。</li>
+</ul>
+<h1 id="调度器的设计策略">调度器的设计策略 <a href="#%e8%b0%83%e5%ba%a6%e5%99%a8%e7%9a%84%e8%ae%be%e8%ae%a1%e7%ad%96%e7%95%a5" class="anchor">🔗</a></h1><ol>
+<li>
+<p>复用线程：避免频繁的创建、销毁线程，而是对线程的复用。</p>
+<ul>
+<li>work stealing 机制：当本线程无可运行的 G 时，尝试从其他线程绑定的 P 偷取 G，而不是销毁线程。</li>
+<li>hand off 机制：​ 当本线程因为 G 进行系统调用阻塞时，线程释放绑定的 P，把 P 转移给其他空闲的线程执行。</li>
+</ul>
+</li>
+<li>
+<p>利用并行：<code>GOMAXPROCS</code> 设置 P 的数量，最多有 <code>GOMAXPROCS</code> 个线程分布在多个 CPU 上同时运行。<code>GOMAXPROCS</code> 也限制了并发的程度，比如 <code>GOMAXPROCS= 核数/2</code>，则最多利用了一半的 CPU 核进行并行。</p>
+</li>
+<li>
+<p>抢占：在 coroutine 中要等待一个协程主动让出 CPU 才执行下一个协程，
+<code>在 Go 中，一个 goroutine 最多占用 CPU 10ms， 防止其他 goroutine 被饿死，这就是 goroutine 不同于 coroutine 的一个地方</code>。</p>
+</li>
+<li>
+<p>全局 G 队列：在新的调度器中依然有全局 G 队列，但功能已经被弱化了，当 M 执行 work stealing 从其他 P 偷不到 G 时，它可以从全局 G 队列获取 G。</p>
+</li>
+</ol>
+<h1 id="go-func--调度流程">go func () 调度流程 <a href="#go-func--%e8%b0%83%e5%ba%a6%e6%b5%81%e7%a8%8b" class="anchor">🔗</a></h1><p><img src="/img/go-gmp-b.jpeg" alt="2.jpg"></p>
+<ol>
+<li>我们通过 go func () 来创建一个 goroutine；</li>
+<li>有两个存储 G 的队列，一个是局部调度器 P 的本地队列、一个是全局 G 队列。新创建的 G 会先保存在 P 的本地队列中，如果 P 的本地队列已经满了就会保存在全局的队列中；
+​3. G 只能运行在 M 中，一个 M 必须持有一个 P，M 与 P 是 1：1 的关系。M 会从 P 的本地队列弹出一个可执行状态的 G 来执行，如果 P 的本地队列为空，就会想其他的 MP 组合偷取一个可执行的 G 来执行；
+​4. 一个 M 调度 G 执行的过程是一个循环机制；</li>
+<li>当 M 执行某一个 G 时候如果发生了 syscall 或则其余阻塞操作，M 会阻塞，如果当前有一些 G 在执行，runtime 会把这个线程 M 从 P 中摘除 (detach)，然后再创建一个新的操作系统的线程 (如果有空闲的线程可用就复用空闲线程) 来服务于这个 P；</li>
+<li>当 M 系统调用结束时候，这个 G 会尝试获取一个空闲的 P 执行，并放入到这个 P 的本地队列。如果获取不到 P，那么这个线程 M 变成休眠状态， 加入到空闲线程中，然后这个 G 会被放入全局队列中。</li>
+</ol>
+<h1 id="调度器的生命周期">调度器的生命周期 <a href="#%e8%b0%83%e5%ba%a6%e5%99%a8%e7%9a%84%e7%94%9f%e5%91%bd%e5%91%a8%e6%9c%9f" class="anchor">🔗</a></h1><p><img src="/img/go-gmp-c.jpeg" alt="2.jpg"></p>
+<h1 id="特殊的-m0-和-g0">特殊的 M0 和 G0 <a href="#%e7%89%b9%e6%ae%8a%e7%9a%84-m0-%e5%92%8c-g0" class="anchor">🔗</a></h1><ul>
+<li>M0 是启动程序后的编号为 0 的主线程，这个 M 对应的实例会在全局变量 runtime.m0 中，不需要在 heap 上分配，M0 负责执行初始化操作和启动第一个 G， 在之后 M0 就和其他的 M 一样了。</li>
+<li>GO 是每次启动一个 M 都会第一个创建的 gourtine，G0 仅用于负责调度的 G，G0 不指向任何可执行的函数，每个 M 都会有一个自己的 G0。在调度或系统调用时会使用 G0 的栈空间，全局变量的 G0 是 M0 的 G0。</li>
+</ul>
+<h1 id="可视化-gmp-编程">可视化 GMP 编程 <a href="#%e5%8f%af%e8%a7%86%e5%8c%96-gmp-%e7%bc%96%e7%a8%8b" class="anchor">🔗</a></h1><ol>
+<li>方式 1：go tool trace</li>
+<li>方式 2：Debug trace</li>
+</ol>
+
+    </div>
+
+    
+</section>
+
+
+            </div>
+            <div class="side">
+                <div class="side-categories">
+    <h2>Categories</h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/categories/ai">ai(3)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/go">go(23)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E4%BB%A3%E7%A0%81">代码(2)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E5%B7%A5%E5%85%B7">工具(8)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E9%80%86%E5%90%91">逆向(3)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E9%9D%A2%E8%AF%95">面试(5)</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/note/">Recent Note</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/note/%E6%9E%B6%E6%9E%84%E8%80%83%E7%82%B9/">场景总结</a>
+            </li>
+        
+            <li>
+                <a href="/note/rdis-%E7%BC%93%E5%AD%98%E7%A9%BF%E9%80%8F%E9%9B%AA%E5%B4%A9%E5%87%BB%E7%A9%BF%E7%9A%84%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95/">缓存穿透、雪崩、击穿的解决方法</a>
+            </li>
+        
+            <li>
+                <a href="/note/redis-%E5%8D%95%E7%BA%BF%E7%A8%8B%E7%9A%84redis%E4%B8%BA%E4%BB%80%E4%B9%88%E5%BF%AB/">单线程的redis为什么快</a>
+            </li>
+        
+            <li>
+                <a href="/note/redis-%E6%80%BB%E7%BB%93/">redis总结</a>
+            </li>
+        
+            <li>
+                <a href="/note/mysql-%E6%80%BB%E7%BB%93/">mysql总结</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/android/">Recent Android</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/android/redroid%E4%BD%BF%E7%94%A8/">Redroid安卓容器</a>
+            </li>
+        
+            <li>
+                <a href="/android/%E5%85%A5%E9%97%A8/">逆向环境-杂</a>
+            </li>
+        
+            <li>
+                <a href="/android/frida%E6%95%99%E7%A8%8B/">frida教程</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/tool/">Recent Tool</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/tool/linux-almalinux%E4%BC%98%E5%8C%96/">AlmaLinux10</a>
+            </li>
+        
+            <li>
+                <a href="/tool/almalinux-k8s/">AlmaLinux-k8s安装</a>
+            </li>
+        
+            <li>
+                <a href="/tool/vscode%E6%8A%98%E8%85%BE/">vscode折腾</a>
+            </li>
+        
+            <li>
+                <a href="/tool/linux-ubuntu%E4%BC%98%E5%8C%96/">Ubuntu开机优化</a>
+            </li>
+        
+            <li>
+                <a href="/tool/shell-ssh_script/">ssh常用脚本</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/llm/">Recent Llm</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/llm/transformers-%E5%85%A5%E9%97%A8%E7%AF%87/">Transformers-入门篇</a>
+            </li>
+        
+            <li>
+                <a href="/llm/%E6%A8%A1%E5%9E%8Bvllm%E9%83%A8%E7%BD%B2/">AI模型VLLM部署</a>
+            </li>
+        
+            <li>
+                <a href="/llm/%E6%A8%A1%E5%9E%8B%E5%BE%AE%E8%B0%83/">AI模型微调</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/go/">Recent Go</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/go/go%E4%B8%89%E8%89%B2%E6%A0%87%E8%AE%B0%E6%B7%B7%E5%90%88%E5%86%99%E5%B1%8F%E9%9A%9Cgc%E6%A8%A1%E5%BC%8F%E5%85%A8%E6%80%BB%E7%BB%93/">Go三色标记混合写屏障GC模式全总结</a>
+            </li>
+        
+            <li>
+                <a href="/go/go%E4%B8%ADmake%E4%B8%8Enew%E5%8C%BA%E5%88%AB/">Go中make与new区别</a>
+            </li>
+        
+            <li>
+                <a href="/go/go%E5%B8%B8%E7%94%A8bug%E5%92%8C%E6%80%A7%E8%83%BD%E9%97%AE%E9%A2%98%E7%9A%84%E5%AE%9E%E8%B7%B5%E6%96%B9%E6%B3%95/">Go常用bug和性能问题的实践方法</a>
+            </li>
+        
+            <li>
+                <a href="/go/grpc%E6%80%BB%E7%BB%93/">GRPC笔记</a>
+            </li>
+        
+            <li>
+                <a href="/go/go%E7%9A%84defer%E6%80%BB%E7%BB%93/">Go的defer总结</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+            </div>
+        </main>
+        <footer class="footer">
+    <div class="footer-row">
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/note/index.xml">
+                    Feed of Note
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/android/index.xml">
+                    Feed of Android
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/tool/index.xml">
+                    Feed of Tool
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/llm/index.xml">
+                    Feed of Llm
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/go/index.xml">
+                    Feed of Go
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+
+        
+            
+            
+        
+    </div>
+
+    
+</footer>
+
+    </body>
+</html>

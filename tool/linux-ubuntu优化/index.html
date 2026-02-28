@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+<meta name="viewport" content="width=device-width,minimum-scale=1">
+
+
+
+
+<title>Ubuntu开机优化 | Abner的博客</title>
+<link rel="canonical" href="https://abnerxc.github.io/tool/linux-ubuntu%E4%BC%98%E5%8C%96/">
+<meta property="og:type" content="article" />
+<meta property="og:title" content="Ubuntu开机优化 | Abner的博客" />
+<meta property="og:url" content="https://abnerxc.github.io/tool/linux-ubuntu%E4%BC%98%E5%8C%96/" />
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/icofont/icofont.min.css" />
+<link rel="stylesheet" href="/css/syntax.css" />
+<link rel="stylesheet" href="/css/style.css" />
+<link rel="stylesheet" href="/css/custom.css" />
+<script src="/js/copy-code-block.js"></script>
+<link rel="shortcut icon" href="/images/favicon.ico" type="image/x-icon" />
+
+    </head>
+
+    <body>
+        <header class="header-wrapper">
+    <div class="header">
+        <a class="site-title" href="https://abnerxc.github.io/">Abner的博客</a>
+
+        <nav class="menu">
+            
+        </nav>
+    </div>
+</header>
+
+        <main class="main-wrapper">
+            <div class="main">
+                
+
+<section class="single">
+    <h1 class="title">Ubuntu开机优化</h1>
+
+    <div class="tip">
+        <time datetime="2022-07-21 18:35:11 &#43;0800 CST">2022/07/21</time>
+        <span class="split">·</span>
+        <span> 996 words </span>
+        <span class="split">·</span>
+        <span>
+            5 minutes to read
+        </span>
+    </div>
+
+    <div class="taxonomies">
+        
+        <div>
+            Categories:
+            
+                <a href="/categories/%E5%B7%A5%E5%85%B7">工具</a>
+            
+        </div>
+        
+
+        
+    </div>
+
+    
+    
+    <div class="post-toc">
+        <h3>目录</h3>
+        <nav id="TableOfContents">
+  <ul>
+    <li><a href="#安装openssh-server">安装openssh-server</a></li>
+    <li><a href="#内核升级">内核升级</a></li>
+    <li><a href="#开启root">开启root</a></li>
+    <li><a href="#替换国内源">替换国内源</a></li>
+    <li><a href="#删除无用软件">删除无用软件</a></li>
+    <li><a href="#常用安装和卸载">常用安装和卸载</a></li>
+    <li><a href="#设置时间使用utc">设置时间使用UTC</a></li>
+    <li><a href="#自定义dhcp网络的dns-server-ip地址">自定义DHCP网络的DNS Server IP地址</a></li>
+    <li><a href="#snap删除脚本-win字符替换">snap删除脚本 win字符替换</a></li>
+    <li><a href="#软件图标">软件图标</a></li>
+    <li><a href="#gnome桌面美化">gnome桌面美化</a></li>
+    <li><a href="#wsl2">wsl2</a></li>
+    <li><a href="#宿主机无法通过ip连接wsl2解决方案">宿主机无法通过ip连接wsl2解决方案</a></li>
+    <li><a href="#linux-mint22-优化">linux-mint22 优化</a></li>
+  </ul>
+</nav>
+    </div>
+    
+
+    <hr />
+
+    <div class="content">
+        <h1 id="安装openssh-server">安装openssh-server <a href="#%e5%ae%89%e8%a3%85openssh-server" class="anchor">🔗</a></h1><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>sudo apt-get install openssh-server vim git
+</span></span></code></pre></div><h1 id="内核升级">内核升级 <a href="#%e5%86%85%e6%a0%b8%e5%8d%87%e7%ba%a7" class="anchor">🔗</a></h1><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>1、查看内核：uname -a
+</span></span><span style="display:flex;"><span>2、查询指定版本内核：apt-cache search linux| grep inux-headers-6.5
+</span></span><span style="display:flex;"><span>3、下载内核：sudo apt-get install linux-headers-6.5.0-45-generic linux-image-6.5.0-45-generic
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>4、查看已安装的内核版本：dpkg --get-selections | grep linux-image
+</span></span><span style="display:flex;"><span>5、安装各种网卡显卡驱动：sudo apt-get install linux-tools-6.5.0-45-generic  linux-modules-extra-6.5.0-45-generic
+</span></span><span style="display:flex;"><span>6、再次查看驱动：dpkg --get-selections  | grep linux
+</span></span><span style="display:flex;"><span>7、修改内核启动顺序：
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">#备份</span>
+</span></span><span style="display:flex;"><span>    sudo cp /etc/default/grub /etc/default/grub.bak
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># 修改</span>
+</span></span><span style="display:flex;"><span>    sudo vim /etc/default/grub
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">#GRUB_DEFAULT=&#34;1&gt; 3&#34; 其中&#34;1&gt; 3&#34;表示在第一级菜单中序号为1的条目，在该条目的第二级菜单中我们选择序号为3的条目。也就是我们上面讲过的Ubuntu 高级选项（序号1）下的Ubuntu，Linux 4.8.0-36-generic（序号3）。请注意&gt;号后面有空格。</span>
+</span></span><span style="display:flex;"><span>    GRUB_DEFAULT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;1&gt; 5&#34;</span> <span style="color:#75715e"># 或者 GRUB_DEFAULT=&#34;Advanced options for Ubuntu&gt;Ubuntu, Linux 5.8.0-41-generic&#34;    </span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># 更新配置</span>
+</span></span><span style="display:flex;"><span>    sudo update-grub
+</span></span><span style="display:flex;"><span>8、重启电脑
+</span></span></code></pre></div><h1 id="开启root">开启root <a href="#%e5%bc%80%e5%90%afroot" class="anchor">🔗</a></h1><ul>
+<li>sudo vi /etc/ssh/sshd_config(33行)， #PermitRootLogin prohibit-password 修改为 <code>PermitRootLogin yes</code></li>
+<li>//使用sudo获得root权限 <code>sudo su</code> //输入新密码并确认 <code>passwd root</code></li>
+</ul>
+<h1 id="替换国内源">替换国内源 <a href="#%e6%9b%bf%e6%8d%a2%e5%9b%bd%e5%86%85%e6%ba%90" class="anchor">🔗</a></h1><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>sudo cp /etc/apt/sources.list /etc/apt/sources.list.bak
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;deb http://mirrors.aliyun.com/ubuntu/ </span><span style="color:#66d9ef">$(</span>lsb_release -sc<span style="color:#66d9ef">)</span><span style="color:#e6db74"> main restricted universe multiverse&#34;</span> | sudo tee /etc/apt/sources.list
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;deb-src http://mirrors.aliyun.com/ubuntu/ </span><span style="color:#66d9ef">$(</span>lsb_release -sc<span style="color:#66d9ef">)</span><span style="color:#e6db74"> main restricted universe multiverse&#34;</span> | sudo tee -a /etc/apt/sources.list
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;deb http://mirrors.aliyun.com/ubuntu/ </span><span style="color:#66d9ef">$(</span>lsb_release -sc<span style="color:#66d9ef">)</span><span style="color:#e6db74">-updates main restricted universe multiverse&#34;</span> | sudo tee -a /etc/apt/sources.list
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;deb-src http://mirrors.aliyun.com/ubuntu/ </span><span style="color:#66d9ef">$(</span>lsb_release -sc<span style="color:#66d9ef">)</span><span style="color:#e6db74">-updates main restricted universe multiverse&#34;</span> | sudo tee -a /etc/apt/sources.list
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;deb http://mirrors.aliyun.com/ubuntu/ </span><span style="color:#66d9ef">$(</span>lsb_release -sc<span style="color:#66d9ef">)</span><span style="color:#e6db74">-security main restricted universe multiverse&#34;</span> | sudo tee -a /etc/apt/sources.list
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;deb-src http://mirrors.aliyun.com/ubuntu/ </span><span style="color:#66d9ef">$(</span>lsb_release -sc<span style="color:#66d9ef">)</span><span style="color:#e6db74">-security main restricted universe multiverse&#34;</span> | sudo tee -a /etc/apt/sources.list
+</span></span><span style="display:flex;"><span>sudo apt update
+</span></span><span style="display:flex;"><span>sudo apt upgrade
+</span></span></code></pre></div><h1 id="删除无用软件">删除无用软件 <a href="#%e5%88%a0%e9%99%a4%e6%97%a0%e7%94%a8%e8%bd%af%e4%bb%b6" class="anchor">🔗</a></h1><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>sudo apt-get remove libreoffice
+</span></span><span style="display:flex;"><span>sudo apt-get remove unity-webapps-common  <span style="color:#75715e">#删除Amazon的链接</span>
+</span></span><span style="display:flex;"><span>sudo apt-get  remove   libreoffice-common   unity-webapps-common thunderbird totem rhythmbox  simple-scan gnome-mahjongg aisleriot gnome-mines cheese transmission-common gnome-orca gnome-sudoku webbrowser-app onboard deja-dup <span style="color:#75715e">#无用软件</span>
+</span></span><span style="display:flex;"><span>sudo apt-get remove software-center <span style="color:#75715e">#删除自带的软件中心</span>
+</span></span><span style="display:flex;"><span>sudo apt-get remove imagemagick <span style="color:#75715e">#自带图片编辑</span>
+</span></span><span style="display:flex;"><span>gsettings set com.canonical.Unity.Lenses remote-content-search <span style="color:#e6db74">&#39;none&#39;</span>  <span style="color:#75715e">#关闭dash在线资源搜索</span>
+</span></span></code></pre></div><hr>
+<h1 id="常用安装和卸载">常用安装和卸载 <a href="#%e5%b8%b8%e7%94%a8%e5%ae%89%e8%a3%85%e5%92%8c%e5%8d%b8%e8%bd%bd" class="anchor">🔗</a></h1><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>sudo apt-get install alien <span style="color:#75715e">##alien默认没有安装，所以首先要安装它</span>
+</span></span><span style="display:flex;"><span>sudo alien xxxx.rpm <span style="color:#75715e">##将rpm转换位deb，完成后会生成一个同名的xxxx.deb</span>
+</span></span><span style="display:flex;"><span>sudo dpkg -i xxxx.deb <span style="color:#75715e">##安装</span>
+</span></span><span style="display:flex;"><span>sudo dpkg -l | grep netease <span style="color:#75715e">#查找包</span>
+</span></span><span style="display:flex;"><span>sudo apt-get remove --purge  netease-cloud-music  <span style="color:#f92672">&amp;&amp;</span> sudo apt-get autoremove  <span style="color:#75715e">#干净的卸载</span>
+</span></span></code></pre></div><h1 id="设置时间使用utc">设置时间使用UTC <a href="#%e8%ae%be%e7%bd%ae%e6%97%b6%e9%97%b4%e4%bd%bf%e7%94%a8utc" class="anchor">🔗</a></h1><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>sudo vim /etc/default/rcS  <span style="color:#75715e">###将UTC=no改为UTC=yes</span>
+</span></span></code></pre></div><h1 id="自定义dhcp网络的dns-server-ip地址">自定义DHCP网络的DNS Server IP地址 <a href="#%e8%87%aa%e5%ae%9a%e4%b9%89dhcp%e7%bd%91%e7%bb%9c%e7%9a%84dns-server-ip%e5%9c%b0%e5%9d%80" class="anchor">🔗</a></h1><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>sudo vim /etc/dhcp/dhclient.conf文件，在第21行#prepend domain-name-servers 127.0.0.1;下一行添加如下2行使用aliyun和114的DNS
+</span></span><span style="display:flex;"><span>prepend domain-name-servers 114.114.114.114;
+</span></span><span style="display:flex;"><span>prepend domain-name-servers 223.5.5.5;
+</span></span><span style="display:flex;"><span>这样可以优先使用aliyun的dns，次要使用114的DNS。
+</span></span></code></pre></div><h1 id="snap删除脚本-win字符替换">snap删除脚本 win字符替换 <a href="#snap%e5%88%a0%e9%99%a4%e8%84%9a%e6%9c%ac-win%e5%ad%97%e7%ac%a6%e6%9b%bf%e6%8d%a2" class="anchor">🔗</a></h1><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span><span style="color:#75715e"># 停用 </span>
+</span></span><span style="display:flex;"><span>sudo systemctl stop snapd
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#删除和遗留文件</span>
+</span></span><span style="display:flex;"><span>sudo apt purge snapd -y  <span style="color:#f92672">&amp;&amp;</span> sudo  rm  -rf  ~/snap /snap /var/snap /var/lib/snapd <span style="color:#f92672">&amp;&amp;</span> sudo apt autoremove --purge -y <span style="color:#f92672">&amp;&amp;</span> sudo apt clean
+</span></span><span style="display:flex;"><span>vim delsnap 
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 输入下面内容:</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#!/bin/bash</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">function</span> ubuntu_remove_snap<span style="color:#f92672">()</span> <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>    sudo systemctl disable snapd.service
+</span></span><span style="display:flex;"><span>    sudo systemctl disable snapd.socket
+</span></span><span style="display:flex;"><span>    sudo systemctl disable snapd.seeded.service
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">for</span> snap in <span style="color:#66d9ef">$(</span>snap list | awk <span style="color:#e6db74">&#39;{print $1}&#39;</span><span style="color:#66d9ef">)</span>; <span style="color:#66d9ef">do</span>
+</span></span><span style="display:flex;"><span>        echo <span style="color:#e6db74">&#34;正在移除: </span>$snap<span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>        snap remove <span style="color:#e6db74">&#34;</span>$snap<span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">done</span>
+</span></span><span style="display:flex;"><span>    sudo apt autoremove --purge snapd
+</span></span><span style="display:flex;"><span>    sudo rm -rf /var/cache/snapd
+</span></span><span style="display:flex;"><span>    sudo rm -rf ~/snap
+</span></span><span style="display:flex;"><span> sudo apt update
+</span></span><span style="display:flex;"><span><span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>ubuntu_remove_snap
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#修改权限</span>
+</span></span><span style="display:flex;"><span>sed -i <span style="color:#e6db74">&#39;s/\r$//&#39;</span> delsnap.sh <span style="color:#f92672">&amp;&amp;</span> chmod +x delsnap.sh
+</span></span></code></pre></div><h1 id="软件图标">软件图标 <a href="#%e8%bd%af%e4%bb%b6%e5%9b%be%e6%a0%87" class="anchor">🔗</a></h1><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span><span style="color:#75715e">#创建桌面图标</span>
+</span></span><span style="display:flex;"><span>桌面创建文件  xx.desktop ，并填入下面配置
+</span></span><span style="display:flex;"><span><span style="color:#f92672">[</span>Desktop Entry<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>Version<span style="color:#f92672">=</span>1.0
+</span></span><span style="display:flex;"><span>Type<span style="color:#f92672">=</span>Application
+</span></span><span style="display:flex;"><span>Name<span style="color:#f92672">=</span>xxx
+</span></span><span style="display:flex;"><span>Icon<span style="color:#f92672">=</span>/<span style="color:#f92672">{</span>软件路径<span style="color:#f92672">}</span>/xxx/icon.png
+</span></span><span style="display:flex;"><span>Exec<span style="color:#f92672">=</span>/<span style="color:#f92672">{</span>软件路径<span style="color:#f92672">}</span>/xxx/xx.appimage
+</span></span><span style="display:flex;"><span>Terminal<span style="color:#f92672">=</span>false
+</span></span><span style="display:flex;"><span>Categories<span style="color:#f92672">=</span>Development;IDE;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#权限添加</span>
+</span></span><span style="display:flex;"><span>sudo chmod +x xxx.appimage
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 添加到应用程序中</span>
+</span></span><span style="display:flex;"><span>sudo cp xxx.desktop ~/.local/share/applications
+</span></span></code></pre></div><h1 id="gnome桌面美化">gnome桌面美化 <a href="#gnome%e6%a1%8c%e9%9d%a2%e7%be%8e%e5%8c%96" class="anchor">🔗</a></h1><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span><span style="color:#75715e"># 安装Tweaks 和 Extensions</span>
+</span></span><span style="display:flex;"><span>sudo apt-get update
+</span></span><span style="display:flex;"><span>sudo apt install -y gnome-tweaks gnome-shell-extensions git
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 访问</span>
+</span></span><span style="display:flex;"><span>extensions.gnome.org，开启<span style="color:#e6db74">`</span>Click here to install browser extension<span style="color:#e6db74">`</span>
+</span></span><span style="display:flex;"><span>安装User Themes
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Big Sur 主题</span>
+</span></span><span style="display:flex;"><span>git clone https://gh-proxy.com/github.com/vinceliuice/WhiteSur-gtk-theme.git --depth<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>cd WhiteSur-gtk-theme  <span style="color:#75715e"># 进入主题目录</span>
+</span></span><span style="display:flex;"><span>./install.sh  <span style="color:#75715e"># 运行安装脚本</span>
+</span></span><span style="display:flex;"><span>sudo ./tweaks.sh -g  <span style="color:#75715e"># 添加主题</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Big Sur 应用图标</span>
+</span></span><span style="display:flex;"><span>wget https://gh-proxy.com/github.com/zayronxio/Mkos-Big-Sur/releases/download/0.3/Mkos-Big-Sur.tar.xz
+</span></span><span style="display:flex;"><span>mkdir ~/.icons  <span style="color:#75715e"># 创建 ~/.icons 目录</span>
+</span></span><span style="display:flex;"><span>tar -xJvf Mkos-Big-Sur.tar.xz -C ~/.icons  <span style="color:#75715e"># 将图标文件解压到 ~/.icons 目录</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Big Sur 字体</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">## 界面字体</span>
+</span></span><span style="display:flex;"><span>git clone https://gh-proxy.com/https://github.com/sahibjotsaggu/San-Francisco-Pro-Fonts.git --depth<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>  <span style="color:#75715e"># 下载字体库</span>
+</span></span><span style="display:flex;"><span>sudo mkdir /usr/local/share/fonts/SF-Pro  <span style="color:#75715e"># 新建字体文件夹</span>
+</span></span><span style="display:flex;"><span>cd San-Francisco-Pro-Fonts
+</span></span><span style="display:flex;"><span>sudo mv SF-Pro* /usr/local/share/fonts/SF-Pro  <span style="color:#75715e"># 安装字体</span>
+</span></span><span style="display:flex;"><span>sudo fc-cache -fv  <span style="color:#75715e"># 刷新字体列表缓存</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">## 文档字体</span>
+</span></span><span style="display:flex;"><span>wget https://font.download/dl/font/helvetica-255.zip
+</span></span><span style="display:flex;"><span>sudo mkdir /usr/local/share/fonts/Helvetica
+</span></span><span style="display:flex;"><span>sudo unzip helvetica-255.zip -d /usr/local/share/fonts/Helvetica
+</span></span><span style="display:flex;"><span>sudo fc-cache -fv
+</span></span><span style="display:flex;"><span><span style="color:#75715e">## 代码字体</span>
+</span></span><span style="display:flex;"><span>wget https://gh-proxy.com/github.com/ryanoasis/nerd-fonts/releases/download/v3.2.0/Meslo.tar.xz
+</span></span><span style="display:flex;"><span>sudo mkdir Meslo
+</span></span><span style="display:flex;"><span>sudo tar -xJvf Meslo.tar.xz -C Meslo
+</span></span><span style="display:flex;"><span>sudo mkdir /usr/local/share/fonts/Meslo
+</span></span><span style="display:flex;"><span>cd Meslo
+</span></span><span style="display:flex;"><span>sudo mv MesloLG* /usr/local/share/fonts/Meslo
+</span></span><span style="display:flex;"><span>sudo fc-cache -fv
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#  壁纸下载</span>
+</span></span><span style="display:flex;"><span>git clone https://gh-proxy.com/github.com/vinceliuice/WhiteSur-wallpapers.git --depth<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#设置主题、图标和壁纸</span>
+</span></span><span style="display:flex;"><span>打开 GNOME Tweaks。GNOME Tweaks 位于 Utilities 文件夹里面。 新版本叫<span style="color:#e6db74">&#34;优化&#34;</span>
+</span></span><span style="display:flex;"><span>选择外观
+</span></span><span style="display:flex;"><span>- 图标，选择：Mkos-Big-sur
+</span></span><span style="display:flex;"><span>- 过时应用程序：WhiteSur-Light
+</span></span><span style="display:flex;"><span>- Shell: WhiteSur-Light
+</span></span><span style="display:flex;"><span>选择字体
+</span></span><span style="display:flex;"><span>- 界面文本<span style="color:#f92672">(</span>Interface Text<span style="color:#f92672">)</span>：SF Pro Regular <span style="color:#ae81ff">11</span>
+</span></span><span style="display:flex;"><span>- 文档文本<span style="color:#f92672">(</span>Dodument Text<span style="color:#f92672">)</span>: Helvetica 常规体 <span style="color:#ae81ff">11</span>
+</span></span><span style="display:flex;"><span>- 等宽文本<span style="color:#f92672">(</span>Monospace Text<span style="color:#f92672">)</span>: MesloLGM Nerd Font Regular <span style="color:#ae81ff">13</span>
+</span></span><span style="display:flex;"><span>窗口
+</span></span><span style="display:flex;"><span>- 标题栏按钮，放置：左
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 系统设置</span>
+</span></span><span style="display:flex;"><span>在系统设置中选择，Appearance（桌面）调整如下配置
+</span></span><span style="display:flex;"><span>- 桌面图标：Size选择小，Position of New Icons选择顶部右侧
+</span></span><span style="display:flex;"><span>- Dock：Panel Model选择关闭，Icon Size选择40，Position on Screen选择底部
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 毛玻璃效果</span>
+</span></span><span style="display:flex;"><span>- 添加毛玻璃效果，我们需要安装 Blur my Shell 插件。打开 GNOME 的官网 extensions.gnome.org，搜索并启用 Blur my Shell 插件
+</span></span><span style="display:flex;"><span>- 最小化窗口时的神奇效果，我们需要安装 Compiz alike magic lamp effect 插件。打开 GNOME 的官网 extensions.gnome.org，搜索并启用 Compiz alike magic lamp effect 插件：
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Ubuntu 的程序坞默认只能点击展开，不能点击隐藏窗口，可以使用如下命令开启点击隐藏</span>
+</span></span><span style="display:flex;"><span>gsettings set org.gnome.shell.extensions.dash-to-dock click-action <span style="color:#e6db74">&#39;minimize&#39;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#gnome快捷键冲突</span>
+</span></span><span style="display:flex;"><span>查看快捷键
+</span></span><span style="display:flex;"><span>gsettings get org.gnome.desktop.wm.keybindings switch-to-workspace-left
+</span></span><span style="display:flex;"><span>设置快捷键
+</span></span><span style="display:flex;"><span>gsettings set org.gnome.desktop.wm.keybindings switch-to-workspace-left <span style="color:#e6db74">&#34;[&#39;&lt;Super&gt;&lt;Alt&gt;Left&#39;]&#34;</span>
+</span></span><span style="display:flex;"><span>gsettings set org.gnome.desktop.wm.keybindings switch-to-workspace-right <span style="color:#e6db74">&#34;[&#39;&lt;Super&gt;&lt;Alt&gt;Right&#39;]&#34;</span>
+</span></span></code></pre></div><h1 id="wsl2">wsl2 <a href="#wsl2" class="anchor">🔗</a></h1><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>安装wsl2
+</span></span><span style="display:flex;"><span>dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart
+</span></span><span style="display:flex;"><span>dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart
+</span></span><span style="display:flex;"><span>wsl.exe --install -d Ubuntu-24.04
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>查看: wsl --list --verbose
+</span></span><span style="display:flex;"><span>注销: wsl --unregister Ubuntu-24.04
+</span></span><span style="display:flex;"><span>删除：C:<span style="color:#ae81ff">\U</span>sers<span style="color:#ae81ff">\&lt;</span>用户名&gt;<span style="color:#ae81ff">\A</span>ppData<span style="color:#ae81ff">\L</span>ocal<span style="color:#ae81ff">\P</span>ackages<span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>导入: wsl --import Ubuntu-24.04 D:<span style="color:#ae81ff">\v</span>mos<span style="color:#ae81ff">\U</span>buntu-24.04 D:<span style="color:#ae81ff">\v</span>mos<span style="color:#ae81ff">\U</span>buntu-24.04.tar
+</span></span><span style="display:flex;"><span>导出: wsl --export Ubuntu-24.04 D:<span style="color:#ae81ff">\v</span>mos<span style="color:#ae81ff">\U</span>buntu-24.04.tar
+</span></span><span style="display:flex;"><span>重启：wsl --shutdown
+</span></span></code></pre></div><h1 id="宿主机无法通过ip连接wsl2解决方案">宿主机无法通过ip连接wsl2解决方案 <a href="#%e5%ae%bf%e4%b8%bb%e6%9c%ba%e6%97%a0%e6%b3%95%e9%80%9a%e8%bf%87ip%e8%bf%9e%e6%8e%a5wsl2%e8%a7%a3%e5%86%b3%e6%96%b9%e6%a1%88" class="anchor">🔗</a></h1><p>wsl2的默认网络模式是NAT，建议修改为镜像模式。在C:\Users&lt;UserName&gt;.wslconfig中添加下列代码:</p>
+<pre tabindex="0"><code>[wsl2]
+#镜像网络
+networkingMode=mirrored
+#如果使用代理可以在后面添加
+autoProxy=true
+还可以使用DNS隧道提高与 VPN 和其他复杂网络设置的兼容性:
+dnsTunneling=true
+</code></pre><p>win11防火墙</p>
+<ol>
+<li>获取wsl GUID:<code>Get-NetFirewallHyperVVMCreator</code>,得到id通常是40ExxE90</li>
+<li>查看Hyper-V防火墙状态<code>Get-NetFirewallHyperVVMSetting -PolicyStore ActiveStore -Name '{40E0AC32-46A5-438A-A0B2-2B479E8F2E90}'</code></li>
+<li>关闭Hyper-V防火墙<code>Set-NetFirewallHyperVVMSetting -Name '{40E0AC32-46A5-438A-A0B2-2B479E8F2E90}' -Enabled False</code>
+Ubuntu关闭防火墙</li>
+</ol>
+<pre tabindex="0"><code>ufw disable
+apt-get remove iptables
+</code></pre><h1 id="linux-mint22-优化">linux-mint22 优化 <a href="#linux-mint22-%e4%bc%98%e5%8c%96" class="anchor">🔗</a></h1><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span><span style="color:#75715e">#linuxmint 卸载</span>
+</span></span><span style="display:flex;"><span>sudo apt-get remove --purge libreoffice*  <span style="color:#f92672">&amp;&amp;</span> sudo apt-get autoremove   <span style="color:#75715e">#office</span>
+</span></span><span style="display:flex;"><span>sudo apt-get remove --purge thingy*  <span style="color:#f92672">&amp;&amp;</span> sudo apt-get autoremove  <span style="color:#75715e">#书库</span>
+</span></span><span style="display:flex;"><span>sudo apt-get remove --purge warpinator*  <span style="color:#f92672">&amp;&amp;</span> sudo apt-get autoremove <span style="color:#75715e">#局域网轻松文件共享新利器</span>
+</span></span><span style="display:flex;"><span>sudo apt-get remove --purge hypnotix*  <span style="color:#f92672">&amp;&amp;</span> sudo apt-get autoremove <span style="color:#75715e">#tv</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>sudo apt-get remove --purge webapp-manager*  <span style="color:#f92672">&amp;&amp;</span> sudo apt-get autoremove <span style="color:#75715e">#web应用</span>
+</span></span><span style="display:flex;"><span>sudo apt-get remove --purge mintchat*  <span style="color:#f92672">&amp;&amp;</span> sudo apt-get autoremove <span style="color:#75715e">#聊天</span>
+</span></span><span style="display:flex;"><span>sudo apt-get remove --purge thunderbird*  <span style="color:#f92672">&amp;&amp;</span> sudo apt-get autoremove <span style="color:#75715e">#邮件</span>
+</span></span><span style="display:flex;"><span>sudo apt-get remove --purge transmission*  <span style="color:#f92672">&amp;&amp;</span> sudo apt-get autoremove <span style="color:#75715e">#下载工具</span>
+</span></span><span style="display:flex;"><span>sudo apt-get remove --purge drawing*  <span style="color:#f92672">&amp;&amp;</span> sudo apt-get autoremove <span style="color:#75715e">#绘图工具</span>
+</span></span><span style="display:flex;"><span>sudo apt-get remove --purge sticky*  <span style="color:#f92672">&amp;&amp;</span> sudo apt-get autoremove <span style="color:#75715e">#便签</span>
+</span></span><span style="display:flex;"><span>sudo apt-get remove --purge gucharmap*  <span style="color:#f92672">&amp;&amp;</span> sudo apt-get autoremove <span style="color:#75715e">#字符映射表</span>
+</span></span><span style="display:flex;"><span>sudo apt-get remove --purge firefox*  <span style="color:#f92672">&amp;&amp;</span> sudo apt-get autoremove <span style="color:#75715e">#火狐</span>
+</span></span><span style="display:flex;"><span>sudo apt-get remove --purge onboard*  <span style="color:#f92672">&amp;&amp;</span> sudo apt-get autoremove <span style="color:#75715e">#软键盘</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#sudo apt-get remove --purge celluloid*  &amp;&amp; sudo apt-get autoremove #视频播放器</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#sudo apt-get remove --purge rhythmbox*  &amp;&amp; sudo apt autoremove --purge  #音乐播放器</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#2、桌面图标</span>
+</span></span><span style="display:flex;"><span>ln -s /home/llane/program/Motrix.AppImage ~/Desktop  创建软链接的形式
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#3、fcitx5中文输入法 (会导致idea卡死))</span>
+</span></span><span style="display:flex;"><span>sudo apt update
+</span></span><span style="display:flex;"><span>sudo apt install fcitx5  fcitx5-chinese-addons fcitx5-frontend-gtk2 fcitx5-frontend-gtk3 fcitx5-frontend-qt5 
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#然后编辑 </span>
+</span></span><span style="display:flex;"><span>sudo vim ~/.profile 或 ~/.xprofile，添加以下内容：完成后重启电脑
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#39;export GTK_IM_MODULE=fcitx&#39;</span> &gt;&gt; ~/.profile
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#39;export QT_IM_MODULE=fcitx&#39;</span> &gt;&gt; ~/.profile
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#39;export QT5_IM_MODULE=fcitx&#39;</span> &gt;&gt; ~/.profile
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#39;export XMODIFIERS=@im=fcitx&#39;</span> &gt;&gt; ~/.profile
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#启动</span>
+</span></span><span style="display:flex;"><span>将输入法Fcitx5添加为开机启
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 下载词库文件</span>
+</span></span><span style="display:flex;"><span>wget https://hk.gh-proxy.org/https://github.com/felixonmars/fcitx5-pinyin-zhwiki/releases/download/0.3.0/zhwiki-20251104.dict
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 创建存储目录</span>
+</span></span><span style="display:flex;"><span>mkdir -p ~/.local/share/fcitx5/pinyin/dictionaries/
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 移动词库文件至该目录</span>
+</span></span><span style="display:flex;"><span>mv zhwiki-20251104.dict ~/.local/share/fcitx5/pinyin/dictionaries/
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#4、ibus输入法</span>
+</span></span><span style="display:flex;"><span>sudo apt-get install ibus  ibus-pinyin
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#最近打开的记录清理 </span>
+</span></span><span style="display:flex;"><span>rm -rf ~/.local/share/recently-used.xbel
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#查看最后的关机日志</span>
+</span></span><span style="display:flex;"><span>journalctl -b -1 | grep <span style="color:#e6db74">&#34;Failed to stop&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#日期显示：</span>
+</span></span><span style="display:flex;"><span>%Y-%m-%d<span style="color:#f92672">(</span>%A<span style="color:#f92672">)</span>%H:%M
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#设置显示周几和秒</span>
+</span></span><span style="display:flex;"><span>系统-&gt;区域与语言-&gt;格式 ：选择中国
+</span></span><span style="display:flex;"><span>gsettings set org.gnome.desktop.interface clock-show-weekday true
+</span></span><span style="display:flex;"><span>gsettings set org.gnome.desktop.interface clock-show-seconds true
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#游戏帧率监控</span>
+</span></span><span style="display:flex;"><span>mangohud下载地址：https://github.com/flightlessmango/MangoHud/releases
+</span></span><span style="display:flex;"><span>goverlay下载地址：https://github.com/benjamimgois/goverlay/releases
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 硬件信息查看</span>
+</span></span><span style="display:flex;"><span>hardinfo2 或者 mission center
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#截图软件</span>
+</span></span><span style="display:flex;"><span>sudo apt install flameshot
+</span></span><span style="display:flex;"><span>无法截图解决
+</span></span><span style="display:flex;"><span>设置-&gt;键盘-&gt;自定义快捷键，添加 /bin/sh -c <span style="color:#e6db74">&#34;flameshot gui&#34;</span> &gt; /dev/null &amp;
+</span></span><span style="display:flex;"><span>添加开机启动
+</span></span><span style="display:flex;"><span>命令：flameshot  即可
+</span></span></code></pre></div>
+    </div>
+
+    
+</section>
+
+
+            </div>
+            <div class="side">
+                <div class="side-categories">
+    <h2>Categories</h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/categories/ai">ai(3)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/go">go(23)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E4%BB%A3%E7%A0%81">代码(2)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E5%B7%A5%E5%85%B7">工具(8)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E9%80%86%E5%90%91">逆向(3)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E9%9D%A2%E8%AF%95">面试(5)</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/note/">Recent Note</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/note/%E6%9E%B6%E6%9E%84%E8%80%83%E7%82%B9/">场景总结</a>
+            </li>
+        
+            <li>
+                <a href="/note/rdis-%E7%BC%93%E5%AD%98%E7%A9%BF%E9%80%8F%E9%9B%AA%E5%B4%A9%E5%87%BB%E7%A9%BF%E7%9A%84%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95/">缓存穿透、雪崩、击穿的解决方法</a>
+            </li>
+        
+            <li>
+                <a href="/note/redis-%E5%8D%95%E7%BA%BF%E7%A8%8B%E7%9A%84redis%E4%B8%BA%E4%BB%80%E4%B9%88%E5%BF%AB/">单线程的redis为什么快</a>
+            </li>
+        
+            <li>
+                <a href="/note/redis-%E6%80%BB%E7%BB%93/">redis总结</a>
+            </li>
+        
+            <li>
+                <a href="/note/mysql-%E6%80%BB%E7%BB%93/">mysql总结</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/android/">Recent Android</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/android/redroid%E4%BD%BF%E7%94%A8/">Redroid安卓容器</a>
+            </li>
+        
+            <li>
+                <a href="/android/%E5%85%A5%E9%97%A8/">逆向环境-杂</a>
+            </li>
+        
+            <li>
+                <a href="/android/frida%E6%95%99%E7%A8%8B/">frida教程</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/tool/">Recent Tool</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/tool/linux-almalinux%E4%BC%98%E5%8C%96/">AlmaLinux10</a>
+            </li>
+        
+            <li>
+                <a href="/tool/almalinux-k8s/">AlmaLinux-k8s安装</a>
+            </li>
+        
+            <li>
+                <a href="/tool/vscode%E6%8A%98%E8%85%BE/">vscode折腾</a>
+            </li>
+        
+            <li>
+                <a href="/tool/linux-ubuntu%E4%BC%98%E5%8C%96/">Ubuntu开机优化</a>
+            </li>
+        
+            <li>
+                <a href="/tool/shell-ssh_script/">ssh常用脚本</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/llm/">Recent Llm</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/llm/transformers-%E5%85%A5%E9%97%A8%E7%AF%87/">Transformers-入门篇</a>
+            </li>
+        
+            <li>
+                <a href="/llm/%E6%A8%A1%E5%9E%8Bvllm%E9%83%A8%E7%BD%B2/">AI模型VLLM部署</a>
+            </li>
+        
+            <li>
+                <a href="/llm/%E6%A8%A1%E5%9E%8B%E5%BE%AE%E8%B0%83/">AI模型微调</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/go/">Recent Go</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/go/go%E4%B8%89%E8%89%B2%E6%A0%87%E8%AE%B0%E6%B7%B7%E5%90%88%E5%86%99%E5%B1%8F%E9%9A%9Cgc%E6%A8%A1%E5%BC%8F%E5%85%A8%E6%80%BB%E7%BB%93/">Go三色标记混合写屏障GC模式全总结</a>
+            </li>
+        
+            <li>
+                <a href="/go/go%E4%B8%ADmake%E4%B8%8Enew%E5%8C%BA%E5%88%AB/">Go中make与new区别</a>
+            </li>
+        
+            <li>
+                <a href="/go/go%E5%B8%B8%E7%94%A8bug%E5%92%8C%E6%80%A7%E8%83%BD%E9%97%AE%E9%A2%98%E7%9A%84%E5%AE%9E%E8%B7%B5%E6%96%B9%E6%B3%95/">Go常用bug和性能问题的实践方法</a>
+            </li>
+        
+            <li>
+                <a href="/go/grpc%E6%80%BB%E7%BB%93/">GRPC笔记</a>
+            </li>
+        
+            <li>
+                <a href="/go/go%E7%9A%84defer%E6%80%BB%E7%BB%93/">Go的defer总结</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+            </div>
+        </main>
+        <footer class="footer">
+    <div class="footer-row">
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/note/index.xml">
+                    Feed of Note
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/android/index.xml">
+                    Feed of Android
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/tool/index.xml">
+                    Feed of Tool
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/llm/index.xml">
+                    Feed of Llm
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/go/index.xml">
+                    Feed of Go
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+
+        
+            
+            
+        
+    </div>
+
+    
+</footer>
+
+    </body>
+</html>

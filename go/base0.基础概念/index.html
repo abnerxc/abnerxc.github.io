@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+<meta name="viewport" content="width=device-width,minimum-scale=1">
+
+
+
+
+<title>Go基础-基本类型 | Abner的博客</title>
+<link rel="canonical" href="https://abnerxc.github.io/go/base0.%E5%9F%BA%E7%A1%80%E6%A6%82%E5%BF%B5/">
+<meta property="og:type" content="article" />
+<meta property="og:title" content="Go基础-基本类型 | Abner的博客" />
+<meta property="og:url" content="https://abnerxc.github.io/go/base0.%E5%9F%BA%E7%A1%80%E6%A6%82%E5%BF%B5/" />
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/icofont/icofont.min.css" />
+<link rel="stylesheet" href="/css/syntax.css" />
+<link rel="stylesheet" href="/css/style.css" />
+<link rel="stylesheet" href="/css/custom.css" />
+<script src="/js/copy-code-block.js"></script>
+<link rel="shortcut icon" href="/images/favicon.ico" type="image/x-icon" />
+
+    </head>
+
+    <body>
+        <header class="header-wrapper">
+    <div class="header">
+        <a class="site-title" href="https://abnerxc.github.io/">Abner的博客</a>
+
+        <nav class="menu">
+            
+        </nav>
+    </div>
+</header>
+
+        <main class="main-wrapper">
+            <div class="main">
+                
+
+<section class="single">
+    <h1 class="title">Go基础-基本类型</h1>
+
+    <div class="tip">
+        <time datetime="2019-01-15 18:35:11 &#43;0800 CST">2019/01/15</time>
+        <span class="split">·</span>
+        <span> 128 words </span>
+        <span class="split">·</span>
+        <span>
+            1 minutes to read
+        </span>
+    </div>
+
+    <div class="taxonomies">
+        
+        <div>
+            Categories:
+            
+                <a href="/categories/go">Go</a>
+            
+        </div>
+        
+
+        
+    </div>
+
+    
+    
+    <div class="post-toc">
+        <h3>目录</h3>
+        <nav id="TableOfContents">
+  <ul>
+    <li><a href="#内建类型种类">内建类型种类</a></li>
+    <li><a href="#内建类型特点">内建类型特点</a></li>
+    <li><a href="#init函数特点">init函数特点</a></li>
+    <li><a href="#type的使用">.(type)的使用</a></li>
+  </ul>
+</nav>
+    </div>
+    
+
+    <hr />
+
+    <div class="content">
+        <h1 id="内建类型种类">内建类型种类 <a href="#%e5%86%85%e5%bb%ba%e7%b1%bb%e5%9e%8b%e7%a7%8d%e7%b1%bb" class="anchor">🔗</a></h1><ul>
+<li>
+<p>bool：布尔类型,可选 true|false,默认初始化零值 false</p>
+</li>
+<li>
+<p>整型
+8bit=1字节，int(8)表示8个bit位</p>
+<table>
+  <thead>
+      <tr>
+          <th>类型</th>
+          <th>字节</th>
+          <th>取值</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>(u)int(8)</td>
+          <td>2^0=1</td>
+          <td>2^8=-127~128</td>
+      </tr>
+      <tr>
+          <td>(u)int(16)</td>
+          <td>2^1=2</td>
+          <td>2^16</td>
+      </tr>
+      <tr>
+          <td>(u)int(32)</td>
+          <td>2^2=4</td>
+          <td>2^32</td>
+      </tr>
+      <tr>
+          <td>(u)int(64)</td>
+          <td>2^3=8</td>
+          <td>2^64</td>
+      </tr>
+      <tr>
+          <td>(u)int</td>
+          <td>跟随操作系统位数(32or64位)</td>
+          <td>-</td>
+      </tr>
+  </tbody>
+</table>
+<p>uintptr:一个足够大的无符号整型， 用来表示任意地址;一个uintptr是一个整数，不是一个引用。把一个Pointer转换为uintptr后，实际是剥离了原有的指针的语义，只取了地址的整数值。<code>p = unsafe.Pointer( uintptr ( p ) + offset )</code></p>
+</li>
+<li>
+<p>byte(uint8) , rune(int32)，string</p>
+<ul>
+<li>byte :最基础字节类型,是 uint8 类型的别名</li>
+<li>rune : Go 中的字符类型,是 int32 的别名</li>
+</ul>
+</li>
+<li>
+<p>string
+值用 &quot;&quot; 或者 `` 包括, `` 可包含多行字符串,字符串的内容在初始化后，不能被修改，但可重新完全赋值，字符串的操作与数组相同</p>
+</li>
+<li>
+<p>float32 , float64 , complex64 , complex128
+8bit=1字节，float32表示32个bit位，刚好4个字节</p>
+<table>
+  <thead>
+      <tr>
+          <th>类型</th>
+          <th>字节</th>
+          <th>取值</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>float32</td>
+          <td>4</td>
+          <td>-</td>
+      </tr>
+      <tr>
+          <td>float64</td>
+          <td>8</td>
+          <td>-</td>
+      </tr>
+      <tr>
+          <td>complex64</td>
+          <td>8</td>
+          <td>-</td>
+      </tr>
+      <tr>
+          <td>complex128</td>
+          <td>16</td>
+          <td>-</td>
+      </tr>
+  </tbody>
+</table>
+</li>
+</ul>
+<p>+++</p>
+<h1 id="内建类型特点">内建类型特点 <a href="#%e5%86%85%e5%bb%ba%e7%b1%bb%e5%9e%8b%e7%89%b9%e7%82%b9" class="anchor">🔗</a></h1><ul>
+<li>类型转换只有显示转换,不存在任何形式的隐式类型转换</li>
+<li>虽然提供指针类型,但指针本身不能进行任何形式的计算</li>
+<li>变量声明后有默认初始化零值,变量零值视具体类型而定</li>
+</ul>
+<h1 id="init函数特点">init函数特点 <a href="#init%e5%87%bd%e6%95%b0%e7%89%b9%e7%82%b9" class="anchor">🔗</a></h1><ol>
+<li>主要作用
+<ul>
+<li>初始化不能采用初始化表达式初始化的变量。</li>
+<li>程序运行前的注册。</li>
+<li>实现sync.Once功能。</li>
+<li>其他</li>
+</ul>
+</li>
+<li>特点</li>
+</ol>
+<ul>
+<li>init() 函数是用于程序执行前做包的初始化的函数，比如初始化包里的变量等;</li>
+<li>一个包可以出线多个 init() 函数,一个源文件也可以包含多个 init() 函数；</li>
+<li>同一个包中多个 init() 函数的执行顺序没有明确定义，但是不同包的init函数是根据包导入的依赖关系决定的（看下图）;</li>
+<li>init() 函数在代码中不能被显示调用、不能被引用（赋值给函数变量），否则出现编译错误;</li>
+<li>一个包被引用多次，如 A import B,C import B,A import C，B 被引用多次，但 B 包只会初始化一次；</li>
+<li>引入包，不可出现死循坏。即 A import B,B import A，这种情况编译失败；
+<img src="/img/go-inipack.jpeg" alt=""></li>
+</ul>
+<h1 id="type的使用">.(type)的使用 <a href="#type%e7%9a%84%e4%bd%bf%e7%94%a8" class="anchor">🔗</a></h1><p>类型选择，类型选择的语法形如：i.(type)，其中 i 是接口，type 是固定关键字，需要注意的是，<code>只有接口类型才可以使用类型选择</code></p>
+
+    </div>
+
+    
+</section>
+
+
+            </div>
+            <div class="side">
+                <div class="side-categories">
+    <h2>Categories</h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/categories/ai">ai(3)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/go">go(23)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E4%BB%A3%E7%A0%81">代码(2)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E5%B7%A5%E5%85%B7">工具(8)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E9%80%86%E5%90%91">逆向(3)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E9%9D%A2%E8%AF%95">面试(5)</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/note/">Recent Note</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/note/%E6%9E%B6%E6%9E%84%E8%80%83%E7%82%B9/">场景总结</a>
+            </li>
+        
+            <li>
+                <a href="/note/rdis-%E7%BC%93%E5%AD%98%E7%A9%BF%E9%80%8F%E9%9B%AA%E5%B4%A9%E5%87%BB%E7%A9%BF%E7%9A%84%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95/">缓存穿透、雪崩、击穿的解决方法</a>
+            </li>
+        
+            <li>
+                <a href="/note/redis-%E5%8D%95%E7%BA%BF%E7%A8%8B%E7%9A%84redis%E4%B8%BA%E4%BB%80%E4%B9%88%E5%BF%AB/">单线程的redis为什么快</a>
+            </li>
+        
+            <li>
+                <a href="/note/redis-%E6%80%BB%E7%BB%93/">redis总结</a>
+            </li>
+        
+            <li>
+                <a href="/note/mysql-%E6%80%BB%E7%BB%93/">mysql总结</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/android/">Recent Android</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/android/redroid%E4%BD%BF%E7%94%A8/">Redroid安卓容器</a>
+            </li>
+        
+            <li>
+                <a href="/android/%E5%85%A5%E9%97%A8/">逆向环境-杂</a>
+            </li>
+        
+            <li>
+                <a href="/android/frida%E6%95%99%E7%A8%8B/">frida教程</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/tool/">Recent Tool</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/tool/linux-almalinux%E4%BC%98%E5%8C%96/">AlmaLinux10</a>
+            </li>
+        
+            <li>
+                <a href="/tool/almalinux-k8s/">AlmaLinux-k8s安装</a>
+            </li>
+        
+            <li>
+                <a href="/tool/vscode%E6%8A%98%E8%85%BE/">vscode折腾</a>
+            </li>
+        
+            <li>
+                <a href="/tool/linux-ubuntu%E4%BC%98%E5%8C%96/">Ubuntu开机优化</a>
+            </li>
+        
+            <li>
+                <a href="/tool/shell-ssh_script/">ssh常用脚本</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/llm/">Recent Llm</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/llm/transformers-%E5%85%A5%E9%97%A8%E7%AF%87/">Transformers-入门篇</a>
+            </li>
+        
+            <li>
+                <a href="/llm/%E6%A8%A1%E5%9E%8Bvllm%E9%83%A8%E7%BD%B2/">AI模型VLLM部署</a>
+            </li>
+        
+            <li>
+                <a href="/llm/%E6%A8%A1%E5%9E%8B%E5%BE%AE%E8%B0%83/">AI模型微调</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/go/">Recent Go</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/go/go%E4%B8%89%E8%89%B2%E6%A0%87%E8%AE%B0%E6%B7%B7%E5%90%88%E5%86%99%E5%B1%8F%E9%9A%9Cgc%E6%A8%A1%E5%BC%8F%E5%85%A8%E6%80%BB%E7%BB%93/">Go三色标记混合写屏障GC模式全总结</a>
+            </li>
+        
+            <li>
+                <a href="/go/go%E4%B8%ADmake%E4%B8%8Enew%E5%8C%BA%E5%88%AB/">Go中make与new区别</a>
+            </li>
+        
+            <li>
+                <a href="/go/go%E5%B8%B8%E7%94%A8bug%E5%92%8C%E6%80%A7%E8%83%BD%E9%97%AE%E9%A2%98%E7%9A%84%E5%AE%9E%E8%B7%B5%E6%96%B9%E6%B3%95/">Go常用bug和性能问题的实践方法</a>
+            </li>
+        
+            <li>
+                <a href="/go/grpc%E6%80%BB%E7%BB%93/">GRPC笔记</a>
+            </li>
+        
+            <li>
+                <a href="/go/go%E7%9A%84defer%E6%80%BB%E7%BB%93/">Go的defer总结</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+            </div>
+        </main>
+        <footer class="footer">
+    <div class="footer-row">
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/note/index.xml">
+                    Feed of Note
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/android/index.xml">
+                    Feed of Android
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/tool/index.xml">
+                    Feed of Tool
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/llm/index.xml">
+                    Feed of Llm
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/go/index.xml">
+                    Feed of Go
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+
+        
+            
+            
+        
+    </div>
+
+    
+</footer>
+
+    </body>
+</html>
