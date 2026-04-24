@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+<meta name="viewport" content="width=device-width,minimum-scale=1">
+
+
+
+
+<title>Go-channel总结 | Abner的博客</title>
+<link rel="canonical" href="https://abnerxc.github.io/go/channel%E6%80%BB%E7%BB%93/">
+<meta property="og:type" content="article" />
+<meta property="og:title" content="Go-channel总结 | Abner的博客" />
+<meta property="og:url" content="https://abnerxc.github.io/go/channel%E6%80%BB%E7%BB%93/" />
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/icofont/icofont.min.css" />
+<link rel="stylesheet" href="/css/syntax.css" />
+<link rel="stylesheet" href="/css/style.css" />
+<link rel="stylesheet" href="/css/custom.css" />
+<script src="/js/copy-code-block.js"></script>
+<link rel="shortcut icon" href="/images/favicon.ico" type="image/x-icon" />
+
+    </head>
+
+    <body>
+        <header class="header-wrapper">
+    <div class="header">
+        <a class="site-title" href="https://abnerxc.github.io/">Abner的博客</a>
+
+        <nav class="menu">
+            
+        </nav>
+    </div>
+</header>
+
+        <main class="main-wrapper">
+            <div class="main">
+                
+
+<section class="single">
+    <h1 class="title">Go-channel总结</h1>
+
+    <div class="tip">
+        <time datetime="2021-03-15 18:35:11 &#43;0800 CST">2021/03/15</time>
+        <span class="split">·</span>
+        <span> 618 words </span>
+        <span class="split">·</span>
+        <span>
+            3 minutes to read
+        </span>
+    </div>
+
+    <div class="taxonomies">
+        
+        <div>
+            Categories:
+            
+                <a href="/categories/go">Go</a>
+            
+        </div>
+        
+
+        
+    </div>
+
+    
+    
+    <div class="post-toc">
+        <h3>目录</h3>
+        <nav id="TableOfContents">
+  <ul>
+    <li><a href="#channel的使用场景">channel的使用场景</a></li>
+    <li><a href="#channel的基本操作和注意事项">channel的基本操作和注意事项</a></li>
+    <li><a href="#使用for-range读channel">使用for range读channel</a></li>
+    <li><a href="#使用vok---ch--select操作判断channel是否关闭">使用v,ok := &lt;-ch + select操作判断channel是否关闭</a></li>
+    <li><a href="#使用select处理多个channel">使用select处理多个channel</a></li>
+    <li><a href="#使用channel的声明控制读写权限">使用channel的声明控制读写权限</a></li>
+    <li><a href="#使用缓冲channel增强并发">使用缓冲channel增强并发</a></li>
+    <li><a href="#为操作加上超时">为操作加上超时</a></li>
+    <li><a href="#使用closech关闭所有下游协程">使用<code>close(ch)</code>关闭所有下游协程</a></li>
+    <li><a href="#使用chan-struct作为信号channel">使用chan struct{}作为信号channel</a></li>
+    <li><a href="#使用channel传递结构体的指针而非结构体">使用channel传递结构体的指针而非结构体</a></li>
+    <li><a href="#使用channel传递channel">使用channel传递channel</a></li>
+  </ul>
+</nav>
+    </div>
+    
+
+    <hr />
+
+    <div class="content">
+        <h1 id="channel的使用场景">channel的使用场景 <a href="#channel%e7%9a%84%e4%bd%bf%e7%94%a8%e5%9c%ba%e6%99%af" class="anchor">🔗</a></h1><p>把channel用在数据流动的地方：</p>
+<ul>
+<li>消息传递、消息过滤</li>
+<li>信号广播</li>
+<li>事件订阅与广播</li>
+<li>请求、响应转发</li>
+<li>任务分发</li>
+<li>结果汇总</li>
+<li>并发控制</li>
+<li>同步与异步</li>
+</ul>
+<h1 id="channel的基本操作和注意事项">channel的基本操作和注意事项 <a href="#channel%e7%9a%84%e5%9f%ba%e6%9c%ac%e6%93%8d%e4%bd%9c%e5%92%8c%e6%b3%a8%e6%84%8f%e4%ba%8b%e9%a1%b9" class="anchor">🔗</a></h1><p>channel 存在3种状态</p>
+<ol>
+<li>nil,未初始化，刚刚申明或者手动复制为nil</li>
+<li>active，正常运行中的可读可写</li>
+<li>closed,关闭时，<strong>千万不要认为关闭以后，channel的值是nil</strong></li>
+</ol>
+<p>channel 可进行3种操作</p>
+<ol>
+<li>读</li>
+<li>写</li>
+<li>关闭</li>
+</ol>
+<p>3种状态存在9种情况</p>
+<table>
+  <thead>
+      <tr>
+          <th>操作</th>
+          <th>nil的channel</th>
+          <th>正常channel</th>
+          <th>已关闭channel</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>&lt;- ch</td>
+          <td>阻塞</td>
+          <td>成功or阻塞</td>
+          <td>读到零值</td>
+      </tr>
+      <tr>
+          <td>ch &lt;-</td>
+          <td>阻塞</td>
+          <td>成功or阻塞</td>
+          <td>panic</td>
+      </tr>
+      <tr>
+          <td>close(ch)</td>
+          <td>panic</td>
+          <td>成功</td>
+          <td>panic</td>
+      </tr>
+  </tbody>
+</table>
+<p>对于nil通道的情况，也并非完全遵循上表，有1个特殊场景：当nil的通道在select的某个case中时，这个case会阻塞，但不会造成死锁</p>
+<h1 id="使用for-range读channel">使用for range读channel <a href="#%e4%bd%bf%e7%94%a8for-range%e8%af%bbchannel" class="anchor">🔗</a></h1><ul>
+<li>场景</li>
+</ul>
+<p>当需要不断从channel读取数据时。</p>
+<ul>
+<li>原理</li>
+</ul>
+<p>使用for-range读取channel，这样既安全又便利，当channel关闭时，for循环会自动退出，无需主动监测channel是否关闭，可以防止读取已经关闭的channel，造成读到数据为通道所存储的数据类型的零值。</p>
+<ul>
+<li>用法</li>
+</ul>
+<pre tabindex="0"><code>for x := range ch{
+    fmt.Println(x)
+}
+</code></pre><h1 id="使用vok---ch--select操作判断channel是否关闭">使用v,ok := &lt;-ch + select操作判断channel是否关闭 <a href="#%e4%bd%bf%e7%94%a8vok---ch--select%e6%93%8d%e4%bd%9c%e5%88%a4%e6%96%adchannel%e6%98%af%e5%90%a6%e5%85%b3%e9%97%ad" class="anchor">🔗</a></h1><ul>
+<li>场景</li>
+</ul>
+<p><code>v,ok := &lt;-ch + select</code>操作判断channel是否关闭</p>
+<ul>
+<li>原理</li>
+</ul>
+<p>ok的结果和含义：</p>
+<pre tabindex="0"><code>- `true`：读到通道数据，不确定是否关闭，可能channel还有保存的数据，但channel已关闭。
+- `false`：通道关闭，无数据读到。
+</code></pre><p>从关闭的channel读值读到是channel所传递数据类型的零值，这个零值有可能是发送者发送的，也可能是channel关闭了。</p>
+<p><code>_, ok := &lt;-ch</code>与select配合使用的，当ok为false时，代表了channel已经close。</p>
+<p>下面解释原因，<code>_,ok := &lt;-ch</code>对应的函数是<code>func chanrecv(c *hchan, ep unsafe.Pointer, block bool) (selected, received bool)</code>，入参block含义是当前goroutine是否可阻塞，当block为false代表的是select操作，不可阻塞当前goroutine的在channel操作，否则是普通操作（即<code>_, ok</code>不在select中）。返回值selected代表当前操作是否成功，主要为select服务，返回**received代表是否从channel读到有效值。**它有3种返回值情况：</p>
+<ul>
+<li>block为false，即执行select时，如果channel为空，返回(false,false)，代表select操作失败，没接收到值。</li>
+<li>否则，如果channel已经关闭，并且没有数据，ep即接收数据的变量设置为零值，返回(true,false)，代表select操作成功，但channel已关闭，没读到有效值。</li>
+<li>否则，其他读到有效数据的情况，返回(true,ture)。</li>
+</ul>
+<p>我们考虑_, ok := &lt;-ch和select结合使用的情况。</p>
+<p>情况1：当chanrecv返回(false,false)时，本质是select操作失败了，所以相关的case会阻塞，不会执行，比如下面的代码：</p>
+<pre tabindex="0"><code>
+func main() {
+	ch := make(chan int)
+	select {
+	case v, ok := &lt;-ch:
+		fmt.Printf(&#34;v: %v, ok: %v\n&#34;, v, ok)
+	default:
+		fmt.Println(&#34;nothing&#34;)
+	}
+}
+
+// 结果：
+// nothing
+</code></pre><p>情况2：下面的结果会是零值和false：</p>
+<pre tabindex="0"><code>func main() {
+	ch := make(chan int)
+
+	// 增加关闭
+	close(ch)
+
+	select {
+	case v, ok := &lt;-ch:
+		fmt.Printf(&#34;v: %v, ok: %v\n&#34;, v, ok)
+	}
+}
+
+// v: 0, ok: false
+</code></pre><p>情况3的received为true，即_, ok中的ok为true，不做讨论了，只讨论ok为false的情况。</p>
+<p>最后ok为false的时候，只有情况2，此时channel必然已经关闭，我们便可以在select中用ok判断channel是否已经关闭。</p>
+<ul>
+<li>用法</li>
+</ul>
+<pre tabindex="0"><code>func main() {
+	ch := make(chan int, 1)
+
+	// 发送1个数据关闭channel
+	ch &lt;- 1
+	close(ch)
+	print(&#34;close channel\n&#34;)
+
+	// 不停读数据直到channel没有有效数据
+	for {
+		select {
+		case v, ok := &lt;-ch:
+			print(&#34;v: &#34;, v, &#34;, ok:&#34;, ok, &#34;\n&#34;)
+			if !ok {
+				print(&#34;channel is close\n&#34;)
+				return
+			}	
+		default:
+			print(&#34;nothing\n&#34;)
+		}
+	}
+}
+
+// 结果
+// close channel
+// v: 1, ok:true
+// v: 0, ok:false
+// channel is close
+</code></pre><h1 id="使用select处理多个channel">使用select处理多个channel <a href="#%e4%bd%bf%e7%94%a8select%e5%a4%84%e7%90%86%e5%a4%9a%e4%b8%aachannel" class="anchor">🔗</a></h1><ul>
+<li>场景
+需要对多个通道进行同时处理，但只处理最先发生的channel时</li>
+<li>原理
+<code>select</code>可以同时监控多个通道的情况，只处理未阻塞的case。<strong>当通道为nil时，对应的case永远为阻塞，无论读写。特殊关注：普通情况下，对nil的通道写操作是要panic的。</strong></li>
+<li>用法</li>
+</ul>
+<pre tabindex="0"><code>// 分配job时，如果收到关闭的通知则退出，不分配job
+func (h *Handler) handle(job *Job) {
+    select {
+    case h.jobCh&lt;-job:
+        return 
+    case &lt;-h.stopCh:
+        return
+    }
+}
+</code></pre><h1 id="使用channel的声明控制读写权限">使用channel的声明控制读写权限 <a href="#%e4%bd%bf%e7%94%a8channel%e7%9a%84%e5%a3%b0%e6%98%8e%e6%8e%a7%e5%88%b6%e8%af%bb%e5%86%99%e6%9d%83%e9%99%90" class="anchor">🔗</a></h1><ul>
+<li>
+<p>场景
+协程对某个通道只读或只写时</p>
+<p>目的：</p>
+<ul>
+<li>使代码更易读、更易维护，</li>
+<li>防止只读协程对通道进行写数据，但通道已关闭，造成panic。</li>
+</ul>
+</li>
+<li>
+<p>用法</p>
+<ul>
+<li>如果协程对某个channel只有写操作，则这个channel声明为只写。</li>
+<li>如果协程对某个channel只有读操作，则这个channe声明为只读。</li>
+</ul>
+</li>
+</ul>
+<pre tabindex="0"><code>// 只有generator进行对outCh进行写操作，返回声明
+// &lt;-chan int，可以防止其他协程乱用此通道，造成隐藏bug
+func generator(int n) &lt;-chan int {
+    outCh := make(chan int)
+    go func(){
+        for i:=0;i&lt;n;i++{
+            outCh&lt;-i
+        }
+    }()
+    return outCh
+}
+
+// consumer只读inCh的数据，声明为&lt;-chan int
+// 可以防止它向inCh写数据
+func consumer(inCh &lt;-chan int) {
+    for x := range inCh {
+        fmt.Println(x)
+    }
+}
+</code></pre><h1 id="使用缓冲channel增强并发">使用缓冲channel增强并发 <a href="#%e4%bd%bf%e7%94%a8%e7%bc%93%e5%86%b2channel%e5%a2%9e%e5%bc%ba%e5%b9%b6%e5%8f%91" class="anchor">🔗</a></h1><ul>
+<li>场景
+异步</li>
+<li>原理
+有缓冲通道可供多个协程同时处理，在一定程度可提高并发性。</li>
+<li>用法</li>
+</ul>
+<pre tabindex="0"><code>// 无缓冲
+ch1 := make(chan int)
+ch2 := make(chan int, 0)
+// 有缓冲
+ch3 := make(chan int, 1)
+</code></pre><pre tabindex="0"><code>// 使用5个`do`协程同时处理输入数据
+func test() {
+    inCh := generator(100)
+    outCh := make(chan int, 10)
+
+    for i := 0; i &lt; 5; i++ {
+        go do(inCh, outCh)
+    }
+
+    for r := range outCh {
+        fmt.Println(r)
+    }
+}
+
+func do(inCh &lt;-chan int, outCh chan&lt;- int) {
+    for v := range inCh {
+        outCh &lt;- v * v
+    }
+}
+</code></pre><h1 id="为操作加上超时">为操作加上超时 <a href="#%e4%b8%ba%e6%93%8d%e4%bd%9c%e5%8a%a0%e4%b8%8a%e8%b6%85%e6%97%b6" class="anchor">🔗</a></h1><ul>
+<li>场景
+异步</li>
+<li>原理
+使用<code>select</code>和<code>time.After</code>，看操作和定时器哪个先返回，处理先完成的，就达到了超时控制的效果</li>
+<li>用法</li>
+</ul>
+<pre tabindex="0"><code>
+func doWithTimeOut(timeout time.Duration) (int, error) {
+	select {
+	case ret := &lt;-do():
+		return ret, nil
+	case &lt;-time.After(timeout):
+		return 0, errors.New(&#34;timeout&#34;)
+	}
+}
+
+func do() &lt;-chan int {
+	outCh := make(chan int)
+	go func() {
+		// do work
+	}()
+	return outCh
+}
+</code></pre><h1 id="使用closech关闭所有下游协程">使用<code>close(ch)</code>关闭所有下游协程 <a href="#%e4%bd%bf%e7%94%a8closech%e5%85%b3%e9%97%ad%e6%89%80%e6%9c%89%e4%b8%8b%e6%b8%b8%e5%8d%8f%e7%a8%8b" class="anchor">🔗</a></h1><ul>
+<li>场景
+退出时，显示通知所有协程退出</li>
+<li>原理
+所有读ch的协程都会收到close(ch)的信号</li>
+<li>用法</li>
+</ul>
+<pre tabindex="0"><code>
+func (h *Handler) Stop() {
+    close(h.stopCh)
+
+    // 可以使用WaitGroup等待所有协程退出
+}
+
+// 收到停止后，不再处理请求
+func (h *Handler) loop() error {
+    for {
+        select {
+        case req := &lt;-h.reqCh:
+            go handle(req)
+        case &lt;-h.stopCh:
+            return
+        }
+    }
+}
+</code></pre><h1 id="使用chan-struct作为信号channel">使用chan struct{}作为信号channel <a href="#%e4%bd%bf%e7%94%a8chan-struct%e4%bd%9c%e4%b8%ba%e4%bf%a1%e5%8f%b7channel" class="anchor">🔗</a></h1><ul>
+<li>场景
+使用channel传递信号，而不是传递数据时</li>
+<li>原理
+没数据需要传递时，传递空struct</li>
+<li>用法</li>
+</ul>
+<pre tabindex="0"><code>// 上例中的Handler.stopCh就是一个例子，stopCh并不需要传递任何数据
+// 只是要给所有协程发送退出的信号
+type Handler struct {
+    stopCh chan struct{}
+    reqCh chan *Request
+}
+</code></pre><h1 id="使用channel传递结构体的指针而非结构体">使用channel传递结构体的指针而非结构体 <a href="#%e4%bd%bf%e7%94%a8channel%e4%bc%a0%e9%80%92%e7%bb%93%e6%9e%84%e4%bd%93%e7%9a%84%e6%8c%87%e9%92%88%e8%80%8c%e9%9d%9e%e7%bb%93%e6%9e%84%e4%bd%93" class="anchor">🔗</a></h1><ul>
+<li>场景
+使用channel传递结构体数据时</li>
+<li>原理
+channel本质上传递的是数据的拷贝，拷贝的数据越小传输效率越高，传递结构体指针，比传递结构体更高效</li>
+<li>用法</li>
+</ul>
+<pre tabindex="0"><code>reqCh chan *Request
+
+// 好过
+reqCh chan Request
+</code></pre><h1 id="使用channel传递channel">使用channel传递channel <a href="#%e4%bd%bf%e7%94%a8channel%e4%bc%a0%e9%80%92channel" class="anchor">🔗</a></h1><ul>
+<li>场景
+使用场景有点多，通常是用来获取结果。</li>
+<li>原理
+channel可以用来传递变量，channel自身也是变量，可以传递自己。</li>
+<li>用法</li>
+</ul>
+<pre tabindex="0"><code>
+package main
+
+import (
+	&#34;fmt&#34;
+	&#34;math/rand&#34;
+	&#34;sync&#34;
+	&#34;time&#34;
+)
+
+func main() {
+	reqs := []int{1, 2, 3, 4, 5, 6, 7, 8, 9}
+
+	// 存放结果的channel的channel
+	outs := make(chan chan int, len(reqs))
+	var wg sync.WaitGroup
+	wg.Add(len(reqs))
+	for _, x := range reqs {
+		o := handle(&amp;wg, x)
+		outs &lt;- o
+	}
+
+	go func() {
+		wg.Wait()
+		close(outs)
+	}()
+
+	// 读取结果，结果有序
+	for o := range outs {
+		fmt.Println(&lt;-o)
+	}
+}
+
+// handle 处理请求，耗时随机模拟
+func handle(wg *sync.WaitGroup, a int) chan int {
+	out := make(chan int)
+	go func() {
+		time.Sleep(time.Duration(rand.Intn(3)) * time.Second)
+		out &lt;- a
+		wg.Done()
+	}()
+	return out
+}
+</code></pre><blockquote>
+<p>本文收集来源： <a href="http://lessisbetter.site/2019/01/20/golang-channel-all-usage/">http://lessisbetter.site/2019/01/20/golang-channel-all-usage/</a></p>
+</blockquote>
+
+    </div>
+
+    
+</section>
+
+
+            </div>
+            <div class="side">
+                <div class="side-categories">
+    <h2>Categories</h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/categories/ai">ai(3)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/go">go(23)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E4%BB%A3%E7%A0%81">代码(2)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E5%B7%A5%E5%85%B7">工具(8)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E9%80%86%E5%90%91">逆向(3)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E9%9D%A2%E8%AF%95">面试(5)</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/note/">Recent Note</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/note/%E6%9E%B6%E6%9E%84%E8%80%83%E7%82%B9/">场景总结</a>
+            </li>
+        
+            <li>
+                <a href="/note/rdis-%E7%BC%93%E5%AD%98%E7%A9%BF%E9%80%8F%E9%9B%AA%E5%B4%A9%E5%87%BB%E7%A9%BF%E7%9A%84%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95/">缓存穿透、雪崩、击穿的解决方法</a>
+            </li>
+        
+            <li>
+                <a href="/note/redis-%E5%8D%95%E7%BA%BF%E7%A8%8B%E7%9A%84redis%E4%B8%BA%E4%BB%80%E4%B9%88%E5%BF%AB/">单线程的redis为什么快</a>
+            </li>
+        
+            <li>
+                <a href="/note/redis-%E6%80%BB%E7%BB%93/">redis总结</a>
+            </li>
+        
+            <li>
+                <a href="/note/mysql-%E6%80%BB%E7%BB%93/">mysql总结</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/android/">Recent Android</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/android/redroid%E4%BD%BF%E7%94%A8/">Redroid安卓容器</a>
+            </li>
+        
+            <li>
+                <a href="/android/%E5%85%A5%E9%97%A8/">逆向环境-杂</a>
+            </li>
+        
+            <li>
+                <a href="/android/frida%E6%95%99%E7%A8%8B/">frida教程</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/tool/">Recent Tool</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/tool/linux-almalinux%E4%BC%98%E5%8C%96/">AlmaLinux10</a>
+            </li>
+        
+            <li>
+                <a href="/tool/almalinux-k8s/">AlmaLinux-k8s安装</a>
+            </li>
+        
+            <li>
+                <a href="/tool/vscode%E6%8A%98%E8%85%BE/">vscode折腾</a>
+            </li>
+        
+            <li>
+                <a href="/tool/linux-ubuntu%E4%BC%98%E5%8C%96/">Ubuntu开机优化</a>
+            </li>
+        
+            <li>
+                <a href="/tool/shell-ssh_script/">ssh常用脚本</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/llm/">Recent Llm</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/llm/transformers-%E5%85%A5%E9%97%A8%E7%AF%87/">Transformers-入门篇</a>
+            </li>
+        
+            <li>
+                <a href="/llm/%E6%A8%A1%E5%9E%8Bvllm%E9%83%A8%E7%BD%B2/">AI模型VLLM部署</a>
+            </li>
+        
+            <li>
+                <a href="/llm/%E6%A8%A1%E5%9E%8B%E5%BE%AE%E8%B0%83/">AI模型微调</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/go/">Recent Go</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/go/go%E4%B8%89%E8%89%B2%E6%A0%87%E8%AE%B0%E6%B7%B7%E5%90%88%E5%86%99%E5%B1%8F%E9%9A%9Cgc%E6%A8%A1%E5%BC%8F%E5%85%A8%E6%80%BB%E7%BB%93/">Go三色标记混合写屏障GC模式全总结</a>
+            </li>
+        
+            <li>
+                <a href="/go/go%E4%B8%ADmake%E4%B8%8Enew%E5%8C%BA%E5%88%AB/">Go中make与new区别</a>
+            </li>
+        
+            <li>
+                <a href="/go/go%E5%B8%B8%E7%94%A8bug%E5%92%8C%E6%80%A7%E8%83%BD%E9%97%AE%E9%A2%98%E7%9A%84%E5%AE%9E%E8%B7%B5%E6%96%B9%E6%B3%95/">Go常用bug和性能问题的实践方法</a>
+            </li>
+        
+            <li>
+                <a href="/go/grpc%E6%80%BB%E7%BB%93/">GRPC笔记</a>
+            </li>
+        
+            <li>
+                <a href="/go/go%E7%9A%84defer%E6%80%BB%E7%BB%93/">Go的defer总结</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+            </div>
+        </main>
+        <footer class="footer">
+    <div class="footer-row">
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/note/index.xml">
+                    Feed of Note
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/android/index.xml">
+                    Feed of Android
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/tool/index.xml">
+                    Feed of Tool
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/llm/index.xml">
+                    Feed of Llm
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/go/index.xml">
+                    Feed of Go
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+
+        
+            
+            
+        
+    </div>
+
+    
+</footer>
+
+    </body>
+</html>
