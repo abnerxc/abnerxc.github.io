@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+<meta name="viewport" content="width=device-width,minimum-scale=1">
+
+
+
+
+<title>Claude Code常用技巧 | Abner的博客</title>
+<link rel="canonical" href="https://abnerxc.github.io/llm/claude_code/">
+<meta property="og:type" content="article" />
+<meta property="og:title" content="Claude Code常用技巧 | Abner的博客" />
+<meta property="og:url" content="https://abnerxc.github.io/llm/claude_code/" />
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/icofont/icofont.min.css" />
+<link rel="stylesheet" href="/css/syntax.css" />
+<link rel="stylesheet" href="/css/style.css" />
+<link rel="stylesheet" href="/css/custom.css" />
+<script src="/js/copy-code-block.js"></script>
+<link rel="shortcut icon" href="/images/favicon.ico" type="image/x-icon" />
+
+    </head>
+
+    <body>
+        <header class="header-wrapper">
+    <div class="header">
+        <a class="site-title" href="https://abnerxc.github.io/">Abner的博客</a>
+
+        <nav class="menu">
+            
+        </nav>
+    </div>
+</header>
+
+        <main class="main-wrapper">
+            <div class="main">
+                
+
+<section class="single">
+    <h1 class="title">Claude Code常用技巧</h1>
+
+    <div class="tip">
+        <time datetime="2026-03-03 18:07:58 &#43;0800 CST">2026/03/03</time>
+        <span class="split">·</span>
+        <span> 246 words </span>
+        <span class="split">·</span>
+        <span>
+            2 minutes to read
+        </span>
+    </div>
+
+    <div class="taxonomies">
+        
+        <div>
+            Categories:
+            
+                <a href="/categories/ai">AI</a>
+            
+        </div>
+        
+
+        
+    </div>
+
+    
+    
+    <div class="post-toc">
+        <h3>目录</h3>
+        <nav id="TableOfContents">
+  <ul>
+    <li><a href="#安装">安装</a></li>
+    <li><a href="#配置国产模型并绕过地区报错">配置国产模型并绕过地区报错</a></li>
+    <li><a href="#权限模式">权限模式</a></li>
+    <li><a href="#上下文和记忆会话">上下文和记忆、会话</a></li>
+    <li><a href="#安装mcp">安装MCP</a></li>
+    <li><a href="#安装skills">安装skills</a></li>
+    <li><a href="#终端交互">终端交互</a></li>
+  </ul>
+</nav>
+    </div>
+    
+
+    <hr />
+
+    <div class="content">
+        <h1 id="安装">安装 <a href="#%e5%ae%89%e8%a3%85" class="anchor">🔗</a></h1><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>几种方案：
+</span></span><span style="display:flex;"><span>1. <span style="color:#e6db74">`</span>PowerShell 原生安装<span style="color:#e6db74">`</span>（官方推荐）
+</span></span><span style="display:flex;"><span>irm https://claude.ai/install.ps1 | iex
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>2. <span style="color:#e6db74">`</span>CMD 原生安装<span style="color:#e6db74">`</span>
+</span></span><span style="display:flex;"><span>curl -fsSL https://claude.ai/install.cmd -o install.cmd <span style="color:#f92672">&amp;&amp;</span> install.cmd <span style="color:#f92672">&amp;&amp;</span> del install.cmd
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>3. <span style="color:#e6db74">`</span>WinGet 安装<span style="color:#e6db74">`</span>
+</span></span><span style="display:flex;"><span>winget install Anthropic.ClaudeCode
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>4. <span style="color:#e6db74">`</span>npm 全局安装<span style="color:#e6db74">`</span>
+</span></span><span style="display:flex;"><span>npm install -g @anthropic-ai/claude-code
+</span></span><span style="display:flex;"><span>这个方案需要 <span style="color:#e6db74">`</span>Node.js 18+<span style="color:#e6db74">`</span>。官方对 Windows 也建议配 <span style="color:#e6db74">`</span>Git <span style="color:#66d9ef">for</span> Windows<span style="color:#e6db74">`</span>。
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>5. <span style="color:#e6db74">`</span>WSL 里安装<span style="color:#e6db74">`</span>
+</span></span><span style="display:flex;"><span>curl -fsSL https://claude.ai/install.sh | bash
+</span></span><span style="display:flex;"><span>如果你平时就在 WSL 里开发，这通常是 Windows 上兼容性最好的一种。
+</span></span></code></pre></div><h1 id="配置国产模型并绕过地区报错">配置国产模型并绕过地区报错 <a href="#%e9%85%8d%e7%bd%ae%e5%9b%bd%e4%ba%a7%e6%a8%a1%e5%9e%8b%e5%b9%b6%e7%bb%95%e8%bf%87%e5%9c%b0%e5%8c%ba%e6%8a%a5%e9%94%99" class="anchor">🔗</a></h1><p><code>hasCompletedOnboarding</code>绕过国内检测</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>cat &gt; ~/.claude/settings.json <span style="color:#e6db74">&lt;&lt; &#39;EOF&#39;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">{
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  &#34;hasCompletedOnboarding&#34;: true,    
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  &#34;env&#34;: {
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    &#34;ANTHROPIC_BASE_URL&#34;: &#34;https://api.deepseek.com/anthropic&#34;,
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    &#34;ANTHROPIC_AUTH_TOKEN&#34;: &#34;sk-1234&#34;,
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    &#34;ANTHROPIC_MODEL&#34;: &#34;deepseek-chat&#34;,
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    &#34;ANTHROPIC_DEFAULT_SONNET_MODEL&#34;: &#34;deepseek-v4-flash&#34;,
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    &#34;ANTHROPIC_DEFAULT_HAIKU_MODEL&#34;: &#34;deepseek-v4-flash&#34;,
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    &#34;ANTHROPIC_DEFAULT_OPUS_MODEL&#34;: &#34;deepseek-v4-pro&#34;,
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    &#34;CLAUDE_CODE_DISABLE_ADAPTIVE_THINKING&#34;: &#34;1&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  }
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">}
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">EOF</span>
+</span></span></code></pre></div><h1 id="权限模式">权限模式 <a href="#%e6%9d%83%e9%99%90%e6%a8%a1%e5%bc%8f" class="anchor">🔗</a></h1><p>Claude Code 的<strong>权限模式</strong>（permission mode）决定哪些操作会自动执行、哪些需要确认。下表汇总各模式的作用与开启方式。</p>
+<table>
+  <thead>
+      <tr>
+          <th style="text-align: left">模式</th>
+          <th style="text-align: left">作用</th>
+          <th style="text-align: left">如何开启</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td style="text-align: left"><strong>default</strong></td>
+          <td style="text-align: left">默认模式；基本是只读操作直接执行，其他操作会询问</td>
+          <td style="text-align: left">* 直接启动就是这个模式<br>* 或：<code>claude --permission-mode default</code><br>* 或在 <code>settings.json</code> 里设：<code>&quot;defaultMode&quot;: &quot;default&quot;</code></td>
+      </tr>
+      <tr>
+          <td style="text-align: left"><strong>acceptEdits</strong></td>
+          <td style="text-align: left">自动接受文件编辑和常见文件系统命令</td>
+          <td style="text-align: left">* 会话中按 <code>Shift+Tab</code> 切换到它<br>* 或：<code>claude --permission-mode acceptEdits</code><br>* 或设：<code>&quot;defaultMode&quot;: &quot;acceptEdits&quot;</code></td>
+      </tr>
+      <tr>
+          <td style="text-align: left"><strong>plan</strong></td>
+          <td style="text-align: left">只分析、读文件、写计划，不改代码</td>
+          <td style="text-align: left">* 会话中按 <code>Shift+Tab</code> 切换到它<br>* 或：<code>claude --permission-mode plan</code><br>* 或设：<code>&quot;defaultMode&quot;: &quot;plan&quot;</code><br>* 也可在单条消息前用 <code>/plan</code></td>
+      </tr>
+      <tr>
+          <td style="text-align: left"><strong>auto</strong></td>
+          <td style="text-align: left">自动执行大多数操作，但带后台安全检查</td>
+          <td style="text-align: left">* <code>claude --permission-mode auto</code><br>* 或设：<code>&quot;defaultMode&quot;: &quot;auto&quot;</code><br>* 满足条件时，也可能通过 <code>Shift+Tab</code> 切到</td>
+      </tr>
+      <tr>
+          <td style="text-align: left"><strong>dontAsk</strong></td>
+          <td style="text-align: left">不会弹确认框；只有预先批准的工具才能用</td>
+          <td style="text-align: left">* <code>claude --permission-mode dontAsk</code><br>* 或设：<code>&quot;defaultMode&quot;: &quot;dontAsk&quot;</code><br>* <strong>不会出现在 Shift+Tab 循环里</strong></td>
+      </tr>
+      <tr>
+          <td style="text-align: left"><strong>bypassPermissions</strong></td>
+          <td style="text-align: left">跳过几乎所有权限检查，最激进</td>
+          <td style="text-align: left">* <code>claude --permission-mode bypassPermissions</code><br>* 或：<code>claude --dangerously-skip-permissions</code><br>* 或设：<code>&quot;defaultMode&quot;: &quot;bypassPermissions&quot;</code></td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>说明：</strong> 可通过命令行 <code>--permission-mode</code>、配置文件里的 <code>defaultMode</code>，以及会话内 <code>Shift+Tab</code>（部分模式）或消息前缀（如 <code>/plan</code>）切换；<code>dontAsk</code> 不在 <code>Shift+Tab</code> 循环中；<code>bypassPermissions</code> 另有危险标志 <code>--dangerously-skip-permissions</code>，使用前请自行评估风险。按<code>shtift+tab</code>可以进行模式切换</p>
+<h1 id="上下文和记忆会话">上下文和记忆、会话 <a href="#%e4%b8%8a%e4%b8%8b%e6%96%87%e5%92%8c%e8%ae%b0%e5%bf%86%e4%bc%9a%e8%af%9d" class="anchor">🔗</a></h1><ul>
+<li>/resume:  会话恢复，claude -c 恢复上次的会话</li>
+<li>/context：查看当前占用上下</li>
+<li>/compact： 当你完成一个阶段性任务后，前面的内容“还有一点价值，但已经不需要保留全部细节”时，建议手动执行</li>
+<li>/clear: 清空会话所有</li>
+<li>/init：生成 cloud.md 文件（项目级配置）</li>
+<li>/memory 可以选择项目级别或者用户全局</li>
+</ul>
+<h1 id="安装mcp">安装MCP <a href="#%e5%ae%89%e8%a3%85mcp" class="anchor">🔗</a></h1><p>网址：https://mcpmarket.com/</p>
+<ul>
+<li>安装 Playwright MCP（用途是可以控制浏览器）</li>
+</ul>
+<pre tabindex="0"><code>claude mcp add playwright npx @playwright/mcp@latest
+</code></pre><p>如果你能看到 playwright，说明它已经安装成功。但可以看到有一个 “failed”，表示有问题。不用自己排查。  这正是 Claude Code 的强项：直接让它自己解决。</p>
+<ul>
+<li>安装 HyperFrames Skill，让 AI 制作视频</li>
+</ul>
+<pre tabindex="0"><code>帮我安装 npx skills add /-com/hyperframes
+</code></pre><h1 id="安装skills">安装skills <a href="#%e5%ae%89%e8%a3%85skills" class="anchor">🔗</a></h1><p>网址：https://skills.sh/
+存放目录：~/.claude/skills</p>
+<h1 id="终端交互">终端交互 <a href="#%e7%bb%88%e7%ab%af%e4%ba%a4%e4%ba%92" class="anchor">🔗</a></h1><ul>
+<li>! 号，进入bash模式，进入终端模式，可执行任意 shell 命令（如open index.html、mkdir、npm install）</li>
+<li>当运行是阻塞进程时：输入ctrl+b 可以让任务进入后台</li>
+<li>长文本：文本换行shift+enter，macos:option+enter，其他编辑器打开，ctrl+g，默认是打开vi，设置默认文件打开软件如vscode</li>
+<li>查看当前后台任务 /tasks，输入k 结束后台任务</li>
+<li>ctrl+c复制文件，ctrl+v粘贴到会话或者文件直接拖入会话</li>
+</ul>
+
+    </div>
+
+    
+</section>
+
+
+            </div>
+            <div class="side">
+                <div class="side-categories">
+    <h2>Categories</h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/categories/ai">ai(4)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/go">go(23)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E4%BB%A3%E7%A0%81">代码(2)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E5%B7%A5%E5%85%B7">工具(8)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E9%80%86%E5%90%91">逆向(3)</a>
+            </li>
+        
+            <li>
+                <a href="/categories/%E9%9D%A2%E8%AF%95">面试(5)</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/llm/">Recent Llm</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/llm/claude_code/">Claude Code常用技巧</a>
+            </li>
+        
+            <li>
+                <a href="/llm/transformers-%E5%85%A5%E9%97%A8%E7%AF%87/">Transformers-入门篇</a>
+            </li>
+        
+            <li>
+                <a href="/llm/%E6%A8%A1%E5%9E%8Bvllm%E9%83%A8%E7%BD%B2/">AI模型VLLM部署</a>
+            </li>
+        
+            <li>
+                <a href="/llm/%E6%A8%A1%E5%9E%8B%E5%BE%AE%E8%B0%83/">AI模型微调</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/note/">Recent Note</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/note/%E6%9E%B6%E6%9E%84%E8%80%83%E7%82%B9/">场景总结</a>
+            </li>
+        
+            <li>
+                <a href="/note/rdis-%E7%BC%93%E5%AD%98%E7%A9%BF%E9%80%8F%E9%9B%AA%E5%B4%A9%E5%87%BB%E7%A9%BF%E7%9A%84%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95/">缓存穿透、雪崩、击穿的解决方法</a>
+            </li>
+        
+            <li>
+                <a href="/note/redis-%E5%8D%95%E7%BA%BF%E7%A8%8B%E7%9A%84redis%E4%B8%BA%E4%BB%80%E4%B9%88%E5%BF%AB/">单线程的redis为什么快</a>
+            </li>
+        
+            <li>
+                <a href="/note/redis-%E6%80%BB%E7%BB%93/">redis总结</a>
+            </li>
+        
+            <li>
+                <a href="/note/mysql-%E6%80%BB%E7%BB%93/">mysql总结</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/android/">Recent Android</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/android/redroid%E4%BD%BF%E7%94%A8/">Redroid安卓容器</a>
+            </li>
+        
+            <li>
+                <a href="/android/%E5%85%A5%E9%97%A8/">逆向环境-杂</a>
+            </li>
+        
+            <li>
+                <a href="/android/frida%E6%95%99%E7%A8%8B/">frida教程</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/tool/">Recent Tool</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/tool/linux-almalinux%E4%BC%98%E5%8C%96/">AlmaLinux10</a>
+            </li>
+        
+            <li>
+                <a href="/tool/almalinux-k8s/">AlmaLinux-k8s安装</a>
+            </li>
+        
+            <li>
+                <a href="/tool/vscode%E6%8A%98%E8%85%BE/">vscode折腾</a>
+            </li>
+        
+            <li>
+                <a href="/tool/linux-ubuntu%E4%BC%98%E5%8C%96/">Ubuntu开机优化</a>
+            </li>
+        
+            <li>
+                <a href="/tool/shell-ssh_script/">ssh常用脚本</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+                    <div class="side-recent">
+    <h2 class="side-title">
+        <a href="/go/">Recent Go</a>
+    </h2>
+    <hr />
+
+    <ul>
+        
+            <li>
+                <a href="/go/go%E4%B8%89%E8%89%B2%E6%A0%87%E8%AE%B0%E6%B7%B7%E5%90%88%E5%86%99%E5%B1%8F%E9%9A%9Cgc%E6%A8%A1%E5%BC%8F%E5%85%A8%E6%80%BB%E7%BB%93/">Go三色标记混合写屏障GC模式全总结</a>
+            </li>
+        
+            <li>
+                <a href="/go/go%E4%B8%ADmake%E4%B8%8Enew%E5%8C%BA%E5%88%AB/">Go中make与new区别</a>
+            </li>
+        
+            <li>
+                <a href="/go/go%E5%B8%B8%E7%94%A8bug%E5%92%8C%E6%80%A7%E8%83%BD%E9%97%AE%E9%A2%98%E7%9A%84%E5%AE%9E%E8%B7%B5%E6%96%B9%E6%B3%95/">Go常用bug和性能问题的实践方法</a>
+            </li>
+        
+            <li>
+                <a href="/go/grpc%E6%80%BB%E7%BB%93/">GRPC笔记</a>
+            </li>
+        
+            <li>
+                <a href="/go/go%E7%9A%84defer%E6%80%BB%E7%BB%93/">Go的defer总结</a>
+            </li>
+        
+    </ul>
+</div>
+
+                
+            </div>
+        </main>
+        <footer class="footer">
+    <div class="footer-row">
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/llm/index.xml">
+                    Feed of Llm
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/note/index.xml">
+                    Feed of Note
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/android/index.xml">
+                    Feed of Android
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/tool/index.xml">
+                    Feed of Tool
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/go/index.xml">
+                    Feed of Go
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+
+        
+            
+            
+        
+    </div>
+
+    
+</footer>
+
+    </body>
+</html>
