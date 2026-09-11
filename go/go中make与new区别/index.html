@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+<meta name="viewport" content="width=device-width,minimum-scale=1">
+
+
+
+
+<title>Go中make与new区别 | Abner的博客</title>
+<link rel="canonical" href="https://abnerxc.github.io/go/go%E4%B8%ADmake%E4%B8%8Enew%E5%8C%BA%E5%88%AB/">
+<meta property="og:type" content="article" />
+<meta property="og:title" content="Go中make与new区别 | Abner的博客" />
+<meta property="og:url" content="https://abnerxc.github.io/go/go%E4%B8%ADmake%E4%B8%8Enew%E5%8C%BA%E5%88%AB/" />
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/icofont/icofont.min.css" />
+<link rel="stylesheet" href="/css/syntax.css" />
+<link rel="stylesheet" href="/css/style.css" />
+<link rel="stylesheet" href="/css/custom.css" />
+<script src="/js/copy-code-block.js"></script>
+<link rel="shortcut icon" href="/images/favicon.ico" type="image/x-icon" />
+
+    </head>
+
+    <body>
+        <header class="header-wrapper">
+    <div class="header">
+        <a class="site-title" href="https://abnerxc.github.io/">Abner的博客</a>
+
+        <nav class="menu">
+            
+        </nav>
+    </div>
+</header>
+
+        <main class="main-wrapper single-page-wrapper has-floating-toc">
+            <div class="main">
+                
+
+<section class="single">
+    <h1 class="title">Go中make与new区别</h1>
+
+    <div class="tip">
+        <time datetime="2024-09-20 10:46:12 &#43;0800 CST">2024/09/20</time>
+        <span class="split">·</span>
+        <span> 119 words </span>
+        <span class="split">·</span>
+        <span>
+            1 minutes to read
+        </span>
+    </div>
+
+    <div class="taxonomies">
+        
+        <div>
+            Categories:
+            
+                <a href="/categories/go">Go</a>
+            
+        </div>
+        
+
+        
+    </div>
+
+    <hr />
+
+    <div class="single-body has-toc">
+        
+        
+        <aside class="post-toc">
+            <h3>目录</h3>
+            <nav id="TableOfContents">
+  <ul>
+    <li><a href="#变量的声明">变量的声明</a></li>
+    <li><a href="#new">new</a></li>
+    <li><a href="#make">make</a></li>
+    <li><a href="#make与new的异同">make与new的异同</a></li>
+  </ul>
+</nav>
+        </aside>
+        
+
+        <div class="content">
+            <h1 id="变量的声明">变量的声明 <a href="#%e5%8f%98%e9%87%8f%e7%9a%84%e5%a3%b0%e6%98%8e" class="anchor">🔗</a></h1><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#66d9ef">var</span> <span style="color:#a6e22e">i</span> <span style="color:#66d9ef">int</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">var</span> <span style="color:#a6e22e">s</span> <span style="color:#66d9ef">string</span>
+</span></span></code></pre></div><p>量的声明我们可以通过var关键字，然后就可以在程序中使用。当我们不指定变量的默认值时，这些变量的默认值是他们的零值，比如int类型的零值是<code>0</code>,string类型的零值是<code>&quot;&quot;</code>，引用类型的零值是<code>nil</code>。</p>
+<p>对于例子中的两种类型的声明，我们可以直接使用，对其进行赋值输出。但是如果我们换成指针类型呢？</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#f92672">package</span> <span style="color:#a6e22e">main</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> (
+</span></span><span style="display:flex;"><span> <span style="color:#e6db74">&#34;fmt&#34;</span>
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">main</span>() {
+</span></span><span style="display:flex;"><span>   <span style="color:#66d9ef">var</span> <span style="color:#a6e22e">i</span> <span style="color:#f92672">*</span><span style="color:#66d9ef">int</span>
+</span></span><span style="display:flex;"><span>   <span style="color:#f92672">*</span><span style="color:#a6e22e">i</span>=<span style="color:#ae81ff">10</span>
+</span></span><span style="display:flex;"><span>   <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Println</span>(<span style="color:#f92672">*</span><span style="color:#a6e22e">i</span>)
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ go run test1.go 
+</span></span><span style="display:flex;"><span>panic: runtime error: invalid memory address or nil pointer dereference
+</span></span><span style="display:flex;"><span><span style="color:#f92672">[</span>signal SIGSEGV: segmentation violation code<span style="color:#f92672">=</span>0x1 addr<span style="color:#f92672">=</span>0x0 pc<span style="color:#f92672">=</span>0x4849df<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>goroutine <span style="color:#ae81ff">1</span> <span style="color:#f92672">[</span>running<span style="color:#f92672">]</span>:
+</span></span><span style="display:flex;"><span>main.main<span style="color:#f92672">()</span>
+</span></span><span style="display:flex;"><span>	/home/itheima/go/src/golang_deeper/make_new/t
+</span></span></code></pre></div><p>从这个提示中可以看出，对于引用类型的变量，我们不光要声明它，还要为它分配内容空间，否则我们的值放在哪里去呢？这就是上面错误提示的原因。</p>
+<h1 id="new">new <a href="#new" class="anchor">🔗</a></h1><p>对于上面的问题我们如何解决呢？既然我们知道了没有为其分配内存，那么我们使用new分配一个吧。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">main</span>() {
+</span></span><span style="display:flex;"><span>  
+</span></span><span style="display:flex;"><span>   <span style="color:#66d9ef">var</span> <span style="color:#a6e22e">i</span> <span style="color:#f92672">*</span><span style="color:#66d9ef">int</span>
+</span></span><span style="display:flex;"><span>   <span style="color:#a6e22e">i</span>=new(<span style="color:#66d9ef">int</span>)
+</span></span><span style="display:flex;"><span>   <span style="color:#f92672">*</span><span style="color:#a6e22e">i</span>=<span style="color:#ae81ff">10</span>
+</span></span><span style="display:flex;"><span>   <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Println</span>(<span style="color:#f92672">*</span><span style="color:#a6e22e">i</span>)
+</span></span><span style="display:flex;"><span>  
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>我们使用new关键字，为引用类型变量分配内存，然后就可以进行赋值了。现在再运行程序，PASS，打印10。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#f92672">package</span> <span style="color:#a6e22e">main</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> (
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;fmt&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;sync&#34;</span>
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">user</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">lock</span> <span style="color:#a6e22e">sync</span>.<span style="color:#a6e22e">Mutex</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">name</span> <span style="color:#66d9ef">string</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">age</span> <span style="color:#66d9ef">int</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">main</span>() {
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">u</span> <span style="color:#f92672">:=</span> new(<span style="color:#a6e22e">user</span>) <span style="color:#75715e">//默认给u分配到内存全部为0</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">u</span>.<span style="color:#a6e22e">lock</span>.<span style="color:#a6e22e">Lock</span>()  <span style="color:#75715e">//可以直接使用，因为lock为0,是开锁状态</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">u</span>.<span style="color:#a6e22e">name</span> = <span style="color:#e6db74">&#34;张三&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">u</span>.<span style="color:#a6e22e">lock</span>.<span style="color:#a6e22e">Unlock</span>()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Println</span>(<span style="color:#a6e22e">u</span>)
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ go run test2.go 
+</span></span><span style="display:flex;"><span>&amp;<span style="color:#f92672">{{</span><span style="color:#ae81ff">0</span> 0<span style="color:#f92672">}</span> 张三 0<span style="color:#f92672">}</span>
+</span></span></code></pre></div><p>这就是new，它返回的永远是类型的指针，指向分配类型的内存地址。</p>
+<h1 id="make">make <a href="#make" class="anchor">🔗</a></h1><p>make也是用于内存分配的，但是和new不同。它只用于</p>
+<ul>
+<li>map</li>
+<li>chan</li>
+<li>slice
+的内存创建，而且它返回的类型就是这三个类型本身，而不是他们的指针类型，因为这三种类型就是引用类型，所以就没有必要返回他们的指针了。</li>
+</ul>
+<h1 id="make与new的异同">make与new的异同 <a href="#make%e4%b8%8enew%e7%9a%84%e5%bc%82%e5%90%8c" class="anchor">🔗</a></h1><p>同：堆空间分配
+不同：make: 只用于slice、map以及channel的初始化， 无可替代；new: 用于类型内存分配(初始化值为0)， 不常用</p>
+
+        </div>
+    </div>
+
+    
+</section>
+
+
+            </div>
+            
+        </main>
+        <footer class="footer">
+    <div class="footer-row">
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/llm/index.xml">
+                    Feed of Llm
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/note/index.xml">
+                    Feed of Note
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/android/index.xml">
+                    Feed of Android
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/tool/index.xml">
+                    Feed of Tool
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/go/index.xml">
+                    Feed of Go
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+
+        
+            
+            
+        
+    </div>
+
+    
+</footer>
+
+    </body>
+</html>

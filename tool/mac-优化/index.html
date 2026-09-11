@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+<meta name="viewport" content="width=device-width,minimum-scale=1">
+
+
+
+
+<title>Mac优化 | Abner的博客</title>
+<link rel="canonical" href="https://abnerxc.github.io/tool/mac-%E4%BC%98%E5%8C%96/">
+<meta property="og:type" content="article" />
+<meta property="og:title" content="Mac优化 | Abner的博客" />
+<meta property="og:url" content="https://abnerxc.github.io/tool/mac-%E4%BC%98%E5%8C%96/" />
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/icofont/icofont.min.css" />
+<link rel="stylesheet" href="/css/syntax.css" />
+<link rel="stylesheet" href="/css/style.css" />
+<link rel="stylesheet" href="/css/custom.css" />
+<script src="/js/copy-code-block.js"></script>
+<link rel="shortcut icon" href="/images/favicon.ico" type="image/x-icon" />
+
+    </head>
+
+    <body>
+        <header class="header-wrapper">
+    <div class="header">
+        <a class="site-title" href="https://abnerxc.github.io/">Abner的博客</a>
+
+        <nav class="menu">
+            
+        </nav>
+    </div>
+</header>
+
+        <main class="main-wrapper single-page-wrapper has-floating-toc">
+            <div class="main">
+                
+
+<section class="single">
+    <h1 class="title">Mac优化</h1>
+
+    <div class="tip">
+        <time datetime="2022-07-21 18:35:11 &#43;0800 CST">2022/07/21</time>
+        <span class="split">·</span>
+        <span> 52 words </span>
+        <span class="split">·</span>
+        <span>
+            1 minutes to read
+        </span>
+    </div>
+
+    <div class="taxonomies">
+        
+        <div>
+            Categories:
+            
+                <a href="/categories/%E5%B7%A5%E5%85%B7">工具</a>
+            
+        </div>
+        
+
+        
+    </div>
+
+    <hr />
+
+    <div class="single-body has-toc">
+        
+        
+        <aside class="post-toc">
+            <h3>目录</h3>
+            <nav id="TableOfContents"></nav>
+        </aside>
+        
+
+        <div class="content">
+            <p>全局设置代理</p>
+<pre tabindex="0"><code>export ALL_PROXY=socks5://127.0.0.1:1086
+</code></pre><p>git-ssh</p>
+<pre tabindex="0"><code>git config --global user.name &#34;xuchen&#34;
+git config --global user.email &#34;abner510@126.com&#34;
+</code></pre><p>brew</p>
+<pre tabindex="0"><code>ruby -e &#34;$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)&#34;
+</code></pre><p>或者
+/bin/zsh -c &ldquo;$(curl -fsSL <a href="https://gitee.com/cunkai/HomebrewCN/raw/master/Homebrew.sh)%22">https://gitee.com/cunkai/HomebrewCN/raw/master/Homebrew.sh)&quot;</a>
+选择1 中科大源</p>
+<p>oh-my-zsh</p>
+<pre tabindex="0"><code>curl -L https://raw.github.com/robbyrussell/oh-my-zsh/master/tools/install.sh | sh
+</code></pre><p>zsh-autosuggestions 自动补全插件</p>
+<ul>
+<li>下载该插件到.oh-my-zsh的插件目录 <code>git clone git://github.com/zsh-users/zsh-autosuggestions $ZSH_CUSTOM/plugins/zsh-autosuggestions</code></li>
+<li>编辑.zshrc： <code>plugins=(git zsh-autosuggestions)</code></li>
+<li>重启命令行工具</li>
+<li>下载自动补全插件 <code>http://mimosa-pudica.net/src/incr-0.2.zsh</code></li>
+<li>放到oh-my-zsh的插件库中 <code>.oh-my-zsh/plugins/创建incr文件夹放到该文件夹中</code></li>
+<li>.zshrc末尾添加：<code>source ~/.oh-my-zsh/plugins/incr/incr*.zsh</code> 重启命令行</li>
+</ul>
+
+        </div>
+    </div>
+
+    
+</section>
+
+
+            </div>
+            
+        </main>
+        <footer class="footer">
+    <div class="footer-row">
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/llm/index.xml">
+                    Feed of Llm
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/note/index.xml">
+                    Feed of Note
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/android/index.xml">
+                    Feed of Android
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/tool/index.xml">
+                    Feed of Tool
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/go/index.xml">
+                    Feed of Go
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+
+        
+            
+            
+        
+    </div>
+
+    
+</footer>
+
+    </body>
+</html>

@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+<meta name="viewport" content="width=device-width,minimum-scale=1">
+
+
+
+
+<title>Go基础-信道 | Abner的博客</title>
+<link rel="canonical" href="https://abnerxc.github.io/go/base5.channel/">
+<meta property="og:type" content="article" />
+<meta property="og:title" content="Go基础-信道 | Abner的博客" />
+<meta property="og:url" content="https://abnerxc.github.io/go/base5.channel/" />
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/icofont/icofont.min.css" />
+<link rel="stylesheet" href="/css/syntax.css" />
+<link rel="stylesheet" href="/css/style.css" />
+<link rel="stylesheet" href="/css/custom.css" />
+<script src="/js/copy-code-block.js"></script>
+<link rel="shortcut icon" href="/images/favicon.ico" type="image/x-icon" />
+
+    </head>
+
+    <body>
+        <header class="header-wrapper">
+    <div class="header">
+        <a class="site-title" href="https://abnerxc.github.io/">Abner的博客</a>
+
+        <nav class="menu">
+            
+        </nav>
+    </div>
+</header>
+
+        <main class="main-wrapper single-page-wrapper has-floating-toc">
+            <div class="main">
+                
+
+<section class="single">
+    <h1 class="title">Go基础-信道</h1>
+
+    <div class="tip">
+        <time datetime="2019-01-15 18:35:11 &#43;0800 CST">2019/01/15</time>
+        <span class="split">·</span>
+        <span> 157 words </span>
+        <span class="split">·</span>
+        <span>
+            1 minutes to read
+        </span>
+    </div>
+
+    <div class="taxonomies">
+        
+        <div>
+            Categories:
+            
+                <a href="/categories/go">Go</a>
+            
+        </div>
+        
+
+        
+    </div>
+
+    <hr />
+
+    <div class="single-body has-toc">
+        
+        
+        <aside class="post-toc">
+            <h3>目录</h3>
+            <nav id="TableOfContents">
+  <ul>
+    <li><a href="#信道声明">信道声明</a></li>
+    <li><a href="#读写数据">读写数据</a></li>
+    <li><a href="#解决生产环境使用timesleep">解决生产环境使用timeSleep</a></li>
+    <li><a href="#死锁只读不写或者只读不写">死锁（只读不写或者只读不写）</a></li>
+    <li><a href="#关闭信道与-for-loop">关闭信道与 for loop</a></li>
+    <li><a href="#缓冲信道和普通信道">缓冲信道和普通信道</a></li>
+    <li><a href="#总结">总结</a></li>
+  </ul>
+</nav>
+        </aside>
+        
+
+        <div class="content">
+            <p>信道是协程之间通信的管道，从一端发送数据，另一端接收数据。</p>
+<h1 id="信道声明">信道声明 <a href="#%e4%bf%a1%e9%81%93%e5%a3%b0%e6%98%8e" class="anchor">🔗</a></h1><ul>
+<li><code>var c chan int</code>,声明了 nil 信道。nil 信道没什么作用，既不能发送数据也不能接受数据</li>
+<li><code>c:=make(chan int)</code>,使用 make 函数创建了可用的信道 c。</li>
+</ul>
+<p>+++</p>
+<h1 id="读写数据">读写数据 <a href="#%e8%af%bb%e5%86%99%e6%95%b0%e6%8d%ae" class="anchor">🔗</a></h1><pre tabindex="0"><code>c := make(chan int)
+// 写数据
+c &lt;- data   
+
+// 读数据
+variable &lt;- c  // 方式一
+&lt;- c              // 方式二
+</code></pre><p>+++</p>
+<h1 id="解决生产环境使用timesleep">解决生产环境使用timeSleep <a href="#%e8%a7%a3%e5%86%b3%e7%94%9f%e4%ba%a7%e7%8e%af%e5%a2%83%e4%bd%bf%e7%94%a8timesleep" class="anchor">🔗</a></h1><pre tabindex="0"><code>func printHello(c chan bool) {
+    fmt.Println(&#34;hello world goroutine&#34;)
+    &lt;- c    // 读取信道的数据
+}
+ 
+func main() {
+    c := make(chan bool)
+    go printHello(c)
+    c &lt;- true    // main 协程阻塞
+    fmt.Println(&#34;main goroutine&#34;)
+}
+//output
+hello world goroutine
+main goroutine
+</code></pre><p>+++</p>
+<h1 id="死锁只读不写或者只读不写">死锁（只读不写或者只读不写） <a href="#%e6%ad%bb%e9%94%81%e5%8f%aa%e8%af%bb%e4%b8%8d%e5%86%99%e6%88%96%e8%80%85%e5%8f%aa%e8%af%bb%e4%b8%8d%e5%86%99" class="anchor">🔗</a></h1><pre tabindex="0"><code>func main() {
+    c := make(chan bool)
+    c &lt;- true    // 只写不读
+    fmt.Println(&#34;main goroutine&#34;)
+}
+</code></pre><p>+++</p>
+<h1 id="关闭信道与-for-loop">关闭信道与 for loop <a href="#%e5%85%b3%e9%97%ad%e4%bf%a1%e9%81%93%e4%b8%8e-for-loop" class="anchor">🔗</a></h1><pre tabindex="0"><code>func printNums(ch chan int) {
+    for i := 0; i &lt; 10; i++ {
+        ch &lt;- i
+    }
+    close(ch)
+}
+
+func main() {
+    ch := make(chan int)
+    go printNums(ch)
+    for {
+        v, ok := &lt;-ch
+        if ok == false {     // 通过 ok 判断信道是否关闭
+            fmt.Println(v, ok)
+            break
+        }
+        fmt.Println(v, ok)
+    }
+}
+</code></pre><p>+++</p>
+<h1 id="缓冲信道和普通信道">缓冲信道和普通信道 <a href="#%e7%bc%93%e5%86%b2%e4%bf%a1%e9%81%93%e5%92%8c%e6%99%ae%e9%80%9a%e4%bf%a1%e9%81%93" class="anchor">🔗</a></h1><p><strong>普通信道是<code>无缓冲的，读写信道会立马阻塞当前协程</code>。对于缓冲信道，写不会阻塞当前信道直到信道满了，同理，读操作也不会阻塞当前信道除非信道没数据</strong></p>
+<h1 id="总结">总结 <a href="#%e6%80%bb%e7%bb%93" class="anchor">🔗</a></h1><p>{% post_link Go/channel总结 [channel总结]%}</p>
+
+        </div>
+    </div>
+
+    
+</section>
+
+
+            </div>
+            
+        </main>
+        <footer class="footer">
+    <div class="footer-row">
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/llm/index.xml">
+                    Feed of Llm
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/note/index.xml">
+                    Feed of Note
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/android/index.xml">
+                    Feed of Android
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/tool/index.xml">
+                    Feed of Tool
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+            
+            
+                <a class="footer-item" href="https://abnerxc.github.io/go/index.xml">
+                    Feed of Go
+                    <i class="icofont-rss"></i>
+                </a>
+            
+        
+
+        
+            
+            
+        
+    </div>
+
+    
+</footer>
+
+    </body>
+</html>
